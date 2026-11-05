@@ -1,0 +1,174 @@
+{
+  "metadata": {
+    "soundFile": "milo-greeting.mp3",
+    "duration": 4.63
+  },
+  "mouthCues": [
+    {
+      "start": 0.0,
+      "end": 0.21,
+      "value": "B"
+    },
+    {
+      "start": 0.21,
+      "end": 0.35,
+      "value": "E"
+    },
+    {
+      "start": 0.35,
+      "end": 0.66,
+      "value": "A"
+    },
+    {
+      "start": 0.66,
+      "end": 0.86,
+      "value": "B"
+    },
+    {
+      "start": 0.86,
+      "end": 0.95,
+      "value": "A"
+    },
+    {
+      "start": 0.95,
+      "end": 1.03,
+      "value": "D"
+    },
+    {
+      "start": 1.03,
+      "end": 1.1,
+      "value": "E"
+    },
+    {
+      "start": 1.1,
+      "end": 1.24,
+      "value": "F"
+    },
+    {
+      "start": 1.24,
+      "end": 1.31,
+      "value": "E"
+    },
+    {
+      "start": 1.31,
+      "end": 1.38,
+      "value": "B"
+    },
+    {
+      "start": 1.38,
+      "end": 1.71,
+      "value": "X"
+    },
+    {
+      "start": 1.71,
+      "end": 1.75,
+      "value": "B"
+    },
+    {
+      "start": 1.75,
+      "end": 1.79,
+      "value": "C"
+    },
+    {
+      "start": 1.79,
+      "end": 2.0,
+      "value": "F"
+    },
+    {
+      "start": 2.0,
+      "end": 2.07,
+      "value": "D"
+    },
+    {
+      "start": 2.07,
+      "end": 2.49,
+      "value": "E"
+    },
+    {
+      "start": 2.49,
+      "end": 2.63,
+      "value": "C"
+    },
+    {
+      "start": 2.63,
+      "end": 2.71,
+      "value": "A"
+    },
+    {
+      "start": 2.71,
+      "end": 2.85,
+      "value": "B"
+    },
+    {
+      "start": 2.85,
+      "end": 2.99,
+      "value": "D"
+    },
+    {
+      "start": 2.99,
+      "end": 3.06,
+      "value": "E"
+    },
+    {
+      "start": 3.06,
+      "end": 3.2,
+      "value": "C"
+    },
+    {
+      "start": 3.2,
+      "end": 3.41,
+      "value": "B"
+    },
+    {
+      "start": 3.41,
+      "end": 3.55,
+      "value": "C"
+    },
+    {
+      "start": 3.55,
+      "end": 3.69,
+      "value": "B"
+    },
+    {
+      "start": 3.69,
+      "end": 3.81,
+      "value": "A"
+    },
+    {
+      "start": 3.81,
+      "end": 3.84,
+      "value": "C"
+    },
+    {
+      "start": 3.84,
+      "end": 3.92,
+      "value": "A"
+    },
+    {
+      "start": 3.92,
+      "end": 3.99,
+      "value": "B"
+    },
+    {
+      "start": 3.99,
+      "end": 4.13,
+      "value": "E"
+    },
+    {
+      "start": 4.13,
+      "end": 4.27,
+      "value": "B"
+    },
+    {
+      "start": 4.27,
+      "end": 4.63,
+      "value": "X"
+    }
+  ],
+  "transcript": "Hello, I'm Milo. A small hello can start a big adventure.",
+  "generator": {
+    "speech": "eSpeak NG 1.52.0",
+    "cues": "Rhubarb Lip Sync 1.14.0, phonetic recognizer",
+    "timing": "Audio-derived estimated mouth cues, seconds"
+  }
+}

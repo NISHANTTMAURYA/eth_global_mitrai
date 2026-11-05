@@ -1,0 +1,14 @@
+node_modules/
+.next/
+.env*
+!.env.example
+.data/
+artifacts/
+test-results/
+playwright-report/
+.DS_Store
+research/papers/
+research/extracted/
+
+*.tsbuildinfo
+work/

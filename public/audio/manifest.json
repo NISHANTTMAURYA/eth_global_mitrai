@@ -1,0 +1,20 @@
+[
+  {
+    "name": "mira",
+    "audio": "/audio/mira-greeting.mp3",
+    "cues": "/audio/mira-greeting.json",
+    "duration": 4.19,
+    "mouthCues": 28,
+    "bytes": 28797,
+    "sha256": "98f5c7b8b37fbc7328f21c5203de2ca187e94cf961f6aaaa6716e56c9e135cbc"
+  },
+  {
+    "name": "milo",
+    "audio": "/audio/milo-greeting.mp3",
+    "cues": "/audio/milo-greeting.json",
+    "duration": 4.63,
+    "mouthCues": 32,
+    "bytes": 38034,
+    "sha256": "df968b8de2d379e964dca2ad13906958dc8fc3c23211227d28c4e6f2ec0a9f67"
+  }
+]

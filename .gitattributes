@@ -1,0 +1,3 @@
+# Preserve upstream legal texts byte-for-byte, including their original whitespace.
+public/models/licenses/** -whitespace
+public/audio/licenses/** -whitespace

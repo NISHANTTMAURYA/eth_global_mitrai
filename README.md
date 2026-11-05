@@ -1,0 +1,279 @@
+# MitrAI — create, cultivate, discover and adopt
+
+Runnable local MVP for ETHGlobal Mumbai · updated 6 November 2026.
+
+## Run the implementation
+
+Requires Node.js 22.13+ (tested with Node 25.6).
+
+```sh
+npm ci
+npm run dev
+```
+
+Open `http://localhost:3000`. Connect → **Try the local demo**. Browse → create a robot or human character → talk/play → save a checkpoint → add private/public memories → publish → open a second session to audition and enquire. The studio Milo also supports free local adoption. Use the ten-minute lifespan to observe an actual Sunset.
+
+```sh
+npm run typecheck
+npm test
+npm run build
+npm run test:integration
+```
+
+The integration command starts a production server with a disposable isolated SQLite database, exercises the HTTP flows, and removes only its own temporary data. Browser-based visual QA was blocked by preview permission; no visual pass is claimed.
+
+### Live configuration
+
+Copy `.env.example` to `.env.local`. Set `OG_API_KEY` and `OG_MODEL` for 0G inference; the documented router endpoint is the default. Without them the UI explicitly says **Scripted demo**. Provider failures are surfaced, not replaced with invented replies. Set the public Rabdi access key/RPC for reliable chain access. Browser-exposed keys are public configuration, never wallet private keys.
+
+Sign in with a browser wallet, create a character, then choose **The mind → Sync to Arkiv**. Wallet approval signs the public snapshot write. The server verifies the result before recording the entity key. **Discover on Arkiv** queries public records and accepts only this app verifier’s signed snapshots. The script `npm run query:arkiv` reproduces the schema query, optionally filtered with `ARKIV_OWNER`. No live transaction was executed during implementation, so writer addresses and live entity evidence remain pending.
+
+Real handover first requires the existing owner to sign Arkiv ownership transfer, then the app reconciles the new owner and starts a new private ownership epoch. There is no payment or escrow contract.
+
+### Storage and trust
+
+SQLite and the Ed25519 verifier key live in ignored `.data/` (or `MITRAI_DATA_DIR`). Preserve this directory for continuity; do not publish it. Chats are separated by character, owner and ownership epoch. The app signs sanitized public state; private messages and memory evidence are excluded. The canonical birth registry and trusted verifier enforce official lifetimes. This is a single-server hackathon architecture, not permissionless finality or a serverless Postgres deployment.
+
+### Character media
+
+Two primary rigged models are locally served: RobotExpressive with embedded body clips, and the pixiv humanoid VRM with five vowel expressions and procedural hand/head animation. Fox is an optional third creature. The voice button plays a licensed generated greeting with audio-derived Rhubarb timing. Browser-spoken dynamic replies use approximate word/vowel timing. Robot expressions are stylized; no claim of phoneme-accurate robot lip sync. See `docs/character-assets.md` and `docs/speech-assets.md` for source licenses and exact controls.
+
+The remaining sections describe the product flow and longer-term design; implementation status is authoritative in `state.md`.
+
+MitrAI is an open platform for cultivating unique 3D characters with memories, habits and personality. Creators invent uses; the platform supplies creation, evolution, publishing, discovery and ownership transfer. Each character has a finite lifetime ending at **Sunset**, followed by a read-only **Legacy**.
+
+This revision supersedes the earlier emphasis on a daily personal companion and relegation of selling to a later product. Discovery and adoption are core journeys. Paid settlement remains unimplemented and must not be presented as working.
+
+## Product decisions
+
+- Core loop: **create → cultivate → demonstrate → publish → discover → adopt → continue → Sunset**.
+- No fixed use-case category. Creators can explore games, storytelling, interviewing, commentary or other activities with free-text definitions and tags.
+- Quality over volume: one active cultivation slot per account, editable drafts, no bulk creation and no rewards for creation counts. Selling should not instantly replenish a creation allowance; choose an explicit cooldown. Wallet/account limits alone cannot enforce one-per-human.
+- Ownership is exclusive within the official service. Public data can still be copied elsewhere.
+- Lifespan is fixed at creation and runs offline. Transfers, payments and storage renewals never extend it.
+- Final lifespan is undecided. Thirty days is a hypothesis requiring enough time for cultivation and adoption; use a clearly labeled ten-minute demo character for judging.
+- Sunset ends interaction and evolution; a read-only legacy preserves approved history.
+- Buyer value must be visible: distinctive behavior, permitted transferable knowledge, demonstrated abilities, history and time remaining. Age and scarcity alone do not guarantee demand.
+
+## Website and onboarding
+
+Discovery comes first. Use warm ivory, charcoal and muted amber, expressive 3D previews, and clear lifetime information.
+
+| Page | Purpose |
+| --- | --- |
+| `/` and `/explore` | Browse public characters without a wallet; Create and Adopt entry points; filter by creator tags, style, demonstrated activities, availability and time remaining |
+| `/create` | Free-text identity, behavior, optional purpose, appearance, starting temperament, example dialogue and draft preview |
+| `/onboarding` | Wallet login, optional human verification, creation/adoption review and transaction confirmation |
+| `/companion/[id]` | Owner's 3D character, chat/play, activities, remaining time, memory controls and save status |
+| `/companion/[id]/mind` | Traits, habits, memories and explanations of changes |
+| `/publish/[id]` | Preview public bio, demonstrations, approved history, transferable state and availability |
+| `/characters/[id]` | Public profile, evidence of abilities, isolated audition and offer/adopt action |
+| `/transfer/[id]` | Recipient, remaining lifespan, included assets/data and handover confirmation |
+| `/companion/[id]/history` | Creation, checkpoints, confirmed ownership changes and lifecycle |
+| `/legacy/[id]` | Frozen character and approved biography; no conversation |
+| `/settings` | Planned account controls; current connection and integration settings open in the header dialog |
+
+### Creation flow
+
+1. Browse first. Cards show a distinctive description, demonstrations, creator, availability and time remaining. Avoid ranking solely by message volume.
+2. Choose **Create** or **Adopt**. Adoption allows participation without generating another persona.
+3. For creation, answer “Who is this being?” and “How does it behave?” Optionally describe something to explore together. Inspiration examples are optional; accept original purposes.
+4. Choose a bundled licensed GLB body, name, colors and starting temperament. Add example dialogue and boundaries. Preview responses in a draft before its lifespan starts. Custom model upload is stretch scope.
+5. Connect an EVM wallet through its injected browser provider and sign an expiring nonce-bound login message. If World is implemented, verify the creation allowance on the server and bind it to this session. Cancellation leaves browsing available.
+6. Review exact lifespan, public-state visibility, private-memory rules and permanent Sunset. Check Arkiv network/gas and sign creation. Confirmed creation starts the clock; refresh recovery uses transaction receipts rather than creating a duplicate.
+7. Talk, play scenarios, practise activities and give feedback. Approve useful memories and public highlights separately. A shared goal is optional; conversation alone does not prove a skill or grant tool access.
+
+### Cultivation and saving
+
+Load confirmed state from Arkiv → verify current owner and lifecycle → retrieve that ownership epoch's private memories → call 0G → validate proposed events → apply bounded evolution rules → show provisional changes → owner signs a session checkpoint → show confirmed state.
+
+Keep signing at session boundaries rather than every message. Unsaved changes must be labeled. Backend signing requires explicitly authorized supported delegation; it cannot silently impersonate the owner.
+
+### Publishing
+
+Creation does not automatically publish or list a character. Choose **Introduce to the world** when ready:
+
+1. Write a public bio and choose free-form discovery tags.
+2. Select demonstrations and approved experiences; preview the exact public and transferable package.
+3. Distinguish creator claims from evaluated abilities and include demonstration/checkpoint dates.
+4. Choose **Showcase only**, **Open to offers**, or **Listed for transfer**. A paid listing also requires price, currency, expiry and an actually implemented settlement mechanism.
+5. Sign the Arkiv publishing write. The gallery queries these records and links to the canonical character state.
+
+Drafts, private chats and owner-specific facts stay off public storage. Unlisting removes discoverability in the app; it cannot make previously public data secret. Stale listings must be invalidated on ownership changes or Sunset.
+
+### Discovery, audition and buying
+
+Every profile must answer “Why this character?” Show behavior examples, useful knowledge, personality development, history, included assets/permissions and exact remaining lifespan. Example creations might be a sarcastic dungeon guide, cricket commentator or interviewer for fictional villains. These are possibilities, not mandatory categories.
+
+Allow a short **isolated audition** from the public checkpoint. This deliberately revises the original owner-only conversation rule: only the owner cultivates the canonical brain, while visitors try disposable public context. Auditions never read private memories, change the brain or earn experience. Apply a small allowance/rate limit and stop auditions at Sunset.
+
+Adoption flow: discover → inspect evidence → audition → review price/offer and included state → confirm recipient and remaining lifetime → settle through the implemented mechanism → verify canonical ownership → revoke old sessions → start the new owner's private relationship. MVP must demonstrate actual wallet-to-wallet transfer. Until paid settlement exists, use offers and clearly labeled transfer, not a pretend Buy button. Multi-network payment and Arkiv handover are not automatically atomic.
+
+The new owner receives the canonical character and approved transferable knowledge/assets. Previous-owner chats and personal facts stay behind. Lifetime never resets. Reputation and transaction evidence must not imply guaranteed future performance or resale value.
+
+## Product research informing this revision
+
+Checked 6 November 2026. These products provide design references; none proves demand for this exact marketplace.
+
+- [Character.AI creation guide](https://support.character.ai/hc/en-us/articles/50608869548699-2-Creating-a-Character-Quickstart-Guide-%CF%89): definitions, example dialogue, tags and publishing controls.
+- [Virtuals](https://www.virtuals.io/): agent discovery organized around offerings and jobs.
+- [Inworld](https://inworld.ai/resources/voice-ai-for-ai-character-apps): distinctive persona and voice as part of the character experience.
+- [Spore.fun case study](https://arxiv.org/abs/2506.04236): experimental agent evolution, not evidence of sustainable buyer demand.
+
+## Age and Sunset logic
+
+Use creation block/time as the anchor and store a fixed duration. The browser countdown is display only; the API checks the confirmed anchor and server time before every message, queued reply, save and transfer.
+
+```text
+sunsetAt = anchoredCreationTime + lifespanSeconds
+lifeProgress = clamp((now - anchoredCreationTime) / lifespanSeconds, 0, 1)
+
+0–20%: Dawn        — establish a relationship and initial interests
+20–75%: Bloom      — build habits and pursue the shared goal
+75–100%: Golden    — reflect on selected experiences and prepare a legacy
+100%: Sunset      — stop interactive actions and freeze canonical state
+Afterwards: Legacy — read-only viewing
+```
+
+Experience grows separately from elapsed time. Spending time together changes what the character knows; being older does not automatically make it smarter. Slow stable-trait changes and allow quick temporary mood changes. Cosmetic lifecycle changes may affect lighting, accessories and animation; don't force every model into human biological aging.
+
+At Sunset, freeze the latest confirmed brain plus any explicitly approved final checkpoint committed before the deadline. A closing note can be prepared shortly beforehand. If the app is offline, the deadline still passes: the next request derives the correct state without depending on a timer job.
+
+**Enforcement boundary:** an owner-controlled Arkiv record can be edited by its owner. Keep a registered immutable birth commitment and accept only engine-verified transitions in the official service. This is application-enforced finality with a trusted verifier. Protocol-wide irreversible finality would require an independently enforced registry/contract design; it is not supplied by a JSON field or a signature alone.
+
+Arkiv storage expiration is separate. Keep renewable records available after Sunset so the legacy survives. Renew before expiration and back up the identity/state. Missing a renewal is a storage failure, never the intended lifecycle event. See [Arkiv expiration](https://docs.arkiv.network/writing/expiration/).
+
+## Brain architecture
+
+Read [the concrete brain specification](docs/brain-spec.md) and [research index](research/README.md).
+
+The brain is structured identity, traits, episodes, beliefs, goals, habits and retrieval metadata. A deterministic reducer updates it. An external language model interprets chat and expresses replies; it does not replace the persistent state. No neural network is trained for this character engine.
+
+```mermaid
+flowchart LR
+  U[Owner and 3D website] --> A[Authenticated API]
+  A --> K[Arkiv: canonical character and checkpoints]
+  A --> D[Private DB: chats and private memories]
+  K --> R[Retrieve relevant state]
+  D --> R
+  R --> G[0G: interpret and generate]
+  G --> V[Validate proposed events]
+  V --> B[Deterministic brain reducer]
+  B --> W[Owner approves checkpoint]
+  W --> K
+```
+
+## Proposed implementation stack
+
+| Need | Choice and purpose |
+| --- | --- |
+| Frontend/API | Next.js + TypeScript; one application for pages, authentication and server routes |
+| Interface | Tailwind CSS + shadcn/ui; accessible dialogs and clear transaction states |
+| Wallets | wagmi + viem + RainbowKit; ownership checks and owner-signed writes |
+| 3D | Three.js through React Three Fiber + Drei; GLB loading, idle/listening/thinking animation |
+| Public state | `@arkiv-network/sdk`; live character and checkpoint reads/writes |
+| Private data | PostgreSQL + Drizzle; per-owner chats, memory evidence and sessions |
+| Model calls | 0G Private Computer, through the documented server API; record actual request IDs |
+| Optional human check | World IDKit with backend verification at character creation |
+| Asset storage | Object storage initially; Swarm adapter if time permits |
+| Hosting | Vercel plus hosted PostgreSQL; server-only secrets and model credentials |
+| Background tasks | Expiry monitoring, storage renewal alerts and legacy preparation; correctness must not depend on jobs firing |
+
+Pin package versions after checking current documentation. Don't mix old Arkiv examples and current schemas. Confirm provider credentials, SDK APIs and supported models with sponsor docs before coding.
+
+### Data layout
+
+`Character`: canonical key and wallet owner; public ID, name, birth commitment, lifespan, current version, public brain bytes and asset hash/reference. Derive lifecycle from the trusted anchor.
+
+`Checkpoint`: character key, sequence, previous hash, state hash, rule version, engine signature, sanitized accepted events and compact public state. Verify signature, linkage and author before treating a record as canonical.
+
+`PrivateMemory` in Postgres: owner + character + ownership epoch, text, confidence, source message IDs and consent. Never retrieve memories from an earlier ownership epoch for a new owner.
+
+`TransferEvent` history: derive confirmed ownership events, retain receipts and reconcile current root ownership. A custom `owner` string is never authentication.
+
+Index the fields the UI queries: entity type/schema, character ID, lifecycle deadline and visibility where useful. Filter current ownership using the system owner field. Respect current entity/bytes limits; the complete chat history never belongs inside one root.
+
+### API responsibilities
+
+- `POST /api/auth/challenge`, `/verify`: nonce, origin and session validation.
+- `POST /api/human/verify`: validate World results and consume a scoped creation allowance.
+- `GET /api/characters/:id`: verified public state with derived lifecycle.
+- `POST /api/characters/:id/chat`: owner/lifespan checks, private retrieval, 0G call and schema validation.
+- `POST /api/characters/:id/checkpoint`: prepare a bounded state transition for owner signing; recheck version and deadline when accepting confirmation.
+- `POST /api/characters/:id/transfer`: prepare handover and revoke old app access after confirmed ownership changes.
+- `GET /api/legacies`: query confirmed public legacy records.
+
+The implementation consolidates these operations into `GET/POST /api/auth` and `GET/POST /api/app` with validated action names. World verification is not implemented.
+
+## Prize strategy and evidence
+
+Primary: **Arkiv — Build on Arkiv (from scratch)**. Extra picks: **0G — Build with 0G Private Computer**, then **World — Best Use of IDKit**. Implement World only after the core works. Swarm is an optional Arkiv bonus. Rules checked 6 November 2026; [official full prize list](https://ethglobal.com/events/mumbai/prizes).
+
+### Arkiv submission checklist
+
+Use live Rabdi writes and a visible read feature; publish a licensed repository, AI disclosure, writer wallets and a reproducible query. Prepare:
+
+- `arkiv/schema.md`: entities, queried fields, ownership and expiry.
+- `arkiv/friction.md`: actual obstacles, expected/observed behavior and reproduction.
+- `arkiv/reach.md`: target users, trial link and evidence.
+- `arkiv/why-arkiv.md`: user benefit over a conventional database; off-chain boundaries.
+- `arkiv/how-you-use-arkiv.md`: connect filters, edit rights and expiry to visible behavior.
+
+Four judging categories have equal weight. SDK installation alone and unread logs do not qualify. Only one Arkiv track award is available per team. [Official Arkiv rules](https://ethglobal.com/events/mumbai/prizes/arkiv)
+
+**Writer wallets:** pending user-authorized live deployment. **Runnable query:** `npm run query:arkiv`; optional `ARKIV_OWNER` filter. Arkiv evidence files now describe the implemented code; live transaction links and real user measurements remain outstanding.
+
+### Extra 1: 0G
+
+Use inference in the real conversation/update path and show actual request IDs. Demonstrate why the companion merits a return visit and state what fails without 0G. Submit a working demo, public setup instructions, a video under three minutes, team/contact information and deployment addresses if applicable. A generic chat wrapper is explicitly discouraged. Our distinction must be visible evolving state and a finite lifecycle. The official iAI login/credit feature is optional scope. [0G requirements](https://ethglobal.com/events/mumbai/prizes/0g)
+
+### Extra 2: World
+
+Use IDKit to ration a finite companion creation allowance per verified human, rather than using it as a cosmetic login. Verify server-side and demonstrate successful creation plus cancellation/rejection with no allowance consumed and no character created. Document integration time, friction and feedback. Bind the verified identity to a wallet with explicit account-change rules. Human verification does not prove every chat is meaningful. [World requirements](https://ethglobal.com/events/mumbai/prizes)
+
+ENS was considered but its track needs meaningful ENSv2 functionality on supported networks. Displaying a resolved name is insufficient; a real character namespace and permissions system would add cross-network work. Keep it out of this MVP. [ENS requirements](https://ethglobal.com/events/mumbai/prizes/ens)
+
+### Optional Swarm bonus
+
+Put a public GLB and legacy artwork on Swarm, reference them in Arkiv, and load them in the UI. Record upload/read code, node/service, postage batch and buyer/provider, reproducible steps, a real entity/reference pair, demo timestamp and friction in `arkiv/swarm.md`. Never publicly expose an encrypted reference containing a secret key. This bonus stays within the Arkiv partner selection. [Bonus rules](https://ethglobal.com/events/mumbai/prizes/arkiv)
+
+## Build order
+
+1. Foundation: wallet session, character creation, live Arkiv dashboard, one GLB.
+2. Brain: private chats, 0G response, validated events, reducer, signed checkpoint and reload.
+3. Lifecycle: correct countdown, server gating, closing moment and legacy page. Include a real short-lived demo character.
+4. Publishing and discovery: live Arkiv gallery, approved demonstrations, isolated audition, offers, second-wallet adoption, provenance and private-data isolation.
+5. Submission evidence and documentation; record the full demo.
+6. Optional: World; then Swarm. Do not delay core completion for a marketplace, tokens, custom model training or arbitrary 3D generation.
+
+## Demo and checks
+
+Aim for a narrated 2:30 video: creation and exact deadline → conversation changes a memory/habit → reload proves Arkiv persistence → show a 0G request ID → hand over to a second wallet → demonstrate private-memory separation → show a short-lived character reach Sunset and reject chat → open its legacy. Include World success/failure if claiming that prize. Keep real elapsed lifecycle behavior; label demo duration explicitly.
+
+Check: replayed/expired signatures; old-owner access; simultaneous checkpoint versions; rejected transactions; refresh during creation; 0G outage without fabricated answers; chat crossing the deadline; storage expiry; private-data leaks in model context; repeated-feedback farming; missing/corrupt GLB. Measure actual latency, costs and tester feedback.
+
+## Repository and setup handoff
+
+```text
+README.md
+idea.md                      # original concept; lifecycle superseded here
+LICENSE                      # add when implementation repository is created
+.env.example                 # add variable names without secrets
+src/app/                     # planned pages and API routes
+src/lib/arkiv/               # schemas, queries, signed write preparation
+src/lib/brain/               # types, retrieval, appraisal, reducer, validation
+src/lib/ai/                  # 0G adapter
+src/lib/auth/                # wallet and optional World checks
+src/components/character/   # avatar renderer and expression mapping
+docs/brain-spec.md
+docs/submission.md
+arkiv/                       # sponsor evidence drafts
+research/README.md
+research/download_manifest.json
+research/papers/
+research/scripts/
+```
+
+Expected environment: Arkiv RPC/chain ID, database URL, session secret, 0G endpoint/credentials/model and optional World configuration. Never place private keys in public frontend environment variables. The app should provide dependency installation, migrations, local start, demo seeding and query commands once implemented; no runnable app is claimed by this planning package.
+
+Preserve meaningful Git history, disclose pre-existing work and AI assistance, and confirm the chosen participation category using the event's [official information hub](https://ethglobal.com/events/mumbai/info). The public general [rules page](https://ethglobal.com/rules) does not expose every Mumbai submission detail. Include these planning files and accurately describe how they were created; do not invent implementation or user evidence.

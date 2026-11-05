@@ -1,0 +1,154 @@
+{
+  "metadata": {
+    "soundFile": "mira-greeting.mp3",
+    "duration": 4.19
+  },
+  "mouthCues": [
+    {
+      "start": 0.0,
+      "end": 0.13,
+      "value": "C"
+    },
+    {
+      "start": 0.13,
+      "end": 0.22,
+      "value": "A"
+    },
+    {
+      "start": 0.22,
+      "end": 0.4,
+      "value": "E"
+    },
+    {
+      "start": 0.4,
+      "end": 0.65,
+      "value": "F"
+    },
+    {
+      "start": 0.65,
+      "end": 0.7,
+      "value": "B"
+    },
+    {
+      "start": 0.7,
+      "end": 0.75,
+      "value": "C"
+    },
+    {
+      "start": 0.75,
+      "end": 0.82,
+      "value": "B"
+    },
+    {
+      "start": 0.82,
+      "end": 0.93,
+      "value": "A"
+    },
+    {
+      "start": 0.93,
+      "end": 1.03,
+      "value": "B"
+    },
+    {
+      "start": 1.03,
+      "end": 1.1,
+      "value": "F"
+    },
+    {
+      "start": 1.1,
+      "end": 1.18,
+      "value": "A"
+    },
+    {
+      "start": 1.18,
+      "end": 1.39,
+      "value": "B"
+    },
+    {
+      "start": 1.39,
+      "end": 1.58,
+      "value": "X"
+    },
+    {
+      "start": 1.58,
+      "end": 1.64,
+      "value": "B"
+    },
+    {
+      "start": 1.64,
+      "end": 1.77,
+      "value": "C"
+    },
+    {
+      "start": 1.77,
+      "end": 2.33,
+      "value": "B"
+    },
+    {
+      "start": 2.33,
+      "end": 2.4,
+      "value": "D"
+    },
+    {
+      "start": 2.4,
+      "end": 2.51,
+      "value": "A"
+    },
+    {
+      "start": 2.51,
+      "end": 2.71,
+      "value": "B"
+    },
+    {
+      "start": 2.71,
+      "end": 2.85,
+      "value": "F"
+    },
+    {
+      "start": 2.85,
+      "end": 2.99,
+      "value": "C"
+    },
+    {
+      "start": 2.99,
+      "end": 3.06,
+      "value": "B"
+    },
+    {
+      "start": 3.06,
+      "end": 3.13,
+      "value": "F"
+    },
+    {
+      "start": 3.13,
+      "end": 3.2,
+      "value": "B"
+    },
+    {
+      "start": 3.2,
+      "end": 3.34,
+      "value": "C"
+    },
+    {
+      "start": 3.34,
+      "end": 3.52,
+      "value": "A"
+    },
+    {
+      "start": 3.52,
+      "end": 3.86,
+      "value": "B"
+    },
+    {
+      "start": 3.86,
+      "end": 4.19,
+      "value": "X"
+    }
+  ],
+  "transcript": "Hello, I'm Mira. Let's make something worth remembering.",
+  "generator": {
+    "speech": "eSpeak NG 1.52.0",
+    "cues": "Rhubarb Lip Sync 1.14.0, phonetic recognizer",
+    "timing": "Audio-derived estimated mouth cues, seconds"
+  }
+}
