@@ -12,3 +12,6 @@ research/extracted/
 
 *.tsbuildinfo
 work/
+
+# Local Netlify folder
+.netlify
