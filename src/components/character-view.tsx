@@ -252,6 +252,7 @@ export default function CharacterView({
             </div>
             <Stage
               model={c.model}
+              modelZoom={1.1}
               speaking={speaking}
               vowel={vowel}
               gesture={gesture}

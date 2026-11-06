@@ -31,6 +31,7 @@ type Props = {
   gestureKey?: number;
   interactive?: boolean;
   compact?: boolean;
+  modelZoom?: number;
   legacy?: boolean;
 };
 class SceneBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
@@ -58,6 +59,8 @@ function Character({
   loader,
   onReady,
   library,
+  compact = false,
+  modelZoom = 1,
 }: Props & { loader: GLTFLoader; onReady: () => void; library?: Awaited<ReturnType<GLTFLoader['loadAsync']>>[] }) {
   const path = modelPath(model);
   const gltf = useLoader(loader, path);
@@ -106,11 +109,13 @@ function Character({
     if (!(camera instanceof PerspectiveCamera)) return;
     const distance = boxFitDistance(transform.size, viewportSize.width / Math.max(1, viewportSize.height), camera.fov);
     camera.position.set(0, 0, distance);
+    // Projection zoom gives an exact visual increase without changing fit bounds.
+    camera.zoom = compact ? 1.15 : modelZoom;
     camera.near = Math.max(.01, distance / 100);
     camera.far = distance + 100;
     camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
-  }, [camera, transform, viewportSize.width, viewportSize.height]);
+  }, [camera, transform, viewportSize.width, viewportSize.height, compact, modelZoom]);
   useEffect(() => {
     if (legacy) {
       Object.values(actions).forEach((a) => a?.stop());

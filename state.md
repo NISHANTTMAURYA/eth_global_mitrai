@@ -58,9 +58,9 @@ User requires zero real-money setup. Changed 0G default and configuration links 
 Removed Drei Html from the model Suspense fallback after the reported React synchronous-root-unmount error. Loading text now stays in the existing page DOM outside Canvas; the loaded model signals readiness after commit. Browser reproduction remains unavailable under the earlier preview permission restriction.
 ### Latest implementation
 
-- Google Vertex AI support is implemented in `src/lib/chat.ts` using `@google/genai` in Vertex mode and is selected first when `GEMINI_USE_VERTEX=true` (or `GOOGLE_GENAI_USE_VERTEXAI=true`) with `GOOGLE_CLOUD_PROJECT`.
+- Google Vertex AI support is implemented in `src/lib/chat.ts` using `@google/genai` in Vertex mode (`gemini-3.8-flash` in `global` location) and is selected first when `GEMINI_USE_VERTEX=true` (or `GOOGLE_GENAI_USE_VERTEXAI=true`) with `GOOGLE_CLOUD_PROJECT`.
 - Provider order is Google Vertex AI → optional 0G testnet → clearly labeled scripted demo.
-- Authenticates using Google Cloud Application Default Credentials (ADC); Bedrock implementation and `@aws-sdk/client-bedrock-runtime` removed.
+- Authenticates using Google Cloud Application Default Credentials (ADC); Bedrock implementation and `@aws-sdk/client-bedrock-runtime` removed. Live inference verified with actual Vertex request ID.
 ### Downloads character expansion
 
 - Copied all 16 skeletal GLB models from Downloads into public/models/downloads; originals preserved.
@@ -99,3 +99,6 @@ Imported humanoids now use the stable generated standing idle rather than the re
 ### Stable framing during animation
 
 Removed active-motion-driven recentering, rescaling and camera fitting. The standing idle establishes the frame once per model load; animation changes only bone poses. Canvas resize can still refit the camera. This preserves character size and stage placement while gestures cycle.
+### Requested size increases and lip-sync research
+
+Gallery camera projection zoom is 1.15; detail zoom is 1.10. Neither depends on current animation. Audited all 24 models: 13 embedded-animation, 10 retargeted humanoid, 1 procedural VRM. Researched primary documentation for Rhubarb, Polly, Azure Speech, TalkingHead, HeadAudio and browser boundary events; saved comparison, capability audit and concrete implementation plan in docs/lip-sync-research.md. No new speech service is configured or claimed integrated.
