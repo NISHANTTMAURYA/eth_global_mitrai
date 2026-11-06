@@ -52,3 +52,7 @@ Corrected the default Arkiv transport to honor the access-key URL constructed by
 ## Testnet-only configuration
 
 User requires zero real-money setup. Changed 0G default and configuration links to the officially documented testnet router and console. Faucet test 0G funds the testnet compute balance; Arkiv uses separate faucet test tGLM. Existing .env.local overrides must also be updated by the user. No faucet transaction or live inference has been executed.
+
+## 3D loading race fix
+
+Removed Drei Html from the model Suspense fallback after the reported React synchronous-root-unmount error. Loading text now stays in the existing page DOM outside Canvas; the loaded model signals readiness after commit. Browser reproduction remains unavailable under the earlier preview permission restriction.

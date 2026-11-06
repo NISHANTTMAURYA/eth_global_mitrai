@@ -1,7 +1,16 @@
 'use client';
-import { Suspense, useEffect, useMemo, useRef, useState, Component, type ReactNode } from 'react';
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  Component,
+  type ReactNode,
+} from 'react';
 import { Canvas, useFrame, useLoader } from '@react-three/fiber';
-import { ContactShadows, OrbitControls, Html, useAnimations } from '@react-three/drei';
+import { ContactShadows, OrbitControls, useAnimations } from '@react-three/drei';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { VRMLoaderPlugin, type VRM } from '@pixiv/three-vrm';
@@ -40,7 +49,8 @@ function Character({
   gestureKey = 0,
   legacy = false,
   loader,
-}: Props & { loader: GLTFLoader }) {
+  onReady,
+}: Props & { loader: GLTFLoader; onReady: () => void }) {
   const path =
     model === 'human'
       ? '/models/pixiv-sample.vrm'
@@ -48,6 +58,9 @@ function Character({
         ? '/models/fox.glb'
         : '/models/robot-expressive.glb';
   const gltf = useLoader(loader, path);
+  useEffect(() => {
+    onReady();
+  }, [gltf, onReady]);
   const vrm = model === 'human' ? (gltf.userData.vrm as VRM) : undefined;
   const object = useMemo(() => (model === 'human' ? gltf.scene : clone(gltf.scene)), [gltf, model]);
   const group = useRef<Group>(null);
@@ -169,6 +182,8 @@ export default function CharacterStage(props: Props) {
     [],
   );
   const [visible, setVisible] = useState(false);
+  const [loadedModel, setLoadedModel] = useState<ModelId | null>(null);
+  const markReady = useCallback(() => setLoadedModel(props.model), [props.model]);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const node = ref.current;
@@ -183,6 +198,7 @@ export default function CharacterStage(props: Props) {
     <div
       ref={ref}
       className={`character-stage ${props.compact ? 'compact' : ''}`}
+      aria-busy={visible && loadedModel !== props.model}
       aria-label={`Animated ${props.model === 'human' ? 'human' : props.model} character`}
     >
       <SceneBoundary>
@@ -196,15 +212,10 @@ export default function CharacterStage(props: Props) {
             <hemisphereLight args={['#fff8ec', '#d4c6ae', 1.7]} />
             <directionalLight position={[3, 5, 4]} intensity={3} />
             <directionalLight position={[-3, 2, -2]} intensity={1.3} />
-            <Suspense
-              fallback={
-                <Html center>
-                  <span className="loading-dot">Meeting your character…</span>
-                </Html>
-              }
-            >
+            {/* DOM loading UI stays outside Canvas: Drei Html creates another React root. */}
+            <Suspense fallback={null}>
               <group position={[0, -1.55, 0]}>
-                <Character {...props} loader={loader} />
+                <Character {...props} loader={loader} onReady={markReady} />
                 <ContactShadows
                   position={[0, 0.005, 0]}
                   opacity={0.22}
@@ -225,6 +236,11 @@ export default function CharacterStage(props: Props) {
               maxPolarAngle={Math.PI / 1.8}
             />
           </Canvas>
+        )}
+        {visible && loadedModel !== props.model && (
+          <div className="character-loading" role="status">
+            <span className="loading-dot">Meeting your character…</span>
+          </div>
         )}
       </SceneBoundary>
     </div>

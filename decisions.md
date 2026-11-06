@@ -24,3 +24,5 @@
 - Default Arkiv transport must inherit the SDK-generated keyed URL. An explicit custom RPC is optional and overrides that authentication path.
 
 - Testnet only: default 0G endpoint is the separate testnet router. Do not direct the user to buy real tokens or paid credits for hackathon testing.
+
+- Keep loading overlays in ordinary page DOM. Use a null Canvas Suspense fallback instead of Drei Html so model resolution cannot synchronously unmount a nested DOM root.
