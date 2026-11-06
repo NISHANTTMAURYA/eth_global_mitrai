@@ -130,5 +130,23 @@
     "bytes": 2785564,
     "sha256": "fd93d2ef1b94f963b652136b8c792b01d7326d861f5ce918926c043934a48dbe",
     "pages": 32
+  },
+  {
+    "id": "12_longmemeval_2025",
+    "title": "LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory",
+    "url": "https://arxiv.org/pdf/2410.10813",
+    "status": "downloaded",
+    "file": "papers/12_longmemeval_2025.pdf",
+    "bytes": 749169,
+    "sha256": "05c5d055201466a241a56e082cdd02d39ad566fa04b3804891983e4e069a3fda"
+  },
+  {
+    "id": "13_proactive_dialogue_2024",
+    "title": "Redefining Proactivity for Information Seeking Dialogue",
+    "url": "https://arxiv.org/pdf/2410.15297",
+    "status": "downloaded",
+    "file": "papers/13_proactive_dialogue_2024.pdf",
+    "bytes": 1118921,
+    "sha256": "78774b7b6e3b23099e6c99cd63e4d9973b1f37497189a8d75ac4360908ff6196"
   }
 ]

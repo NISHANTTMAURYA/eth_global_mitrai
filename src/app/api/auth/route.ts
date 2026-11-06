@@ -14,6 +14,8 @@ export async function POST(request: Request) {
     const data = await request.json();
     const action = z.enum(['demo', 'challenge', 'verify', 'logout']).parse(data.action);
     if (action === 'demo') {
+      if (process.env.MITRAI_DEMO_MODE !== '1')
+        throw new Error('Local demos are disabled. Connect an EVM wallet to continue.');
       await setIdentity(`demo:${crypto.randomUUID()}`);
       return NextResponse.json({ ok: true });
     }

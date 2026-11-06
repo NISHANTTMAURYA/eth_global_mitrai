@@ -32,7 +32,7 @@ test(
       tagline: 'A test story worth continuing',
       description: 'Curious and thoughtful, ready to explore ideas together.',
       behavior: 'Be warm and ask useful questions.',
-      model: 'human',
+      model: 'download:Casual_Female',
       tags: ['Tests'],
       shortLife: true,
       traits: { curiosity: 60, warmth: 70, playfulness: 50 },
@@ -93,6 +93,16 @@ test(
     assert.equal(publicView.status, 200);
     assert.ok(!JSON.stringify(publicView.data).includes('PRIVATE_ZEBRA_SECRET'));
     assert.deepEqual(publicView.data.messages, []);
+    const publicLedger = await bob(`/api/brain?id=${id}`);
+    assert.equal(publicLedger.status, 200);
+    assert.equal(publicLedger.data.mind, null);
+    assert.deepEqual(publicLedger.data.profiles, []);
+    assert.ok(publicLedger.data.events.length > 0);
+    assert.ok(!JSON.stringify(publicLedger.data).includes('PRIVATE_ZEBRA_SECRET'));
+    const privateLedger = await alice(`/api/brain?id=${id}`);
+    assert.equal(privateLedger.status, 200);
+    assert.equal(privateLedger.data.profiles.length, 1);
+    assert.ok(privateLedger.data.mind);
     const before = JSON.stringify(publicView.data.character.brain);
     assert.equal(
       (await bob('/api/app', { action: 'chat', id, text: 'What do you remember?', audition: true }))
@@ -142,6 +152,9 @@ test(
     assert.equal(adopted.data.character.lifespan, duration);
     assert.deepEqual(adopted.data.messages, []);
     assert.ok(!JSON.stringify(adopted.data).includes('PRIVATE_ZEBRA_SECRET'));
+    const nextLedger = await bob(`/api/brain?id=${id}`);
+    assert.equal(nextLedger.data.profiles.length, 2);
+    assert.equal(nextLedger.data.profiles[0].profile, null, 'prior owner metadata stays sealed');
     assert.equal(
       (
         await alice('/api/app', {
@@ -169,3 +182,61 @@ test('Sunset and unauthenticated mutation denied by API', { skip: !base }, async
     400,
   );
 });
+
+test(
+  'private continuity, inbox preferences and push endpoints enforce owner/session boundaries',
+  { skip: !base },
+  async () => {
+    const alice = client(),
+      bob = client();
+    assert.equal((await alice('/api/proactive')).status, 400);
+    await alice('/api/auth', { action: 'demo' });
+    await bob('/api/auth', { action: 'demo' });
+    const created = await alice('/api/app', {
+      action: 'create',
+      name: 'Continuity Test',
+      tagline: 'A careful growing mind',
+      description: 'A friendly companion for testing private continuity.',
+      behavior: 'Ask thoughtful questions and listen.',
+      model: 'download:BlueSoldier_Male',
+      tags: ['Test'],
+      shortLife: false,
+      traits: { curiosity: 60, warmth: 70, playfulness: 50 },
+    });
+    assert.equal(created.status, 200);
+    const id = created.data.character.id;
+    assert.equal((await bob(`/api/proactive?character=${id}`)).status, 400);
+    const sent = await alice('/api/app', {
+      action: 'chat',
+      id,
+      text: 'I enjoy ceramics and am exploring new glazes.',
+      audition: false,
+    });
+    assert.equal(sent.status, 200);
+    const privateState = await alice(`/api/proactive?character=${id}`);
+    assert.equal(privateState.status, 200);
+    assert.ok(privateState.data.mind.lastUserAt > 0);
+    assert.equal(privateState.data.jobs.length, 1);
+    const preferences = { ...privateState.data.preferences, enabled: false };
+    assert.equal(
+      (await alice('/api/proactive', { action: 'preferences', preferences })).status,
+      200,
+    );
+    assert.equal((await alice(`/api/proactive?character=${id}`)).data.jobs.length, 0);
+    assert.equal(
+      (
+        await alice('/api/proactive', {
+          action: 'subscribe',
+          subscription: {
+            endpoint: 'https://127.0.0.1/internal',
+            keys: { p256dh: 'x'.repeat(80), auth: 'x'.repeat(24) },
+          },
+        })
+      ).status,
+      400,
+    );
+    assert.equal((await alice('/api/proactive/run', {})).status, 401);
+    const other = await bob('/api/proactive');
+    assert.equal(other.data.notifications.length, 0);
+  },
+);

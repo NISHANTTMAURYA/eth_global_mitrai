@@ -23,6 +23,7 @@ test('duplicate accepted event is idempotent', () => {
 });
 test('handover preserves lifetime and public history, removes private memories', () => {
   const c = seeds()[0];
+  c.brain.memories.push({ id: 'public', text: 'Approved memory', scope: 'public', createdAt: 0 });
   c.brain.memories.push({ id: 's', text: 'secret', scope: 'private', createdAt: 0 });
   const next = handover(c, 'demo:new');
   assert.equal(next.createdAt, c.createdAt);
@@ -33,6 +34,7 @@ test('handover preserves lifetime and public history, removes private memories',
 });
 test('expired characters cannot transfer', () => {
   const c = seeds().find((c) => c.id === 'juniper')!;
+  c.createdAt = Date.now() - c.lifespan - 1;
   assert.throws(() => handover(c, 'demo:new'), /Sunset/);
 });
 test('one feedback does not rewrite personality', () => {

@@ -26,18 +26,49 @@ test('0G defaults to testnet, not the paid mainnet router', () => {
   assert.equal(DEFAULT_OG_API_URL, 'https://router-api-testnet.integratenetwork.work/v1');
 });
 
-test('Bedrock is selected before optional 0G when configured', () => {
-  const old = { enabled: process.env.ENABLE_BEDROCK, model: process.env.AWS_BEDROCK_MODEL, key: process.env.OG_API_KEY, og: process.env.OG_MODEL };
+test('Google Vertex AI is selected before optional 0G when configured', () => {
+  const old = {
+    enabled: process.env.GEMINI_USE_VERTEX,
+    project: process.env.GOOGLE_CLOUD_PROJECT,
+    key: process.env.OG_API_KEY,
+    og: process.env.OG_MODEL,
+  };
   try {
-    process.env.ENABLE_BEDROCK = 'true';
-    process.env.AWS_BEDROCK_MODEL = 'test-model';
+    process.env.GEMINI_USE_VERTEX = 'true';
+    process.env.GOOGLE_CLOUD_PROJECT = 'project-aa91aa00-7576-4735-b60';
     process.env.OG_API_KEY = 'optional';
     process.env.OG_MODEL = 'optional';
-    assert.equal(configuredProvider(), 'Amazon Bedrock');
+    assert.equal(configuredProvider(), 'Google Vertex AI');
   } finally {
-    if (old.enabled === undefined) delete process.env.ENABLE_BEDROCK; else process.env.ENABLE_BEDROCK = old.enabled;
-    if (old.model === undefined) delete process.env.AWS_BEDROCK_MODEL; else process.env.AWS_BEDROCK_MODEL = old.model;
-    if (old.key === undefined) delete process.env.OG_API_KEY; else process.env.OG_API_KEY = old.key;
-    if (old.og === undefined) delete process.env.OG_MODEL; else process.env.OG_MODEL = old.og;
+    if (old.enabled === undefined) delete process.env.GEMINI_USE_VERTEX;
+    else process.env.GEMINI_USE_VERTEX = old.enabled;
+    if (old.project === undefined) delete process.env.GOOGLE_CLOUD_PROJECT;
+    else process.env.GOOGLE_CLOUD_PROJECT = old.project;
+    if (old.key === undefined) delete process.env.OG_API_KEY;
+    else process.env.OG_API_KEY = old.key;
+    if (old.og === undefined) delete process.env.OG_MODEL;
+    else process.env.OG_MODEL = old.og;
   }
+});
+
+import fs from 'node:fs';
+import path from 'node:path';
+import { VOICES, defaultVoiceForModel } from '../src/lib/voices';
+
+test('Sarvam default voices have pre-generated static preview audio files', () => {
+  assert.ok(VOICES.length >= 6);
+  for (const v of VOICES) {
+    const filePath = path.join(process.cwd(), 'public', v.previewUrl);
+    assert.ok(fs.existsSync(filePath), `Static preview file missing for ${v.id}: ${filePath}`);
+    const stat = fs.statSync(filePath);
+    assert.ok(stat.size > 1000, `Static preview file is too small for ${v.id}`);
+  }
+});
+
+test('Different character models are assigned distinct default voices', () => {
+  assert.equal(defaultVoiceForModel('robot'), 'shubh');
+  assert.equal(defaultVoiceForModel('fox'), 'simran');
+  assert.equal(defaultVoiceForModel('human'), 'priya');
+  assert.equal(defaultVoiceForModel('character-female-a'), 'ishita');
+  assert.equal(defaultVoiceForModel('download:Alien'), 'aditya');
 });

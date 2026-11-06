@@ -1,4 +1,6 @@
 'use client';
+import BrainObservatory from './brain-observatory';
+import { getWalletProvider } from '@/lib/browser-wallet';
 import { useState, useEffect, useCallback, useRef, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -31,6 +33,10 @@ import { lifecycle, shortAddress, type Character, type Message } from '@/lib/dom
 import { api } from '@/lib/client';
 import { Stage, Flower, TimeLeft, LifecyclePill, Modal } from './ui';
 import { writeArkiv, transferArkiv } from '@/lib/arkiv';
+import { isVrmModel } from '@/lib/models';
+import { getVoice, defaultVoiceForModel } from '@/lib/voices';
+import { messageBatch } from '@/lib/message-batch';
+import { availableGestures, speechSegments } from '@/lib/conversation';
 import { validateSpeechTrack, type SpeechTrack } from '@/lib/lip-sync';
 import type { Address, Hex } from 'viem';
 export default function CharacterView({
@@ -57,13 +63,20 @@ export default function CharacterView({
   const [tab, setTab] = useState(initialTab);
   const [chat, setChat] = useState<Message[]>([]);
   const [input, setInput] = useState('');
+  const [queuedCount, setQueuedCount] = useState(0);
+  const queuedChars = useRef(0);
+  const batchRef = useRef<ReturnType<typeof messageBatch<Message>> | null>(null);
+  const deliverRef = useRef<(items: Message[]) => Promise<void>>(async () => {});
   const [pending, setPending] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [speaking, setSpeaking] = useState(false);
-  const [speech, setSpeech] = useState<{audio: HTMLAudioElement; track: SpeechTrack} | null>(null);
+  const [speech, setSpeech] = useState<{
+    audio: { currentTime: number; paused: boolean; ended: boolean };
+    track: SpeechTrack;
+  } | null>(null);
   const [speechLoading, setSpeechLoading] = useState(false);
-  const [voice, setVoice] = useState(false);
-  const [gesture, setGesture] = useState('Wave');
+  const [voice, setVoice] = useState(true);
+  const [gesture, setGesture] = useState('Idle');
   const [gestureKey, setGestureKey] = useState(0);
   const [publishing, setPublishing] = useState(autoPublish);
   const [transfer, setTransfer] = useState(autoTransfer);
@@ -78,13 +91,62 @@ export default function CharacterView({
   const [incoming, setIncoming] = useState<{ from: string; note: string; at: number }[]>([]);
   const [provider, setProvider] = useState('Scripted demo');
   const [actionBusy, setActionBusy] = useState(false);
+  const [portrait, setPortrait] = useState(true);
   const [greeting, setGreeting] = useState(false);
   const end = useRef<HTMLDivElement>(null);
-  const audio = useRef<HTMLAudioElement | null>(null);
+  const audioContext = useRef<AudioContext | null>(null);
+  const source = useRef<AudioBufferSourceNode | null>(null);
+  const finishGesture = useRef<(() => void) | null>(null);
+  const completeGesture = useCallback(() => {
+    finishGesture.current?.();
+    finishGesture.current = null;
+  }, []);
+  const finishPlayback = useRef<(() => void) | null>(null);
+  const deliverySequence = useRef(0);
+  const voiceEnabled = useRef(true);
+  const [directedCue, setDirectedCue] = useState(false);
+  const unlockAudio = () => {
+    audioContext.current ??= new AudioContext();
+    void audioContext.current.resume().catch(() => {});
+  };
   const animation = useRef<number>(0);
   const speechTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const speechRequest = useRef<AbortController | null>(null);
   const speechSequence = useRef(0);
+  useEffect(() => {
+    const saved = localStorage.getItem('mitrai-spoken-replies');
+    voiceEnabled.current = saved !== 'off';
+    setVoice(saved !== 'off');
+  }, []);
+  useEffect(() => {
+    localStorage.setItem('mitrai-spoken-replies', voice ? 'on' : 'off');
+  }, [voice]);
+  useEffect(() => {
+    const queue = messageBatch<Message>({
+      deliver: (items) => deliverRef.current(items),
+      changed: setQueuedCount,
+    });
+    batchRef.current = queue;
+    return () => {
+      queue.dispose();
+      batchRef.current = null;
+      queuedChars.current = 0;
+    };
+  }, [c.id, owner]);
+  useEffect(() => {
+    if (!(pending || queuedCount > 0) || !availableGestures(c.model).includes('Think')) return;
+    setGesture('Think');
+    setGestureKey((n) => n + 1);
+    const timer = setInterval(() => {
+      setGesture('Think');
+      setGestureKey((n) => n + 1);
+    }, 7000);
+    return () => {
+      clearInterval(timer);
+      setGesture('Idle');
+      setGestureKey((n) => n + 1);
+    };
+  }, [pending, queuedCount > 0, c.model]);
   const l = lifecycle(c, now);
   useEffect(() => {
     fetch(`/api/app?id=${c.id}`)
@@ -103,15 +165,34 @@ export default function CharacterView({
   useEffect(() => {
     end.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [chat, pending]);
+  useEffect(() => {
+    if (!own || !owner) return;
+    const timer = setInterval(async () => {
+      const r = await fetch(`/api/app?id=${encodeURIComponent(c.id)}`);
+      if (!r.ok) return;
+      const data = await r.json();
+      setChat((items) => {
+        const fresh = (data.messages || []).filter(
+          (m: Message) => m.proactive && !items.some((item) => item.id === m.id),
+        );
+        return fresh.length ? [...items, ...fresh] : items;
+      });
+    }, 15000);
+    return () => clearInterval(timer);
+  }, [own, owner, c.id]);
   const stopSpeech = useCallback(() => {
     speechSequence.current++;
     speechRequest.current?.abort();
     window.speechSynthesis?.cancel();
-    if (audio.current) {
-      audio.current.onended = null; audio.current.onerror = null;
-      audio.current.onpause = null; audio.current.onplay = null;
-      audio.current.pause(); audio.current = null;
-    }
+    finishGesture.current?.();
+    finishGesture.current = null;
+    source.current?.stop();
+    source.current = null;
+    finishPlayback.current?.();
+    finishPlayback.current = null;
+    setDirectedCue(false);
+    setGesture('Idle');
+    setGestureKey((n) => n + 1);
     cancelAnimationFrame(animation.current);
     if (speechTimeout.current) clearTimeout(speechTimeout.current);
     setSpeaking(false);
@@ -119,55 +200,109 @@ export default function CharacterView({
     setSpeech(null);
     setSpeechLoading(false);
   }, []);
-  useEffect(() => () => stopSpeech(), [stopSpeech, c.id]);
+  useEffect(
+    () => () => {
+      deliverySequence.current++;
+      stopSpeech();
+      void audioContext.current?.close();
+      audioContext.current = null;
+    },
+    [stopSpeech, c.id],
+  );
   useEffect(() => {
     if (!l.alive) stopSpeech();
   }, [l.alive, stopSpeech]);
-  const speak = async (text: string) => {
+  const speak = async (text: string, gesture?: Message['gesture'], onStarted?: () => void) => {
     stopSpeech();
     const sequence = speechSequence.current;
-    const controller = new AbortController(); speechRequest.current = controller;
+    const controller = new AbortController();
+    speechRequest.current = controller;
     setSpeechLoading(true);
-    try {
-      const res = await fetch('/api/speech', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, id: c.id }),
-        signal: controller.signal,
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (sequence !== speechSequence.current) return;
-        if (data.audio) {
-          const player = new Audio(data.audio);
-          audio.current = player;
-          setSpeech({audio:player,track:validateSpeechTrack(data)});
-          setSpeechLoading(false);
-          player.onplay = () => setSpeaking(true);
-          player.onpause = () => setSpeaking(false);
-          player.onended = stopSpeech;
-          player.onerror = () => {
-            stopSpeech();
-            notify('Could not play speech audio.');
-          };
-          await player.play();
-          return;
-        }
-        throw new Error('Speech returned no audio.');
-      } else {
-        const result = await res.json();
-        throw new Error(result.error || 'Could not prepare timed speech.');
+    let revealed = false;
+    const reveal = () => {
+      if (!revealed) {
+        revealed = true;
+        onStarted?.();
       }
+    };
+    try {
+      const segments = speechSegments({ text, gesture });
+      // Prepare segments before playback so gesture boundaries don't incur a network pause.
+      const prepared = [];
+      for (const segment of segments) {
+        const res = await fetch('/api/speech', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: segment.text, id: c.id }),
+          signal: controller.signal,
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Could not prepare speech.');
+        const context = audioContext.current;
+        if (!context) throw new Error('Tap the speaker to enable audio.');
+        const bytes = Uint8Array.from(atob(data.audio.split(',')[1]), (ch) => ch.charCodeAt(0));
+        const buffer = await context.decodeAudioData(bytes.buffer);
+        prepared.push({ buffer, track: validateSpeechTrack(data), animation: segment.animation });
+      }
+      for (const part of prepared) {
+        if (sequence !== speechSequence.current) return;
+        const context = audioContext.current!;
+        if (context.state !== 'running')
+          throw new Error('Your browser paused audio. Tap the speaker to enable it.');
+        const player = context.createBufferSource();
+        player.buffer = part.buffer;
+        player.connect(context.destination);
+        source.current = player;
+        const started = context.currentTime;
+        const clock = {
+          get currentTime() {
+            return context.currentTime - started;
+          },
+          paused: false,
+          ended: false,
+        };
+        setSpeech({ audio: clock, track: part.track });
+        setSpeaking(true);
+        setSpeechLoading(false);
+        const gestureDone = part.animation
+          ? new Promise<void>((resolve) => {
+              finishGesture.current = resolve;
+            })
+          : Promise.resolve();
+        setDirectedCue(!!part.animation);
+        setGesture(part.animation || 'Idle');
+        setGestureKey((n) => n + 1);
+        const audioDone = new Promise<void>((resolve) => {
+          finishPlayback.current = resolve;
+          player.onended = () => {
+            clock.ended = true;
+            clock.paused = true;
+            player.disconnect();
+            resolve();
+          };
+          player.start();
+          reveal();
+        });
+        await audioDone;
+        if (sequence !== speechSequence.current) return;
+        // Mouth closes when audio ends; keep the gesture running until the mixer finishes.
+        setSpeaking(false);
+        await gestureDone;
+      }
+      if (sequence === speechSequence.current) stopSpeech();
     } catch (error) {
       if (sequence !== speechSequence.current) return;
       stopSpeech();
+      reveal();
       notify(error instanceof Error ? error.message : 'Could not prepare voice.');
     }
   };
   const playGreeting = async () => {
     if (!ensure()) return;
-    await speak(`Hello, I'm ${c.name}. A little conversation can start a new adventure. What shall we explore together?`);
-    if (audio.current && !audio.current.paused) setGreeting(true);
+    unlockAudio();
+    await speak(
+      `Hello, I'm ${c.name}. A little conversation can start a new adventure. What shall we explore together?`,
+    );
   };
   const action = async (fn: () => Promise<void>) => {
     if (!ensure()) return;
@@ -181,27 +316,75 @@ export default function CharacterView({
       setActionBusy(false);
     }
   };
-  const send = async (text = input) => {
-    if (!ensure() || !text.trim() || pending) return;
+  const send = (text = input) => {
+    if (!ensure() || !text.trim() || !batchRef.current) return;
     if (!l.alive) {
       notify('Sunset has arrived. This legacy is read-only.');
       return;
     }
-    setPending(true);
-    const message: Message = {
-      id: crypto.randomUUID(),
-      role: 'user',
-      text: text.trim(),
-      at: Date.now(),
-    };
+    const value = text.trim();
+    if (queuedChars.current + value.length + (batchRef.current.size ? 2 : 0) > 1500) {
+      notify('This message burst is full (1500 characters). Please wait for it to send.');
+      return;
+    }
+    queuedChars.current += value.length + (batchRef.current.size ? 2 : 0);
+    stopSpeech();
+    if (availableGestures(c.model).includes('Think')) {
+      setGesture('Think');
+      setGestureKey((n) => n + 1);
+    }
+    ++deliverySequence.current;
+    if (voiceEnabled.current) unlockAudio();
+    const message: Message = { id: crypto.randomUUID(), role: 'user', text: value, at: Date.now() };
     setChat((items) => [...items, message]);
     setInput('');
+    batchRef.current.add(message);
+  };
+  deliverRef.current = async (batch: Message[]) => {
+    queuedChars.current = 0;
+    const message = { ...batch[0], text: batch.map((item) => item.text).join('\n\n') };
+    const delivery = deliverySequence.current;
+    setPending(true);
     try {
       const result = await api('chat', { id: c.id, text: message.text, audition: !own });
-      setChat((items) => [...items, result.message]);
-      if (voice) speak(result.message.text);
+      const replies: Message[] = result.messages || [result.message];
+      setPending(false);
+      for (const reply of replies) {
+        if (delivery !== deliverySequence.current) {
+          setChat((items) => [
+            ...items,
+            ...replies.filter((reply) => !items.some((item) => item.id === reply.id)),
+          ]);
+          return;
+        }
+        const show = () =>
+          setChat((items) =>
+            items.some((item) => item.id === reply.id) ? items : [...items, reply],
+          );
+        if (voiceEnabled.current) {
+          await speak(reply.text, reply.gesture, show);
+          if (delivery === deliverySequence.current) show();
+        } else {
+          show();
+          if (reply.gesture) {
+            const finished = new Promise<void>((resolve) => {
+              finishGesture.current = resolve;
+            });
+            setDirectedCue(true);
+            setGesture(reply.gesture.animation);
+            setGestureKey((n) => n + 1);
+            await finished;
+            setDirectedCue(false);
+            setGesture('Idle');
+            setGestureKey((n) => n + 1);
+          } else
+            await new Promise((resolve) =>
+              setTimeout(resolve, Math.min(1500, 400 + reply.text.length * 12)),
+            );
+        }
+      }
     } catch (e) {
-      setChat((items) => items.filter((m) => m.id !== message.id));
+      // Keep the visible user messages on failure so the burst is never silently lost.
       setInput(message.text);
       notify(e instanceof Error ? e.message : 'Conversation failed.');
     } finally {
@@ -212,16 +395,17 @@ export default function CharacterView({
     action(async () => {
       if (!owner?.startsWith('0x'))
         throw new Error('Connect a wallet to write real Arkiv state. Demo characters stay local.');
-      if (!window.ethereum) throw new Error('A browser wallet is required.');
+      const walletProvider = getWalletProvider();
+      if (!walletProvider) throw new Error('Reconnect your browser wallet.');
       const prepared = await api('prepareSnapshot', { id: c.id });
       const result = await writeArkiv(
-        window.ethereum,
+        walletProvider,
         owner as Address,
         prepared.character,
         prepared.proof,
         prepared.verifier,
       );
-      await api('sync', { id: c.id, entityKey: result.entityKey });
+      await api('sync', { id: c.id, entityKey: result.entityKey, txHash: result.txHash });
       notify(`Arkiv checkpoint confirmed: ${result.txHash.slice(0, 12)}…`);
     });
   return (
@@ -261,7 +445,11 @@ export default function CharacterView({
             <Stage
               model={c.model}
               modelZoom={1.1}
-              speaking={speaking}
+              portrait={portrait}
+              directed
+              onGestureComplete={completeGesture}
+              directedCue={directedCue}
+              speaking={speaking || directedCue}
               speech={speech}
               gesture={gesture}
               gestureKey={gestureKey}
@@ -269,6 +457,15 @@ export default function CharacterView({
             />
             {l.alive && (
               <div className="gesture-toolbar">
+                {isVrmModel(c.model) && (
+                  <button
+                    onClick={() => setPortrait((value) => !value)}
+                    aria-label={portrait ? 'Show full body' : 'Show face close up'}
+                    title={portrait ? 'Show full body' : 'Show face close up'}
+                  >
+                    <span>{portrait ? 'Full body' : 'Face view'}</span>
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     setGesture('Wave');
@@ -278,7 +475,7 @@ export default function CharacterView({
                 >
                   <Hand size={18} />
                 </button>
-                {(c.model === 'robot' || /^download:(?:\d+_|Alien)/.test(c.model)) && (
+                {availableGestures(c.model).includes('Dance') && (
                   <button
                     onClick={() => {
                       setGesture('Dance');
@@ -290,18 +487,31 @@ export default function CharacterView({
                     <Music2 size={18} />
                   </button>
                 )}
-                {/^download:\d+_/.test(c.model) && [
-                  { name: 'Charleston', label: 'Charleston dance', icon: Music2 },
-                  { name: 'Clap', label: 'Clap', icon: Hand },
-                  { name: 'Bow', label: 'Take a bow', icon: Heart },
-                  { name: 'Think', label: 'Thinking', icon: Brain },
-                ].map((motion) => (
-                  <button key={motion.name} title={motion.label} aria-label={motion.label}
-                    onClick={() => { setGesture(motion.name); setGestureKey((n) => n + 1); }}>
-                    <motion.icon size={18} />
-                    <span className="motion-label">{motion.name}</span>
-                  </button>
-                ))}
+                {(/^download:\d+_/.test(c.model) || isVrmModel(c.model)) &&
+                  [
+                    { name: 'Charleston', label: 'Charleston dance', icon: Music2 },
+                    { name: 'Clap', label: 'Clap', icon: Hand },
+                    { name: 'Bow', label: 'Take a bow', icon: Heart },
+                    { name: 'Think', label: 'Thinking', icon: Brain },
+                    { name: 'Jump', label: 'Jump', icon: Sparkles },
+                    { name: 'Sit', label: 'Sit down and stand up', icon: Heart },
+                    { name: 'ArmPump', label: 'Arm pump dance', icon: Music2 },
+                    { name: 'BodyRoll', label: 'Body roll dance', icon: Music2 },
+                    { name: 'HipDance', label: 'Hip dance', icon: Music2 },
+                  ].map((motion) => (
+                    <button
+                      key={motion.name}
+                      title={motion.label}
+                      aria-label={motion.label}
+                      onClick={() => {
+                        setGesture(motion.name);
+                        setGestureKey((n) => n + 1);
+                      }}
+                    >
+                      <motion.icon size={18} />
+                      <span className="motion-label">{motion.name}</span>
+                    </button>
+                  ))}
                 <button
                   onClick={greeting ? stopSpeech : playGreeting}
                   aria-label={greeting ? 'Stop greeting' : 'Play timed voice greeting'}
@@ -329,6 +539,15 @@ export default function CharacterView({
               {c.tags.map((t) => (
                 <span key={t}>{t}</span>
               ))}
+              <span
+                className="voice-tag-pill"
+                title={`Sarvam AI Voice: ${getVoice(c.voice || defaultVoiceForModel(c.model)).description}`}
+                style={{ cursor: 'pointer' }}
+                onClick={() => playGreeting()}
+              >
+                <Volume2 size={11} style={{ verticalAlign: 'middle', marginRight: 3 }} />
+                {getVoice(c.voice || defaultVoiceForModel(c.model)).name} Voice
+              </span>
             </div>
             <div className="lifetime-meter">
               <div>
@@ -399,7 +618,14 @@ export default function CharacterView({
             className="workspace-tabs"
             role="group"
             aria-label="Character sections"
-            style={{ '--selected-tab': Math.max(0, ['conversation', 'mind', 'story', 'history'].indexOf(tab)) } as CSSProperties}
+            style={
+              {
+                '--selected-tab': Math.max(
+                  0,
+                  ['conversation', 'mind', 'story', 'history'].indexOf(tab),
+                ),
+              } as CSSProperties
+            }
           >
             {[
               { id: 'conversation', label: 'Chat', icon: Heart },
@@ -440,12 +666,20 @@ export default function CharacterView({
                 <button
                   className={`icon-button ${voice ? 'voice-on' : ''}`}
                   onClick={() => {
+                    voiceEnabled.current = !voice;
                     setVoice(!voice);
                     if (voice) stopSpeech();
+                    else unlockAudio();
                   }}
                   aria-label={voice ? 'Mute spoken replies' : 'Enable spoken replies'}
                 >
-                  {speechLoading ? <Loader2 className="spin" size={18} /> : voice ? <Volume2 size={18} /> : <VolumeX size={18} />}
+                  {speechLoading ? (
+                    <Loader2 className="spin" size={18} />
+                  ) : voice ? (
+                    <Volume2 size={18} />
+                  ) : (
+                    <VolumeX size={18} />
+                  )}
                 </button>
               </div>
               {!own && l.alive && (
@@ -454,6 +688,19 @@ export default function CharacterView({
                   This audition leaves no memories and never changes the character.
                 </div>
               )}
+              <div role="status" aria-live="polite" className="speech-status">
+                {queuedCount
+                  ? `${queuedCount} message${queuedCount > 1 ? 's' : ''} queued · sends 8 seconds after your last send`
+                  : pending
+                    ? 'Thinking…'
+                    : speechLoading
+                      ? 'Preparing voice…'
+                      : speaking
+                        ? 'Speaking…'
+                        : directedCue
+                          ? 'Finishing gesture…'
+                          : ''}
+              </div>
               <div className="messages">
                 {!chat.length && (
                   <div className="chat-welcome">
@@ -475,7 +722,13 @@ export default function CharacterView({
                       <small>
                         {m.provider}
                         {m.requestId ? ` · ${m.requestId}` : ''}
-                        <button onClick={() => speak(m.text)} aria-label="Read this reply aloud">
+                        <button
+                          onClick={() => {
+                            unlockAudio();
+                            void speak(m.text, m.gesture);
+                          }}
+                          aria-label="Read this reply aloud"
+                        >
                           <Volume2 size={12} />
                         </button>
                       </small>
@@ -513,12 +766,12 @@ export default function CharacterView({
                   placeholder={
                     l.alive ? `Say something to ${c.name}…` : 'This character has reached Sunset'
                   }
-                  disabled={!l.alive || pending}
+                  disabled={!l.alive}
                 />
                 <button
                   type="submit"
                   className="send-button"
-                  disabled={!l.alive || pending || !input.trim()}
+                  disabled={!l.alive || !input.trim()}
                   aria-label="Send message"
                 >
                   {pending ? <Loader2 className="spin" size={18} /> : <ArrowRight size={20} />}
@@ -526,7 +779,7 @@ export default function CharacterView({
               </form>
               <div className="chat-caption">
                 {provider === 'Scripted demo'
-                  ? 'Scripted rehearsal, not live AI inference. Configure Bedrock for open-ended conversation.'
+                  ? 'Scripted rehearsal, not live AI inference. Configure live AI in settings for open-ended conversation.'
                   : `Replies generated with ${provider}. Verify important claims.`}
               </div>
               {own && l.alive && (
@@ -554,25 +807,7 @@ export default function CharacterView({
           )}
           {tab === 'mind' && (
             <div className="tab-content">
-              <p className="eyebrow">A SMALL MIND, ALWAYS BECOMING</p>
-              <h2>Made of little moments.</h2>
-              <p className="muted">
-                A structured memory, a few growing habits, and a personality that changes slowly.
-              </p>
-              <div className="trait-cards">
-                {Object.entries(c.brain.traits).map(([k, v]) => (
-                  <div key={k}>
-                    <span>{k}</span>
-                    <strong>
-                      {v}
-                      <small>/100</small>
-                    </strong>
-                    <div className="meter">
-                      <i style={{ width: `${v}%` }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <BrainObservatory c={c} own={own} />
               <div className="subheading">
                 <h3>
                   Memories <span>{c.brain.memories.length}</span>
@@ -702,50 +937,7 @@ export default function CharacterView({
           )}
           {tab === 'history' && (
             <div className="tab-content">
-              <p className="eyebrow">THE LITTLE THINGS THAT LED HERE</p>
-              <h2>A life with a history.</h2>
-              <div className="provenance-summary">
-                <div>
-                  <span>Created by</span>
-                  <strong>{shortAddress(c.creator)}</strong>
-                </div>
-                <div>
-                  <span>Current owner</span>
-                  <strong>{shortAddress(c.owner)}</strong>
-                </div>
-                <div>
-                  <span>Born</span>
-                  <strong>{new Date(c.createdAt).toLocaleDateString()}</strong>
-                </div>
-                <div>
-                  <span>Source</span>
-                  <strong>{c.entityKey ? 'Arkiv linked' : 'Local rehearsal'}</strong>
-                </div>
-              </div>
-              <div className="timeline">
-                {[...c.history].reverse().map((h, i) => (
-                  <div key={`${h.at}-${i}`}>
-                    <i />
-                    <small>{new Date(h.at).toLocaleString()}</small>
-                    <p>{h.text}</p>
-                  </div>
-                ))}
-              </div>
-              {c.entityKey && (
-                <a
-                  className="text-link"
-                  target="_blank"
-                  rel="noreferrer"
-                  href={`https://rabdi.explorer.arkiv.network`}
-                >
-                  Open Rabdi explorer
-                  <ExternalLink size={14} />
-                </a>
-              )}
-              <p className="muted small-text">
-                Local history is application-maintained. A signed chain write proves a transaction,
-                not that a skill claim is true.
-              </p>
+              <BrainObservatory c={c} own={own} historyOnly />
             </div>
           )}
         </section>
@@ -794,9 +986,25 @@ export default function CharacterView({
                     .filter(Boolean)
                     .slice(0, 4),
                 });
+                if (!c.demo) {
+                  const walletProvider = getWalletProvider();
+                  if (!walletProvider || !owner?.startsWith('0x'))
+                    throw new Error('Reconnect the owner wallet to publish.');
+                  const prepared = await api('prepareSnapshot', { id: c.id });
+                  const result = await writeArkiv(
+                    walletProvider,
+                    owner as Address,
+                    prepared.character,
+                    prepared.proof,
+                    prepared.verifier,
+                  );
+                  await api('sync', { id: c.id, ...result });
+                }
                 setPublishing(false);
                 notify(
-                  'Public profile published to the local gallery. Sync to Arkiv from the Mind tab when ready.',
+                  c.demo
+                    ? 'Published to the local demo gallery.'
+                    : 'Your character is published on Arkiv.',
                 );
               })
             }
@@ -879,17 +1087,20 @@ export default function CharacterView({
             disabled={actionBusy || !recipient}
             onClick={() =>
               action(async () => {
+                let txHash: string | undefined;
                 if (c.entityKey) {
-                  if (!window.ethereum || !owner?.startsWith('0x'))
+                  const walletProvider = getWalletProvider();
+                  if (!walletProvider || !owner?.startsWith('0x'))
                     throw new Error('Connect the owner wallet first.');
-                  await transferArkiv(
-                    window.ethereum,
+                  const receipt = await transferArkiv(
+                    walletProvider,
                     owner as Address,
                     c.entityKey as Hex,
                     recipient as Address,
                   );
+                  txHash = receipt.txHash;
                 }
-                await api('transfer', { id: c.id, recipient });
+                await api('transfer', { id: c.id, recipient, txHash });
                 setTransfer(false);
                 router.push('/explore');
                 notify('Ownership handed over. Old owner access has ended.');

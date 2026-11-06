@@ -1,6 +1,6 @@
 # MitrAI brain mock — implementable specification
 
-Status: proposed engineering design informed by the local papers. No custom neural model training. The full product can use a pretrained language model for interpreting and expressing language. This engine is a small cognitive simulation; biological fidelity is not established.
+Status: architectural design; a grounded private-memory reducer and proactive scheduler are now implemented in src/lib/private-mind.ts, src/lib/continuity.ts and src/lib/proactive-engine.ts. This document also includes future extensions. Original design informed by the local papers. No custom neural model training. The full product can use a pretrained language model for interpreting and expressing language. This engine is a small cognitive simulation; biological fidelity is not established.
 
 ## Research decisions
 
@@ -32,7 +32,7 @@ Do not claim to reproduce full Soar, ACT-R, BDI or human development. Case-based
 }
 ```
 
-Integers represent bounded scores on a documented scale, generally 0–10,000; signed mood values can use −10,000 to +10,000. Store current owner through Arkiv's actual system ownership field. Birth block/time and the canonical birth commitment must be checked independently of user-editable state. Store only public-approved transferable records here. Private facts use the same logical types in Postgres with owner and ownership-epoch access control.
+Integers represent bounded scores on a documented scale, generally 0–10,000; signed mood values can use −10,000 to +10,000. Store current owner through Arkiv's actual system ownership field. Birth block/time and the canonical birth commitment must be checked independently of user-editable state. Store only public-approved transferable records here. Private facts use the same logical types in the current SQLite implementation with owner and ownership-epoch access control.
 
 ## Mapping to Arkiv
 

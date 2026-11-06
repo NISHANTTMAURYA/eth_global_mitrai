@@ -1,12 +1,41 @@
-import { spawn } from 'node:child_process';
+import { spawn, execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 const directory = mkdtempSync(path.join(tmpdir(), 'mitrai-test-'));
 const port = process.env.MITRAI_TEST_PORT || '3107';
 const base = `http://localhost:${port}`;
+// A deliberately expired fixture tests Sunset. Product templates have fresh clocks.
+execFileSync(
+  process.execPath,
+  [
+    '--import',
+    'tsx',
+    '--input-type=module',
+    '-e',
+    `const s=await import('./src/lib/store.ts');const c=s.getCharacter('juniper');c.createdAt=Date.now()-c.lifespan-1000;s.saveCharacter(c);`,
+  ],
+  {
+    env: {
+      ...process.env,
+      MITRAI_DATA_DIR: directory,
+      MITRAI_DEMO_MODE: '1',
+      PROACTIVE_DISABLED: '1',
+    },
+    stdio: 'ignore',
+  },
+);
 const server = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'start', '-p', port], {
-  env: { ...process.env, MITRAI_DATA_DIR: directory, OG_API_KEY: '', OG_MODEL: '' },
+  env: {
+    ...process.env,
+    MITRAI_DATA_DIR: directory,
+    MITRAI_DEMO_MODE: '1',
+    PROACTIVE_DISABLED: '1',
+    OG_API_KEY: '',
+    OG_MODEL: '',
+    GEMINI_USE_VERTEX: '',
+    APP_ORIGIN: base,
+  },
   stdio: ['ignore', 'pipe', 'pipe'],
 });
 let exited = false;

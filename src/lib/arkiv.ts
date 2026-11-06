@@ -20,6 +20,14 @@ export const Characters = defineSchema('mitrai.characters.v1', {
   verifier: str(),
   snapshot: bytes(),
 });
+export const Checkpoints = defineSchema('mitrai.checkpoints.v1', {
+  characterId: str().indexed(),
+  parentKey: str().indexed(),
+  version: str().indexed(),
+  proof: str(),
+  verifier: str(),
+  snapshot: bytes(),
+});
 export function arkivPublic() {
   return createPublicClient({
     chain: rabdi({ accessKey: process.env.NEXT_PUBLIC_ARKIV_ACCESS_KEY || '' }),
@@ -34,6 +42,21 @@ export async function readArkivCharacter(key: Hex) {
     verifier: entity.verifier.value,
     character: JSON.parse(hexToString(entity.snapshot.value)) as Character,
   };
+}
+export async function findArkivCharacter(id: string, owner: Address) {
+  const result = await arkivPublic()
+    .select()
+    .from(Characters)
+    .where(eq('characterId', id))
+    .ownedBy(owner)
+    .fetch();
+  return result.entities.map((e) => ({
+    key: e.$key,
+    owner: e.$owner,
+    proof: e.proof.value,
+    verifier: e.verifier.value,
+    character: JSON.parse(hexToString(e.snapshot.value)) as Character,
+  }));
 }
 export async function discoverArkiv() {
   const { entities } = await arkivPublic()
@@ -56,6 +79,62 @@ export async function writeArkiv(
   proof: string,
   verifier: string,
 ) {
+  const chain = await ensureRabdi(provider);
+  const wallet = createWalletClient({ chain, transport: custom(provider), account: owner });
+  const snapshot = stringToBytes(JSON.stringify(publicCharacter(c)));
+  const values = {
+    characterId: c.id,
+    visibility: c.published ? 'public' : 'unlisted',
+    name: c.name,
+    proof,
+    verifier,
+    snapshot,
+  };
+  if (c.entityKey) {
+    const { txHash } = await wallet.executeBatch({
+      patches: [{ schema: Characters, entityKey: c.entityKey as Hex, set: values }],
+      creates: [
+        {
+          schema: Checkpoints,
+          values: {
+            characterId: c.id,
+            parentKey: c.entityKey,
+            version: String(c.brain.version),
+            proof,
+            verifier,
+            snapshot,
+          },
+          expiration: ExpirationTime.fromDays(90),
+          flags: { readonly: true },
+        },
+      ],
+    });
+    return { entityKey: c.entityKey, txHash };
+  }
+  const [root, checkpoint] = await arkivPublic().predictEntityKeys({ owner, count: 2 });
+  const result = await wallet.executeBatch({
+    creates: [
+      { schema: Characters, values, salt: root.salt, expiration: ExpirationTime.fromDays(90) },
+      {
+        schema: Checkpoints,
+        values: {
+          characterId: c.id,
+          parentKey: root.key,
+          version: String(c.brain.version),
+          proof,
+          verifier,
+          snapshot,
+        },
+        salt: checkpoint.salt,
+        expiration: ExpirationTime.fromDays(90),
+        flags: { readonly: true },
+      },
+    ],
+  });
+  return { entityKey: result.createdEntities[0], txHash: result.txHash };
+}
+
+export async function ensureRabdi(provider: EIP1193Provider) {
   const chain = rabdi({ accessKey: process.env.NEXT_PUBLIC_ARKIV_ACCESS_KEY || '' });
   await provider
     .request({
@@ -77,24 +156,18 @@ export async function writeArkiv(
         ],
       });
     });
-  const wallet = createWalletClient({ chain, transport: custom(provider), account: owner });
-  const snapshot = stringToBytes(JSON.stringify(publicCharacter(c)));
-  const values = {
-    characterId: c.id,
-    visibility: c.published ? 'public' : 'unlisted',
-    name: c.name,
-    proof,
-    verifier,
-    snapshot,
-  };
-  if (c.entityKey) {
-    const { txHash } = await wallet.patchEntity(Characters, c.entityKey as Hex, { set: values });
-    return { entityKey: c.entityKey, txHash };
-  }
-  const result = await wallet.createEntity(Characters, values, {
-    expiration: ExpirationTime.fromDays(90),
-  });
-  return { entityKey: result.entityKey, txHash: result.txHash };
+  return chain;
+}
+export async function readArkivCheckpoints(key: Hex) {
+  const result = await arkivPublic().select().from(Checkpoints).where(eq('parentKey', key)).fetch();
+  return result.entities.map((row) => ({
+    key: row.$key,
+    owner: row.$owner,
+    proof: row.proof.value,
+    verifier: row.verifier.value,
+    character: JSON.parse(hexToString(row.snapshot.value)) as Character,
+    blockNumber: String(row.$createdAt),
+  }));
 }
 export async function transferArkiv(
   provider: EIP1193Provider,
@@ -103,7 +176,7 @@ export async function transferArkiv(
   recipient: Address,
 ) {
   const wallet = createWalletClient({
-    chain: rabdi({ accessKey: process.env.NEXT_PUBLIC_ARKIV_ACCESS_KEY || '' }),
+    chain: await ensureRabdi(provider),
     transport: custom(provider),
     account: owner,
   });

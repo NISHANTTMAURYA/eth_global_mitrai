@@ -20,20 +20,22 @@ npm run build
 npm run test:integration
 ```
 
-The integration command starts a production server with a disposable isolated SQLite database, exercises the HTTP flows, and removes only its own temporary data. Browser-based visual QA was blocked by preview permission; no visual pass is claimed.
+The integration command starts a production server with a disposable isolated SQLite database, exercises the HTTP flows, and removes only its own temporary data. Browser checks now cover gallery caching/clipping, avatar framing, and the check-in interface; see the dated implementation reports for their limits.
 
 ### Live configuration
 
 Follow [the configuration checklist](docs/configuration.md) for account links, keys, test gas and the first live run.
 
-Copy `.env.example` to `.env.local`. For live AI, set `ENABLE_BEDROCK=true`, an AWS region, and a Bedrock Converse-compatible `AWS_BEDROCK_MODEL` ID. Bedrock is the primary model path and its credentials stay server-side. Without Bedrock the UI explicitly says **Scripted demo**. Provider failures are surfaced, not replaced with invented replies. Set the public Rabdi access key/RPC for reliable chain access. Browser-exposed keys are public configuration, never wallet private keys.
+Copy `.env.example` to `.env.local`. Live conversation uses Google Vertex AI when `GEMINI_USE_VERTEX=true` with `GOOGLE_CLOUD_PROJECT`, using Application Default Credentials. `GEMINI_MODEL` selects the model. Optional 0G inference exists as a configured alternative. The current runtime does not select the older Bedrock settings. Without a configured provider the UI labels scripted rehearsal, and personalized proactive generation requires live inference.
+
+See [the growing-mind research and implementation](docs/growing-mind.md) and [check-in operations](docs/proactive-setup.md). Private conversations now have a dated SQLite archive and searchable memory beyond the latest 100-message display window. A semantic planner proposes grounded facts, communication preferences and future check-ins. Durable jobs deliver a contextual in-app message after an event or one unanswered 90-minute reconnection, subject to quiet hours and user controls. Resend email and standards-based web push are implemented with opt-in settings. Live email still needs a Resend key and verified sender; no real email delivery is claimed.
 
 ### Future sponsor integrations (not currently used)
 
 - **0G Compute:** planned as the decentralized inference option for persona conversations. The server would send the persona's approved state and relevant memory to a 0G model and record its actual request ID. This could make conversation inference part of the product's 0G integration. No 0G API calls or storage are part of the current application.
 - **World ID:** planned as an optional verified-person creation allowance to discourage duplicate persona creation. It would verify the person on the server before allowing creation. It is not implemented and does not gate onboarding today.
 
-Bedrock is currently the live model path. These integrations are roadmap items and are not claimed as working prize integrations.
+Google Vertex AI is currently the primary live model path. These integrations are roadmap items and are not claimed as working prize integrations.
 
 Sign in with a browser wallet, create a character, then choose **The mind → Sync to Arkiv**. Wallet approval signs the public snapshot write. The server verifies the result before recording the entity key. **Discover on Arkiv** queries public records and accepts only this app verifier’s signed snapshots. The script `npm run query:arkiv` reproduces the schema query, optionally filtered with `ARKIV_OWNER`. No live transaction was executed during implementation, so writer addresses and live entity evidence remain pending.
 
@@ -41,13 +43,13 @@ Real handover first requires the existing owner to sign Arkiv ownership transfer
 
 ### Storage and trust
 
-SQLite and the Ed25519 verifier key live in ignored `.data/` (or `MITRAI_DATA_DIR`). Preserve this directory for continuity; do not publish it. Chats are separated by character, owner and ownership epoch. The app signs sanitized public state; private messages and memory evidence are excluded. The canonical birth registry and trusted verifier enforce official lifetimes. This is a single-server hackathon architecture, not permissionless finality or a serverless Postgres deployment.
+SQLite and the Ed25519 verifier key live in ignored `.data/` (or `MITRAI_DATA_DIR`). Preserve this directory for continuity; do not publish it. Chats, the full dated archive, private mind state and proactive plans are separated by character, owner and ownership epoch. This SQLite database is not encrypted at rest; the server operator can read it. The app signs sanitized public state; private messages and memory evidence are excluded. The canonical birth registry and trusted verifier enforce official lifetimes. This is a single-server hackathon architecture, not permissionless finality or a serverless Postgres deployment.
 
 ### Character media
 
 Dynamic spoken replies and greetings now use actual speech audio with Rhubarb timing. See [timed speech setup](docs/timed-speech-setup.md) for local executables, optional Sarvam voice configuration, model capabilities and verified limits. Named speech morphs and VRM vowel shapes are driven from audio playback time; arbitrary numeric facial shapes still require mapping.
 
-Gallery characters use a 15% projection-size increase; the chat scene uses a 10% increase. All 24 model forms have embedded, retargeted or procedural body animations. See [lip-sync research and plan](docs/lip-sync-research.md) for techniques, model mouth capabilities and the proposed audio/viseme pipeline. New speech-provider integration remains planned.
+Gallery characters use a 15% projection-size increase; the chat scene uses a 10% increase. The bundled model forms have embedded, retargeted or procedural body animations. See [lip-sync research and plan](docs/lip-sync-research.md) for techniques, model mouth capabilities and the proposed audio/viseme pipeline. Sarvam audio generation has been live-tested; browser and cross-language quality still need broader evaluation.
 
 Sixteen rigged GLB models from Downloads are copied to `public/models/downloads`. Each is seeded as a public studio example and offered in the creation picker; existing personas occupy robot, fox and human forms. A form can belong to only one character globally: used forms are disabled in the picker and duplicate API requests are rejected. Some imported models have no body clips; named facial visemes animate when available. Source licences need confirmation before redistributing imported models publicly.
 
@@ -56,6 +58,43 @@ The remaining sections describe the product flow and longer-term design; impleme
 MitrAI is an open platform for cultivating unique 3D characters with memories, habits and personality. Creators invent uses; the platform supplies creation, evolution, publishing, discovery and ownership transfer. Each character has a finite lifetime ending at **Sunset**, followed by a read-only **Legacy**.
 
 This revision supersedes the earlier emphasis on a daily personal companion and relegation of selling to a later product. Discovery and adoption are core journeys. Paid settlement remains unimplemented and must not be presented as working.
+
+## Hackathon Target & Simplified User Flow
+
+For ETHGlobal Mumbai, the application is streamlined around three direct, high-impact features built on the **Arkiv** track:
+
+### 1. User-First Landing Journey (`/`)
+* **First Page Experience:**
+  * **When an owner visits `/`:** If they already have an active persona, it immediately loads **their persona** (interactive 3D avatar, Sarvam voice responses, memory stats, and real-time life meter).
+  * **When a new user or visitor arrives at `/`:** If they have no persona yet, the page displays a clean, focused prompt with two distinct buttons:
+    * **"Create a Character"**: Opens Step 1 creation (pick 3D model, define personality, preview zero-credit voices).
+    * **"Explore Characters"**: Takes them to `/explore` to browse the community gallery and adoption marketplace.
+* **Top Navigation:** `/explore` remains the permanent route to search all active and legacy personas.
+
+### 2. Buying, Selling & Buy Requests (Arkiv Testnet Track)
+* **Prize Track:** **Arkiv ("Build on Arkiv")** on **Rabdi Testnet**.
+* **How It Operates:**
+  * Every persona is an on-chain **Arkiv Entity** whose `$owner` is the creator's wallet address.
+  * **Set Asking Price:** When publishing, the owner chooses between *Showcase* (view only) or *For Adoption / Sale* and sets a testnet price (e.g., `0.05 ETH` or `10 tGLM`).
+  * **Browse & Audition on `/explore`:** Prospective buyers can view 3D character stages, read public highlights, and listen to authentic Sarvam AI voice previews (zero API cost).
+  * **Send Buy Request:** A buyer clicks **"Send Buy Request"** on any listed persona to propose an offer amount and a note to the creator.
+  * **Accept & Handover:** The owner reviews incoming buy requests and clicks **"Accept & Handover"**, executing Arkiv's native `arkiv.transfer(entityKey, buyerAddress)`.
+  * **Privacy Guarantee:** Transfer moves public traits, age, and approved highlights to the buyer, while the seller's private chat database remains locked and purged from the new owner's view.
+
+### 3. The Aging & Mortality Logic (Emotional Hook)
+* **Why Mortal AI?** Infinite chatbots feel disposable. Because a MitrAI persona has a finite lifespan (30 days standard, or 10 minutes in demo mode), every single interaction carries real emotional weight.
+* **Chronological Clock (The Countdown):**
+  * Time steadily counts down: `remaining = (createdAt + lifespan) - now`.
+  * When time reaches zero $\rightarrow$ **Sunset (Death)**. The persona permanently becomes an immutable, read-only **Legacy / Memoir** on Arkiv.
+* **Maturity (Experience Gained Before Death):**
+  * Sitting idle burns time without gaining wisdom.
+  * Meaningful chat sessions award **Experience Points**, allowing the persona to develop deeper vocabulary, refined habits, and distinct traits before its sunset.
+  * If a creator can no longer dedicate time to their persona, they can list it for **adoption/sale** to let another owner give it a full life before time runs out.
+
+### 4. Non-Owner Experience: The Mind Orbit & Inner Monologue
+To maintain the intimacy of the companion bond and preserve privacy, visitors browsing someone else’s persona cannot engage in unrestricted two-way chat. Instead, they experience the persona’s mind through:
+* **The Inner Monologue:** A one-click spoken soliloquy where the 3D persona animates on stage and shares a 15–20 second voiced reflection in its authentic Sarvam AI voice—reflecting on its origin, its personality, and how many days it has left until Sunset.
+* **The Mind Orbit (Memory Constellation):** An interactive visual ring of orbiting nodes around the avatar displaying public traits, approved memory crystals, and conversational habits. Explorers can inspect what makes this mind unique without accessing the seller’s private chat history.
 
 ## Product decisions
 
@@ -74,7 +113,8 @@ Discovery comes first. Use warm ivory, charcoal and muted amber, expressive 3D p
 
 | Page | Purpose |
 | --- | --- |
-| `/` and `/explore` | Browse public characters without a wallet; Create and Adopt entry points; filter by creator tags, style, demonstrated activities, availability and time remaining |
+| `/` | Personal companion home: directly loads the owner's active persona (chat, 3D stage, life clock); or shows a clean welcome card with "Create a Character" and "Explore Characters" if no persona is owned yet |
+| `/explore` | Dedicated public discovery & marketplace: browse active personas, audition voices with zero credits, inspect asking prices, and send buy requests |
 | `/create` | Free-text identity, behavior, optional purpose, appearance, starting temperament, example dialogue and draft preview |
 | `/onboarding` | Wallet login, optional human verification, creation/adoption review and transaction confirmation |
 | `/companion/[id]` | Owner's 3D character, chat/play, activities, remaining time, memory controls and save status |

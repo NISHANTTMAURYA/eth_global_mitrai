@@ -1,12 +1,26 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Sparkles, ArrowLeft, Check, Hand, Clock3, Loader2, Sun } from 'lucide-react';
+import {
+  ArrowRight,
+  Sparkles,
+  ArrowLeft,
+  Check,
+  Hand,
+  Clock3,
+  Loader2,
+  Sun,
+  Play,
+  Square,
+  Volume2,
+} from 'lucide-react';
 import { type Character, type ModelId } from '@/lib/domain';
 import { api } from '@/lib/client';
 import { Stage, Flower } from './ui';
 import { models } from '@/lib/models';
+import { VOICES, defaultVoiceForModel } from '@/lib/voices';
+import { activateCharacter } from '@/lib/activate-character';
 export default function CreateView({
   owner,
   mine,
@@ -25,6 +39,10 @@ export default function CreateView({
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [model, setModel] = useState<ModelId>('robot');
+  const [voice, setVoice] = useState<string>('shubh');
+  const [playingVoice, setPlayingVoice] = useState<string | null>(null);
+  const previewAudio = useRef<HTMLAudioElement | null>(null);
+  const userChoseVoice = useRef(false);
   const [name, setName] = useState('');
   const [tagline, setTagline] = useState('');
   const [description, setDescription] = useState('');
@@ -37,6 +55,13 @@ export default function CreateView({
   const [agree, setAgree] = useState(false);
   const [saving, setSaving] = useState(false);
   const [gesture, setGesture] = useState(0);
+
+  useEffect(() => {
+    return () => {
+      previewAudio.current?.pause();
+    };
+  }, []);
+
   useEffect(() => {
     try {
       const saved = sessionStorage.getItem('mitrai-draft');
@@ -46,17 +71,42 @@ export default function CreateView({
         setTagline(d.tagline || '');
         setDescription(d.description || '');
         setBehavior(d.behavior || behavior);
-        setModel(d.model || 'robot');
+        const m = d.model || 'robot';
+        setModel(m);
+        setVoice(d.voice || defaultVoiceForModel(m));
+        if (d.voice) userChoseVoice.current = true;
         setTags(d.tags || tags);
       }
     } catch {}
+    const chosen = new URLSearchParams(window.location.search).get('form');
+    if (chosen && models.some((m) => m.id === chosen)) {
+      setModel(chosen);
+      setVoice(defaultVoiceForModel(chosen));
+    }
   }, []);
   useEffect(() => {
     sessionStorage.setItem(
       'mitrai-draft',
-      JSON.stringify({ name, tagline, description, behavior, model, tags }),
+      JSON.stringify({ name, tagline, description, behavior, model, voice, tags }),
     );
-  }, [name, tagline, description, behavior, model, tags]);
+  }, [name, tagline, description, behavior, model, voice, tags]);
+
+  const toggleVoicePreview = (id: string, previewUrl: string) => {
+    if (playingVoice === id) {
+      previewAudio.current?.pause();
+      setPlayingVoice(null);
+      return;
+    }
+    if (previewAudio.current) {
+      previewAudio.current.pause();
+    }
+    const player = new Audio(previewUrl);
+    previewAudio.current = player;
+    player.onended = () => setPlayingVoice(null);
+    player.onerror = () => setPlayingVoice(null);
+    player.play().catch(() => setPlayingVoice(null));
+    setPlayingVoice(id);
+  };
   const next = () => {
     if (
       step === 0 &&
@@ -84,6 +134,7 @@ export default function CreateView({
         description,
         behavior,
         model,
+        voice,
         tags: tags
           .split(',')
           .map((t) => t.trim())
@@ -92,16 +143,62 @@ export default function CreateView({
         shortLife,
         traits,
       });
+      await activateCharacter(r.character, owner);
       sessionStorage.removeItem('mitrai-draft');
       await refresh();
       router.push(`/companion/${r.character.id}`);
       notify('A new little life has begun.');
     } catch (e) {
       notify(e instanceof Error ? e.message : 'Creation failed.');
+      await refresh();
     } finally {
       setSaving(false);
     }
   };
+  if (mine && !mine.demo && !mine.entityKey)
+    return (
+      <div className="page-shell create-page">
+        <div className="create-heading">
+          <p className="eyebrow">A BEGINNING WAITING FOR YOU</p>
+          <h1>Bring {mine.name} to life.</h1>
+          <p>Your draft is saved. Approve its first Arkiv record to begin.</p>
+        </div>
+        <div className="activation-card">
+          <div style={{ height: 350 }}>
+            <Stage model={mine.model} interactive={false} />
+          </div>
+          <p className="muted">
+            Your wallet will create the character’s identity and first brain checkpoint on Rabdi
+            testnet. Its private conversations stay off chain.
+          </p>
+          <button
+            className="button primary"
+            disabled={saving}
+            onClick={async () => {
+              if (!owner) {
+                connect();
+                return;
+              }
+              setSaving(true);
+              try {
+                await activateCharacter(mine, owner);
+                sessionStorage.removeItem('mitrai-draft');
+                await refresh();
+                router.push(`/companion/${mine.id}`);
+                notify(`${mine.name} is confirmed on Arkiv.`);
+              } catch (e) {
+                notify(e instanceof Error ? e.message : 'Could not activate.');
+              } finally {
+                setSaving(false);
+              }
+            }}
+          >
+            {saving ? <Loader2 className="spin" size={16} /> : <Sparkles size={16} />}{' '}
+            {saving ? 'Waiting for your wallet…' : 'Create on Arkiv'}
+          </button>
+        </div>
+      </div>
+    );
   if (mine)
     return (
       <div className="empty-page">
@@ -227,13 +324,69 @@ export default function CreateView({
               </label>
               <div className="model-options">
                 {models.map((option) => {
-                  const occupied = characters.some((character) => character.model === option.id);
+                  const occupied = characters.some(
+                    (character) => !character.demo && character.model === option.id,
+                  );
                   return (
-                    <button key={option.id} disabled={occupied} className={`${model === option.id ? 'chosen' : ''} ${occupied ? 'model-taken' : ''}`} onClick={() => setModel(option.id)}>
-                      <span>✧</span>{option.name}{occupied && <small>Already in use</small>}
+                    <button
+                      key={option.id}
+                      disabled={occupied}
+                      className={`${model === option.id ? 'chosen' : ''} ${occupied ? 'model-taken' : ''}`}
+                      onClick={() => {
+                        setModel(option.id);
+                        if (!userChoseVoice.current) {
+                          setVoice(defaultVoiceForModel(option.id));
+                        }
+                      }}
+                    >
+                      <span>✧</span>
+                      {option.name}
+                      {occupied && <small>Already in use</small>}
                     </button>
                   );
                 })}
+              </div>
+              <label>
+                Choose their voice
+                <small>
+                  Powered by Sarvam AI. Tap the play button to preview voices without using credits.
+                </small>
+              </label>
+              <div className="voice-options">
+                {VOICES.map((v) => (
+                  <div
+                    key={v.id}
+                    className={`voice-card ${voice === v.id ? 'chosen' : ''}`}
+                    onClick={() => {
+                      userChoseVoice.current = true;
+                      setVoice(v.id);
+                    }}
+                  >
+                    <div className="voice-card-top">
+                      <span className="voice-card-name">{v.name}</span>
+                      <span className="voice-card-tag">{v.tag}</span>
+                      <button
+                        type="button"
+                        className={`voice-play-btn ${playingVoice === v.id ? 'playing' : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleVoicePreview(v.id, v.previewUrl);
+                        }}
+                        aria-label={
+                          playingVoice === v.id ? `Stop ${v.name}` : `Listen to ${v.name}`
+                        }
+                        title={`Listen to sample (${v.name})`}
+                      >
+                        {playingVoice === v.id ? (
+                          <Square size={11} fill="currentColor" />
+                        ) : (
+                          <Play size={11} fill="currentColor" />
+                        )}
+                      </button>
+                    </div>
+                    <p className="voice-card-desc">{v.description}</p>
+                  </div>
+                ))}
               </div>
               <button
                 className="button primary full"
@@ -296,12 +449,18 @@ export default function CreateView({
               </label>
               <button className="button primary full" disabled={saving || !agree} onClick={create}>
                 {saving ? <Loader2 className="spin" size={17} /> : <Sparkles size={17} />}{' '}
-                {owner ? 'Begin their story' : 'Connect to begin'}
+                {saving
+                  ? 'Waiting for your wallet…'
+                  : owner
+                    ? owner.startsWith('demo:')
+                      ? 'Begin their story'
+                      : 'Create on Arkiv'
+                    : 'Connect wallet to begin'}
               </button>
               <p className="form-caption">
                 {owner?.startsWith('demo:')
                   ? 'Local demo activation · no blockchain transaction'
-                  : 'Activation is local first. Sync the public checkpoint to Arkiv with your wallet.'}
+                  : 'Approve the Rabdi transaction in your wallet. Your draft stays saved if you cancel.'}
               </p>
             </div>
           )}

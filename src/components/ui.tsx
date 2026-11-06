@@ -11,23 +11,74 @@ export const Stage = dynamic(() => import('./character-stage'), {
     </div>
   ),
 });
-export function Flower({ size = 29 }: { size?: number }) {
+export function MitraiTextLogo({
+  height = 28,
+  className = '',
+  alt = 'MitrAI',
+}: {
+  height?: number;
+  className?: string;
+  alt?: string;
+}) {
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
-      {[0, 60, 120, 180, 240, 300].map((a) => (
-        <ellipse
-          key={a}
-          cx="16"
-          cy="8.4"
-          rx="4.3"
-          ry="7"
-          fill="currentColor"
-          transform={`rotate(${a} 16 16)`}
-        />
-      ))}
-      <circle cx="16" cy="16" r="4" fill="#f8f5ec" />
-    </svg>
+    <img
+      src="/brand/mitrai-logo-dark.png"
+      alt={alt}
+      height={height}
+      className={`mitrai-text-logo ${className}`.trim()}
+      style={{
+        display: 'inline-block',
+        verticalAlign: 'middle',
+        height,
+        width: 'auto',
+        objectFit: 'contain',
+      }}
+    />
   );
+}
+
+export function MitraiLogo({
+  size = 32,
+  className = '',
+  withText = false,
+  alt = 'MitrAI',
+}: {
+  size?: number;
+  className?: string;
+  withText?: boolean;
+  alt?: string;
+}) {
+  if (withText) {
+    return (
+      <img
+        src="/brand/mitrai-logo-dark.png"
+        alt={alt}
+        height={size}
+        className={`mitrai-logo-dark ${className}`.trim()}
+        style={{ display: 'inline-block', verticalAlign: 'middle', height: size, width: 'auto', objectFit: 'contain' }}
+      />
+    );
+  }
+  return (
+    <img
+      src="/brand/mitrai-icon.svg"
+      alt={alt}
+      width={size}
+      height={size}
+      className={`mitrai-icon ${className}`.trim()}
+      style={{
+        display: 'inline-block',
+        verticalAlign: 'middle',
+        height: size,
+        width: size,
+        objectFit: 'contain',
+      }}
+    />
+  );
+}
+
+export function Flower({ size = 29, className = '' }: { size?: number; className?: string }) {
+  return <MitraiLogo size={size} className={className} />;
 }
 export function TimeLeft({ character }: { character: Character }) {
   const [now, setNow] = useState(Date.now());

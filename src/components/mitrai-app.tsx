@@ -23,6 +23,9 @@ import type { Address, Hex } from 'viem';
 import ExploreView from './explore-view';
 import CreateView from './create-view';
 import CharacterView from './character-view';
+import WalletPanel from './wallet-panel';
+import ProactiveInbox from './proactive-inbox';
+import { getWalletProvider, selectWallet, type BrowserWallet } from '@/lib/browser-wallet';
 export default function MitraiApp() {
   const pathname = usePathname();
   const router = useRouter();
@@ -31,6 +34,7 @@ export default function MitraiApp() {
   const [loading, setLoading] = useState(true);
   const [provider, setProvider] = useState('Scripted demo');
   const [connect, setConnect] = useState(false);
+  const [demoEnabled, setDemoEnabled] = useState(false);
   const [settings, setSettings] = useState(false);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState('');
@@ -42,6 +46,7 @@ export default function MitraiApp() {
     setCharacters(result.characters);
     setOwner(result.owner);
     setProvider(result.provider);
+    setDemoEnabled(!!result.demoEnabled);
     setLoading(false);
   }, []);
   useEffect(() => {
@@ -76,9 +81,10 @@ export default function MitraiApp() {
       setConnect(false);
       notify('Demo session ready. Your characters are saved locally on this server.');
     });
-  const wallet = () =>
+  const wallet = (chosen: BrowserWallet) =>
     run(async () => {
-      const ethereum = window.ethereum;
+      selectWallet(chosen);
+      const ethereum = chosen.provider;
       if (!ethereum)
         throw new Error('No browser wallet found. Install an EVM wallet or try the demo.');
       const accounts = (await ethereum.request({ method: 'eth_requestAccounts' })) as string[];
@@ -100,6 +106,12 @@ export default function MitraiApp() {
     });
   const mine = characters.find((c) => c.owner === owner && lifecycle(c).alive);
   const mode = owner?.startsWith('demo:') ? 'Demo collector' : owner ? shortAddress(owner) : null;
+  useEffect(() => {
+    if (!owner?.startsWith('0x')) return;
+    const p = getWalletProvider() as (ReturnType<typeof getWalletProvider> & { on?: (event: string, listener: (accounts: string[]) => void) => void; removeListener?: (event: string, listener: (accounts: string[]) => void) => void });
+    const changed = (accounts: string[]) => { if (!accounts.some(a => a.toLowerCase() === owner)) { void auth('logout').then(refresh); setConnect(true); } };
+    p?.on?.('accountsChanged', changed); return () => p?.removeListener?.('accountsChanged', changed);
+  }, [owner, refresh]);
   const ensure = () => {
     if (!owner) {
       setConnect(true);
@@ -113,7 +125,7 @@ export default function MitraiApp() {
     : undefined;
   const selected = characters.find((c) => c.id === detailId);
   let content;
-  if (parts[0] === 'create')
+  if (parts[0] === 'create' || (parts[0] === 'my-character' && mine && !mine.demo && !mine.entityKey))
     content = (
       <CreateView
         owner={owner}
@@ -161,7 +173,9 @@ export default function MitraiApp() {
       </div>
     );
   else if (detailId)
-    content = selected ? (
+    content = selected && selected.owner === owner && !selected.demo && !selected.entityKey ? (
+      <CreateView owner={owner} mine={selected} characters={characters} connect={() => setConnect(true)} refresh={refresh} notify={notify} />
+    ) : selected ? (
       <CharacterView
         key={selected.id}
         c={selected}
@@ -200,11 +214,13 @@ export default function MitraiApp() {
     <>
       <header className="site-header">
         <div className="nav-wrap">
-          <Link href="/" className="brand">
-            <Flower />
-            <span>
-              mitrai<span className="brand-period">.</span>
-            </span>
+          <Link href="/" className="brand" aria-label="mitrai.">
+            <img
+              src="/brand/mitrai-logo-dark.png?v=2"
+              alt="mitrai."
+              height={36}
+              className="brand-logo"
+            />
           </Link>
           <nav className={menu ? 'nav open' : 'nav'} aria-label="Main navigation">
             <Link
@@ -255,15 +271,20 @@ export default function MitraiApp() {
         </div>
       </header>
       <main>{content}</main>
+      {owner && <ProactiveInbox owner={owner} notify={notify} />}
       <footer className="site-footer">
-        <Link className="brand small" href="/">
-          <Flower size={20} />
-          mitrai.
+        <Link className="brand small" href="/" aria-label="mitrai.">
+          <img
+            src="/brand/mitrai-logo-dark.png"
+            alt="mitrai."
+            height={22}
+            className="brand-logo small"
+          />
         </Link>
         <span>A little life. A world of possibility.</span>
         <div>
           <span className="status-dot" />{' '}
-          {owner?.startsWith('0x') ? 'Wallet connected' : 'Local demo'}
+          {owner?.startsWith('0x') ? 'Wallet connected' : owner ? 'Local demo' : 'Arkiv Rabdi testnet'}
           <span className="footer-divider">/</span>
           <button onClick={() => setSettings(true)}>
             Built with Arkiv <ArrowUpRight size={13} />
@@ -280,50 +301,9 @@ export default function MitraiApp() {
         </div>
       )}
       {connect && (
-        <Modal
-          title={owner ? 'Your connection' : 'Make room for a little life'}
-          close={() => setConnect(false)}
-        >
-          <p className="muted">
-            Explore freely. Connect a wallet for signed Arkiv writes, or try the complete local
-            demo.
-          </p>
-          <button className="connect-choice" onClick={wallet} disabled={busy}>
-            <Wallet />
-            <div>
-              <strong>Connect browser wallet</strong>
-              <small>Sign in with Ethereum · no spending approval</small>
-            </div>
-            <ChevronRight />
-          </button>
-          <button className="connect-choice" onClick={startDemo} disabled={busy}>
-            <Sparkles />
-            <div>
-              <strong>
-                {owner?.startsWith('demo:') ? 'Start a fresh demo session' : 'Try the local demo'}
-              </strong>
-              <small>Saved on this server · no blockchain transactions</small>
-            </div>
-            <ChevronRight />
-          </button>
-          {owner && (
-            <button
-              className="text-button"
-              onClick={() =>
-                run(async () => {
-                  await auth('logout');
-                  await refresh();
-                  setConnect(false);
-                })
-              }
-            >
-              Disconnect session
-            </button>
-          )}
-          <div className="note">
-            <LockKeyhole size={16} />
-            Your private chats stay separate from the public character.
-          </div>
+        <Modal title={owner ? 'Your wallet' : 'Connect your wallet'} close={() => setConnect(false)}>
+          <WalletPanel owner={owner} busy={busy} connect={wallet} notify={notify} disconnect={() => void run(async () => { await auth('logout'); await refresh(); setConnect(false); })} />
+          {demoEnabled && <button className="text-link" onClick={startDemo} disabled={busy}>Try the local development demo</button>}
         </Modal>
       )}
       {settings && (

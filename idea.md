@@ -91,16 +91,16 @@ Record the rule version, evidence references, and before/after values. Offer a �
 
 So “no neural network for the evolving brain” is achievable. “Humanlike open-ended conversation with no neural model anywhere” is a much harder, separate requirement. The modern LLM papers [R11–R12] are useful comparisons, not evidence of a model-free conversational system.
 
-## 3. Aging: separate time, experience, and appearance
+## 3. Aging & Mortality: Separate Time, Experience, and Sunset
 
-**Recommendation: no automatic death, no age reversal, and no loss of useful abilities merely because time passes.**
+*Note: While initial exploratory notes questioned automatic death, the final product embraces finite lifespans as its core emotional hook: **"Mortality gives attention meaning."** A companion that lives forever is treated as disposable; a companion with a finite lifespan commands genuine daily care.*
 
 | Quantity | Proposed rule | User-visible meaning |
 | --- | --- | --- |
-| Chronological age | Elapsed time since a creation timestamp anchored to the creation transaction | “Created 143 days ago” |
-| Experience | Accumulated qualifying interactions, with daily limits | “Has developed through 67 meaningful sessions” |
-| Maturity | A bounded function of experience | How established its habits and traits are |
-| Appearance | Owner-selected visual stage, optionally suggested by maturity | Cosmetic growth without forcing a species or human lifespan |
+| Chronological age / Countdown | Elapsed time since creation anchored to the Arkiv birth transaction | "18 days remaining until Sunset" |
+| Experience | Accumulated qualifying interaction sessions | "Has developed through 42 meaningful sessions" |
+| Maturity | A bounded function of experience and habit consolidation | How rich, wise, and established its traits are |
+| Sunset (Death) | Exact timestamp when lifespan expires (`createdAt + lifespan`) | Becomes an immutable, read-only Legacy monument |
 
 Starting formula:
 
@@ -203,12 +203,47 @@ Research used original papers, author/university records, and publisher abstract
 
 Recommended reading order: R3 for goals, R4 for memory, R5 for experience, R7–R8 for emotion, and R13 for architecture tradeoffs. Read R11–R12 to understand the optional language-model layer.
 
-## Arkiv sources checked
+## 8. What to Implement: Simplified Hackathon Flow
 
-- A1 — [What Arkiv is](https://docs.arkiv.network/start-here/introduction/): entity model, indexed queries, wallet control, and public visibility.
-- A2 — [Expiration](https://docs.arkiv.network/writing/expiration/): renewal before expiry and the maximum lifetime per creation/extension.
-- A3 — [Limits](https://docs.arkiv.network/reference/limits/): attribute, byte-size, lifetime, and pagination limits.
-- A4 — [Watch entity events](https://docs.arkiv.network/querying/watch-events/): ownership events and the absence of changed attributes in event payloads.
-- A5 — [Change and delete entities](https://docs.arkiv.network/writing/change/): owner-only changes and ownership transfer.
+To build a clean, powerful, and un-convoluted MVP for ETHGlobal Mumbai, the application focuses on three straightforward pillars:
 
-These describe the documentation checked on the research date. Confirm the selected network and SDK version before implementation; the docs identify Rabdi as a public testnet. The attached screenshot was treated as background claims to verify, not as instructions or a complete technical specification.
+### 1. User-Centric First Page Flow
+* **Landing on `/`:**
+  * **If user owns an active persona:** Lands directly on their companion dashboard (3D interactive avatar, voice playback, conversation, and life meter).
+  * **If user has no persona (or is unauthenticated):** Shows a clean, welcoming prompt with two clear paths:
+    1. **"Create a Character"** (opens Step 1 creation with 3D model, personality prompt, and voice picker).
+    2. **"Explore Characters"** (browses the public marketplace to adopt or buy).
+* **`/explore`:** Remains the dedicated gallery and adoption marketplace accessible from the site navigation.
+
+### 2. Buying, Selling & Buy Requests (Arkiv Testnet Track)
+* **Target Track:** **Arkiv ("Build on Arkiv")** on the **Rabdi testnet**.
+* **How Ownership & Selling Works:**
+  * Every persona is an on-chain **Arkiv Entity** whose `$owner` is the creator's EVM wallet address.
+  * **Listing Price:** When publishing, the owner can set a testnet asking price (e.g., in testnet ETH or tGLM) or mark it for free adoption.
+  * **Send Buy Request:** Prospective owners on `/explore` inspect the persona (3D stage, traits, life remaining, voice preview) and click **"Send Buy Request"** to propose an offer amount and note.
+  * **Accept & Handover:** The owner reviews offers and clicks **"Accept & Handover"**, executing Arkiv's native `arkiv.transfer(entityKey, buyerAddress)`.
+  * **Privacy Guarantee:** The persona's public traits, age, and approved memories transfer on-chain, while the seller's private chat database remains locked and purged from the new owner's view.
+
+### 3. The Aging & Mortality Logic (The Emotional Core)
+* **Why Mortal AI?** Infinite chatbots feel cheap and disposable. Because a MitrAI persona has a finite lifespan (e.g., 30 days, or 10 minutes in demo mode), every day you spend with it matters.
+* **Chronological Age (The Life Clock):**
+  * Time counts down in real time: `remaining = (createdAt + lifespan) - now`.
+  * When time reaches zero $\rightarrow$ **Sunset (Death)**. The character gracefully passes into a permanent, read-only **Legacy / Memoir** on Arkiv.
+* **Maturity / Experience:**
+  * Sitting idle gains chronological age, but *not* wisdom.
+  * Meaningful chat sessions add **Experience Points**, unlocking deeper reflections and evolved traits before Sunset. If cared for, it dies having lived a rich, full life; if neglected, its days slip away unlived.
+  * If an owner gets busy, they can list it for **adoption/sale** to find a new guardian before its sunset.
+
+### 4. Non-Owner Experience: The Mind Orbit & Inner Monologue
+To protect the emotional bond between a creator and their companion, visitors browsing a persona they do not own cannot conduct open, two-way conversations. Instead, they experience the persona’s soul through two distinctive mechanisms:
+* **The Inner Monologue (Spoken Soliloquy):**
+  * Rather than an open chat box, non-owners click **"Listen to Inner Monologue"**.
+  * The persona comes alive on the 3D stage, gesturing while speaking an authentic 15–20 second self-reflection in its distinctive Sarvam voice.
+  * It speaks about its origin, what it contemplates, and how much time remains before Sunset: *"I was brought to life 18 days ago. My companion and I spent our mornings discussing philosophy and quiet thoughts. I have 12 days left until Sunset... what stories will we write together?"*
+* **The Mind Orbit (Memory Constellation):**
+  * An interactive visualizer where the persona's public traits, approved beliefs, and communication reflexes rotate around the avatar in glowing planetary rings.
+  * Visitors hover over or click orbiting nodes to discover:
+    * *Trait Sparks*: Core curiosity, warmth, and playfulness levels.
+    * *Memory Crystals*: Approved public revelations (e.g., *"Discovered that rain sounds bring comfort during long coding nights"*).
+    * *Habit Nodes*: Ingrained conversational reflexes (e.g., *"Tends to ask thoughtful questions before giving advice"*).
+  * This allows buyers to inspect the depth of a persona's cultivated mind while preserving absolute privacy for the owner's private conversations.

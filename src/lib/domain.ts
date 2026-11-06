@@ -17,6 +17,7 @@ export type Character = {
   description: string;
   behavior: string;
   model: ModelId;
+  voice?: string;
   tags: string[];
   owner: string;
   creator: string;
@@ -37,6 +38,8 @@ export type Message = {
   role: 'user' | 'assistant';
   text: string;
   at: number;
+  proactive?: boolean;
+  gesture?: import('./conversation').GestureCue;
   provider?: string;
   requestId?: string;
 };

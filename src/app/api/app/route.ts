@@ -1,7 +1,10 @@
+import { continuityContext, acceptConversation } from '@/lib/continuity';
+import { reachPreferences, archiveConversation, loadMind, saveMind } from '@/lib/continuity-store';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { isAddress } from 'viem';
 import {
+  database,
   allCharacters,
   getCharacter,
   saveCharacter,
@@ -25,10 +28,20 @@ import {
 } from '@/lib/domain';
 import { configuredProvider, reply } from '@/lib/chat';
 import { models } from '@/lib/models';
-import { readArkivCharacter, discoverArkiv } from '@/lib/arkiv';
+import { defaultVoiceForModel } from '@/lib/voices';
+import { readArkivCharacter, discoverArkiv, findArkivCharacter } from '@/lib/arkiv';
 import { signSnapshot, verifySnapshot } from '@/lib/proof';
+import { recordArkivReceipt } from '@/lib/chain-ledger';
+import { samePublicState } from '@/lib/brain-events';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+let discoveryCache: { at: number; rows: Awaited<ReturnType<typeof discoverArkiv>> } | undefined;
+async function publicDiscovery() {
+  if (discoveryCache && Date.now() - discoveryCache.at < 20000) return discoveryCache.rows;
+  const rows = await discoverArkiv();
+  discoveryCache = { at: Date.now(), rows };
+  return rows;
+}
 const locks = new Set<string>();
 const limitedRequests = new Map<string, { count: number; since: number }>();
 function limit(key: string, max = 25) {
@@ -89,8 +102,24 @@ export async function GET(request: Request) {
     if (id) {
       const c = await verifiedCharacter(id);
       if (!c.published && c.owner !== owner) throw new Error('This character is not published.');
+      let shown = c;
+      if (c.owner !== owner && !c.demo) {
+        if (!c.entityKey) throw new Error('This character is not published on Arkiv.');
+        const remote = await readArkivCharacter(c.entityKey as `0x${string}`);
+        if (
+          !remote.character.published ||
+          remote.character.owner.toLowerCase() !== String(remote.owner).toLowerCase()
+        )
+          throw new Error('This character is not published on Arkiv.');
+        shown = {
+          ...publicCharacter(remote.character),
+          owner: String(remote.owner).toLowerCase(),
+          entityKey: c.entityKey,
+          chainVersion: remote.character.brain.version,
+        };
+      }
       return NextResponse.json({
-        character: c.owner === owner ? c : publicCharacter(c),
+        character: c.owner === owner ? c : publicCharacter(shown),
         messages: c.owner === owner ? messages(id, owner, c.ownershipEpoch || 0) : [],
         offers: c.owner === owner ? offersFor(id) : [],
         owner,
@@ -98,17 +127,50 @@ export async function GET(request: Request) {
       });
     }
     const rows: Character[] = [];
+    let discoveryError: string | null = null;
+    try {
+      const publicRows = await publicDiscovery();
+      for (const row of publicRows) {
+        if (
+          !verifySnapshot(row.character, row.proof, row.verifier) ||
+          !row.character.published ||
+          row.character.owner.toLowerCase() !== String(row.owner).toLowerCase()
+        )
+          continue;
+        const existing = allCharacters().find((c) => c.id === row.character.id);
+        if (
+          existing &&
+          (existing.createdAt !== row.character.createdAt ||
+            existing.lifespan !== row.character.lifespan)
+        )
+          continue;
+        const c = {
+          ...publicCharacter(row.character),
+          owner: String(row.owner).toLowerCase(),
+          entityKey: row.key,
+          chainVersion: row.character.brain.version,
+          demo: false,
+        };
+        if (!existing) saveCharacter(c);
+        rows.push(c);
+      }
+    } catch {
+      discoveryError = 'Published characters could not be loaded from Arkiv. Please try again.';
+    }
     for (const entry of allCharacters()) {
-      if (!entry.published && entry.owner !== owner) continue;
-      // Never serve private state using stale chain ownership. Public discovery stays public.
-      if (entry.owner === owner && entry.entityKey) {
-        const verified = await verifiedCharacter(entry.id);
-        if (verified.published || verified.owner === owner)
-          rows.push(verified.owner === owner ? verified : publicCharacter(verified));
-      } else rows.push(entry.owner === owner ? entry : publicCharacter(entry));
+      if (entry.owner === owner) {
+        const c = entry.entityKey ? await verifiedCharacter(entry.id) : entry;
+        if (c.owner !== owner) continue;
+        const previous = rows.findIndex((r) => r.id === c.id);
+        if (previous >= 0) rows.splice(previous, 1);
+        rows.push(c);
+      } else if (process.env.MITRAI_DEMO_MODE === '1' && entry.demo && entry.published)
+        rows.push(publicCharacter(entry));
     }
     return NextResponse.json({
       characters: rows,
+      discoveryError,
+      demoEnabled: process.env.MITRAI_DEMO_MODE === '1',
       owner,
       provider: configuredProvider(),
     });
@@ -168,7 +230,10 @@ export async function POST(request: Request) {
           tagline: z.string().trim().min(4).max(100),
           description: z.string().trim().min(12).max(1000),
           behavior: z.string().trim().min(5).max(1000),
-          model: z.string().refine((id) => models.some((m) => m.id === id), 'Unknown character model'),
+          model: z
+            .string()
+            .refine((id) => models.some((m) => m.id === id), 'Unknown character model'),
+          voice: z.string().optional(),
           tags: z.array(z.string().trim().min(1).max(25)).max(5),
           shortLife: z.boolean(),
           traits: z.object({
@@ -178,7 +243,12 @@ export async function POST(request: Request) {
           }),
         })
         .parse(data);
-      if (allCharacters().some((character) => character.model === v.model))
+      if (
+        allCharacters().some(
+          (character) =>
+            !character.demo && !character.id.startsWith('catalog-') && character.model === v.model,
+        )
+      )
         throw new Error('That character form is already in use. Choose an unused model.');
       const now = Date.now();
       const c: Character = {
@@ -188,6 +258,7 @@ export async function POST(request: Request) {
         description: v.description,
         behavior: v.behavior,
         model: v.model,
+        voice: v.voice || defaultVoiceForModel(v.model),
         tags: [...new Set(v.tags)],
         owner,
         creator: owner,
@@ -210,6 +281,10 @@ export async function POST(request: Request) {
     lock = id;
     let c = action === 'transfer' ? getCharacter(id) : await verifiedCharacter(id);
     if (action === 'chat') {
+      if (!c.demo && !c.entityKey)
+        throw new Error(
+          'Approve your character’s first Arkiv transaction before starting the conversation.',
+        );
       assertAlive(c);
       const audition = z.boolean().parse(data.audition);
       if (audition && !c.published) throw new Error('This character is not public.');
@@ -218,27 +293,55 @@ export async function POST(request: Request) {
       const history = audition ? [] : messages(id, owner, c.ownershipEpoch || 0);
       if (history.at(-1) && Date.now() - history.at(-1)!.at < 800)
         throw new Error('Give your character a moment before the next message.');
-      const result = await reply(audition ? publicCharacter(c) : c, text, history, audition);
+      if (!audition) archiveConversation(id, owner, c.ownershipEpoch || 0, history);
+      if (!audition) {
+        const activity = loadMind(c, owner);
+        activity.lastUserAt = Date.now();
+        saveMind(c, owner, activity);
+      }
+      const result = await reply(
+        audition ? publicCharacter(c) : c,
+        text,
+        history,
+        audition,
+        audition
+          ? {}
+          : {
+              context: continuityContext(c, owner, text),
+              timezone: reachPreferences(owner).timezone,
+            },
+      );
       const latest = await verifiedCharacter(id);
       assertAlive(latest);
       if (!audition) assertOwner(latest, owner);
       const now = Date.now();
-      const answer = {
+      const answers = result.messages.map((bubble) => ({
+        ...bubble,
         id: crypto.randomUUID(),
         role: 'assistant' as const,
-        text: result.text,
+        text: bubble.text,
         at: now,
         provider: result.provider,
         requestId: result.requestId,
-      };
-      if (!audition)
-        saveMessages(
-          id,
-          owner,
-          [...history, { id: crypto.randomUUID(), role: 'user' as const, text, at: now }, answer],
-          c.ownershipEpoch || 0,
-        );
-      return NextResponse.json({ message: answer });
+      }));
+      const userMessage = { id: crypto.randomUUID(), role: 'user' as const, text, at: now };
+      if (!audition) {
+        database.exec('BEGIN IMMEDIATE');
+        try {
+          saveMessages(
+            id,
+            owner,
+            [...messages(id, owner, c.ownershipEpoch || 0), userMessage, ...answers],
+            c.ownershipEpoch || 0,
+          );
+          acceptConversation(latest, owner, userMessage, answers, result.mind, now);
+          database.exec('COMMIT');
+        } catch (error) {
+          database.exec('ROLLBACK');
+          throw error;
+        }
+      }
+      return NextResponse.json({ message: answers[0], messages: answers });
     }
     if (action === 'adopt') {
       assertAlive(c);
@@ -271,6 +374,22 @@ export async function POST(request: Request) {
         throw new Error(
           'Demo characters cannot become live Arkiv records. Create one with your wallet session.',
         );
+      if (!c.entityKey) {
+        const candidates = await findArkivCharacter(c.id, owner as `0x${string}`);
+        const existing = candidates.find(
+          (row) =>
+            verifySnapshot(row.character, row.proof, row.verifier) &&
+            row.character.createdAt === c.createdAt &&
+            row.character.lifespan === c.lifespan &&
+            row.character.brain.version === c.brain.version,
+        );
+        if (existing) {
+          c.entityKey = existing.key;
+          c.chainVersion = existing.character.brain.version;
+          saveCharacter(c);
+          return NextResponse.json({ ...signSnapshot(c), alreadyOnChain: true });
+        }
+      }
       return NextResponse.json(signSnapshot(c));
     }
     if (action === 'memory') {
@@ -289,6 +408,10 @@ export async function POST(request: Request) {
       const recent = history.filter((m) => m.role === 'user' && m.at > lastCheckpoint);
       if (!recent.length) throw new Error('No new conversation to consolidate.');
       c.brain = evolve(c.brain, recent.map((m) => m.text).join('\n'), recent.at(-1)!.id);
+      const growth = loadMind(c, owner);
+      if (growth.changes.length)
+        for (const axis of ['curiosity', 'warmth', 'playfulness'] as const)
+          c.brain.traits[axis] = growth.style[axis];
       c.history.push({
         at: Date.now(),
         text: `Checkpoint ${c.brain.version} · ${recent.length} conversation events, one consolidation session`,
@@ -304,7 +427,7 @@ export async function POST(request: Request) {
       c.published = true;
       c.availability = v.availability;
       c.highlights = v.highlights;
-      c.history.push({ at: Date.now(), text: 'Introduced to the world' });
+      if (c.demo) c.history.push({ at: Date.now(), text: 'Published to the local demo gallery' });
     }
     if (action === 'transfer') {
       const recipient = z
@@ -317,6 +440,15 @@ export async function POST(request: Request) {
         if (String(remote.owner).toLowerCase() !== recipient)
           throw new Error('Complete the Arkiv ownership transfer first.');
       } else if (!c.demo) throw new Error('Sync this character to Arkiv before transferring.');
+      if (c.entityKey && data.txHash)
+        await recordArkivReceipt(
+          c.id,
+          c.entityKey as `0x${string}`,
+          z
+            .string()
+            .regex(/^0x[0-9a-f]{64}$/i)
+            .parse(data.txHash) as `0x${string}`,
+        );
       c = handover(c, recipient);
     }
     if (action === 'sync') {
@@ -337,8 +469,20 @@ export async function POST(request: Request) {
         throw new Error(
           'The local state changed while the transaction was signing. Sync the newest checkpoint.',
         );
+      if (!samePublicState(c, remote.character))
+        throw new Error('The character changed while signing. Please sync the current state.');
       c.entityKey = key;
       c.chainVersion = c.brain.version;
+      discoveryCache = undefined;
+      if (data.txHash)
+        await recordArkivReceipt(
+          c.id,
+          key as `0x${string}`,
+          z
+            .string()
+            .regex(/^0x[0-9a-f]{64}$/i)
+            .parse(data.txHash) as `0x${string}`,
+        );
       c.history.push({ at: Date.now(), text: 'Public checkpoint confirmed on Arkiv' });
     }
     saveCharacter(c);

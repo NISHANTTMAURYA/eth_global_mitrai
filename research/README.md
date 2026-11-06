@@ -1,6 +1,6 @@
 # Local research library
 
-11 distinct full-text papers downloaded from public author, university, publisher or arXiv sources. PDFs were parsed to check page counts and opening titles. Relevant passages were inspected; no claim that every page was read or that this is a systematic review. Extracted text is included for search.
+13 distinct full-text papers downloaded (the original eleven plus the two additions below) from public author, university, publisher or arXiv sources. PDFs were parsed to check page counts and opening titles. Relevant passages were inspected; no claim that every page was read or that this is a systematic review. Extracted text is included for search.
 
 The brain design is an engineering synthesis in [brain-spec](../docs/brain-spec.md). Two papers explicitly require LLMs; they do not satisfy a strict neural-free system requirement. The remaining papers cover symbolic cognition, numerical mechanisms and psychological theory with differing assumptions.
 
@@ -99,3 +99,16 @@ The original idea.md also cites Bates (1994), the Soar 1987 paper, Roberts et al
 ## Reproducibility and rights
 
 `download_manifest.json` records URLs, sizes, SHA-256 hashes and page counts. `scripts/download_papers.py` repeats downloads; sources may change or disappear. Files are local research copies, not relicensed assets. Retain attribution and check individual reuse conditions before redistributing them in a public code repository.
+
+
+## 12_longmemeval_2025
+
+**LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory** — ICLR 2025.
+[Local PDF](papers/12_longmemeval_2025.pdf) · [Primary source](https://arxiv.org/abs/2410.10813)
+Research reference for dated evidence, corrections, cross-session retrieval and abstaining when recall is insufficient. This implementation is not benchmarked on LongMemEval.
+
+## 13_proactive_dialogue_2024
+
+**Redefining Proactivity for Information Seeking Dialogue** — 2024.
+[Local PDF](papers/13_proactive_dialogue_2024.pdf) · [Primary source](https://arxiv.org/abs/2410.15297)
+Research reference for context-relevant initiative, follow-up questions and useful additional information. Conversation length alone does not validate useful or welcome outreach. HTML methods and limitations were reviewed; no full-paper reproduction is claimed.

@@ -9,11 +9,14 @@
     "test": "tsx --test tests/*.test.ts",
     "typecheck": "tsc --noEmit",
     "test:integration": "node scripts/test-integration.mjs",
-    "query:arkiv": "tsx scripts/query-arkiv.ts"
+    "query:arkiv": "tsx scripts/query-arkiv.ts",
+    "proactive:worker": "node --env-file-if-exists=.env.local --import tsx scripts/proactive-worker.ts",
+    "proactive:once": "node --env-file-if-exists=.env.local --import tsx scripts/proactive-worker.ts --once"
   },
   "dependencies": {
     "@arkiv-network/sdk": "1.0.1",
-    "@aws-sdk/client-bedrock-runtime": "^3.1163.0",
+    "@aws-sdk/client-bedrock-runtime": "3.1163.0",
+    "@google/genai": "^3.0.0",
     "@pixiv/three-vrm": "3.5.5",
     "@react-three/drei": "10.7.9",
     "@react-three/fiber": "9.8.2",
@@ -23,6 +26,7 @@
     "react-dom": "19.3.1",
     "three": "0.187.0",
     "viem": "2.57.16",
+    "web-push": "^3.6.7",
     "zod": "4.6.7"
   },
   "devDependencies": {
@@ -30,6 +34,7 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@types/three": "0.187.0",
+    "@types/web-push": "^3.6.4",
     "prettier": "3.9.10",
     "tsx": "4.23.15",
     "typescript": "7.0.2"
