@@ -1489,6 +1489,30 @@ p {
 .card-ens-subname-btn:hover {
   background: #ede9fe;
 }
+.marketplace-action-box {
+  margin: 18px 0;
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+}
+.marketplace-box-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+.marketplace-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #0369a1;
+  background: #e0f2fe;
+  padding: 2px 7px;
+  border-radius: 6px;
+  display: inline-block;
+  margin-bottom: 2px;
+}
 .character-bio .eyebrow {
   font-size: 11px;
   letter-spacing: 1.3px;
@@ -3053,7 +3077,31 @@ p {
   .character-bio h1 > span {
     font-size: 16px;
   }
-  .character-bio .eyebrow {
+  .marketplace-action-box {
+  margin: 18px 0;
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+}
+.marketplace-box-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+.marketplace-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #0369a1;
+  background: #e0f2fe;
+  padding: 2px 7px;
+  border-radius: 6px;
+  display: inline-block;
+  margin-bottom: 2px;
+}
+.character-bio .eyebrow {
     font-size: 5px;
     letter-spacing: 1px;
     overflow-wrap: anywhere;

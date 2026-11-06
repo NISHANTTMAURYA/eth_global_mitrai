@@ -655,38 +655,61 @@ export default function CharacterView({
               <div className="note">Ten-minute demo lifespan. This clock is real.</div>
             )}
             <p className="bio-description">{c.description}</p>
-            {!own && l.alive && c.availability !== 'showcase' && (
-              <>
-                {c.askingPriceTglm && <p className="muted">Owner’s asking price: {c.askingPriceTglm} tGLM · {Math.ceil(l.remaining / 86400000)} days left</p>}
+            {!own && l.alive && (
+              <div className="marketplace-action-box">
+                <div className="marketplace-box-header">
+                  <div>
+                    <span className="marketplace-badge">
+                      {c.availability === 'transfer'
+                        ? '🟢 Ready for Adoption'
+                        : c.availability === 'offers'
+                          ? '🤝 Open to Offers'
+                          : '🏛️ Private Showcase'}
+                    </span>
+                    <h4 style={{ margin: '4px 0 0', fontSize: 14 }}>Ownership & Adoption</h4>
+                  </div>
+                  {c.askingPriceTglm ? (
+                    <div className="price-tag-wrap" style={{ textAlign: 'right' }}>
+                      <small style={{ fontSize: 10, color: '#64748b', display: 'block' }}>Asking Price</small>
+                      <strong style={{ fontSize: 14, color: '#0f172a' }}>{c.askingPriceTglm} tGLM</strong>
+                    </div>
+                  ) : null}
+                </div>
+                <p className="marketplace-box-desc" style={{ fontSize: 12, color: '#475569', margin: '8px 0 12px' }}>
+                  {c.availability === 'transfer'
+                    ? 'The custodian is ready to hand over this companion’s ENS identity, memory bank, and remaining life.'
+                    : c.availability === 'offers'
+                      ? 'The custodian is reviewing adoption requests and bids in test tGLM / ETH.'
+                      : 'Currently in private showcase. You can propose an unsolicited buy offer or adoption bid to the custodian.'}
+                </p>
                 <button
+                  type="button"
                   className="button primary full"
                   disabled={actionBusy}
                   onClick={() => {
                     if (!ensure()) return;
-                    if (c.availability === 'transfer' && c.owner === 'studio' && c.demo)
+                    if (c.availability === 'transfer' && c.owner === 'studio' && c.demo) {
                       action(async () => {
                         const result = await api('adopt', { id: c.id });
                         router.push(`/companion/${result.character.id}`);
-                        notify(
-                          'This story is yours to continue. Its original Sunset stays the same.',
-                        );
+                        notify('This story is yours to continue. Its original Sunset stays the same.');
                       });
-                    else setOffer(true);
+                    } else {
+                      setOffer(true);
+                    }
                   }}
                 >
                   {actionBusy ? <Loader2 className="spin" size={16} /> : <Heart size={16} />}{' '}
-                  {c.availability === 'transfer'
-                    ? c.owner === 'studio' && c.demo
-                      ? 'Adopt in demo'
-                      : 'Request adoption'
-                    : 'Request adoption'}
+                  {c.availability === 'transfer' && c.owner === 'studio' && c.demo
+                    ? 'Adopt in Demo'
+                    : 'Send Buy Request / Propose Bid'}
                 </button>
-                <small className="form-caption">
+                <small className="form-caption" style={{ display: 'block', fontSize: 10, color: '#94a3b8', marginTop: 6, textAlign: 'center' }}>
                   {c.availability === 'transfer' && c.owner === 'studio'
-                    ? 'Free local demo adoption. No payment or blockchain sale.'
-                    : 'Offers are price discovery only. Payment is not collected in this build.'}
+                    ? 'Free studio adoption. Transfers companion identity to your connected wallet.'
+                    : 'Propose an adoption bid in test tGLM. The custodian can accept and execute 1-click Arkiv handover.'}
                 </small>
-              </>
+              </div>
             )}
             {own && l.alive && (
               <button
@@ -1153,7 +1176,7 @@ export default function CharacterView({
               <div>
                 <strong style={{ display: 'block', fontSize: 13, color: '#0f172a' }}>🏛️ Showcase Only</strong>
                 <small style={{ color: '#64748b', fontSize: 11 }}>
-                  Your companion lives with you. Appears in showcase on Explore; visitors can listen to its Inner Monologue but cannot make adoption offers.
+                  Your companion lives with you. Appears in showcase on Explore; visitors can listen to its Inner Monologue and propose unsolicited adoption bids.
                 </small>
               </div>
             </label>

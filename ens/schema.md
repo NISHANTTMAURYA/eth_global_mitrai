@@ -1,17 +1,13 @@
-# Proposed character ENS records
+# Proposed ENS profile records — not deployed
 
-No records in this table are currently written to ENS. `src/lib/ens.ts` generates a **preview JSON document** with a computed namehash and these fields:
+There is no active ENS schema in production today. The fields below are candidates for a future ENSv2 Permissioned Resolver bundle; they must not be described as live records until written onchain and independently resolved.
 
-| Key | Intended meaning |
+| Key | Public meaning |
 | --- | --- |
-| `description` | Public tagline |
-| `arkiv.entity` | Arkiv root entity key |
-| `agent.model` | Character form identifier |
-| `agent.status` | Current life stage |
-| `agent.guardian` | Current owner wallet |
-| `agent.epoch` | Ownership handover count |
-| `agent.lifespan` | Remaining life |
-| `agent.availability` | Showcase or handover status |
-| `url` | Character page |
+| `description` | Character’s public tagline |
+| `url` | Public MitrAI character page |
+| `io.mitrai.arkiv.entity` | Public Arkiv root entity key |
+| `io.mitrai.owner` | Current public owner wallet |
+| `io.mitrai.status` | Public lifecycle state |
 
-The proposed `mitrai.eth` parent did not resolve in a live Ethereum RPC check on 6 November 2026. The app must first control a real parent namespace and use an ENSv2 registry/resolver before claiming on-chain records.
+Never publish private messages, personal observations, emails, push tokens, or private owner profile data in ENS records. The record writer must resolve the current resolver dynamically and have a narrowly scoped permission.

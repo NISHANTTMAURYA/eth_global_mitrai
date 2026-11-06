@@ -111,7 +111,8 @@ export default function BrainObservatory({
     (e) =>
       selected === 'all' ||
       e.kind === selected ||
-      (selected === 'memory' && e.changes.some((v) => v.field === 'brain.memories')),
+      (selected === 'ownership' && (e.kind === 'ownership' || e.kind === 'birth')) ||
+      (selected === 'memory' && (e.changes.some((v) => v.field === 'brain.memories') || e.kind === 'learning')),
   );
   const past = data?.checkpoints.find((p) => p.key === revision);
   return (
@@ -373,7 +374,11 @@ export default function BrainObservatory({
                 onClick={() => setExpanded(expanded === e.id ? null : e.id)}
               >
                 <time dateTime={new Date(e.at).toISOString()}>{date(e.at)}</time>
-                <strong>{e.title}</strong>
+                <strong>
+                  {e.kind === 'birth' && selected === 'ownership'
+                    ? `Genesis Custodianship · ${shortAddress(e.owner)}`
+                    : e.title}
+                </strong>
                 <span>
                   {e.source === 'chain'
                     ? `Rabdi · block ${e.blockNumber}`
@@ -391,7 +396,13 @@ export default function BrainObservatory({
                       {v.after !== undefined && <pre className="after">{format(v.after)}</pre>}
                     </div>
                   ))}
-                  {!e.changes.length && <p>Initial registration. No earlier state is recorded.</p>}
+                  {!e.changes.length && (
+                    <p>
+                      {e.kind === 'birth'
+                        ? `Genesis registration on Arkiv. Custodianship anchored to ${shortAddress(e.owner)}.`
+                        : 'Initial registration. No earlier state is recorded.'}
+                    </p>
+                  )}
                   {e.sourceId && <small>Source message: {e.sourceId}</small>}
                   {e.txHash && (
                     <a

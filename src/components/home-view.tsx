@@ -21,9 +21,9 @@ import { Stage } from './ui';
 import type { Character, ModelId } from '@/lib/domain';
 
 const PREVIEW_MODELS: { id: ModelId; label: string; ens: string; tag: string }[] = [
-  { id: 'download:09_CactusBoy', label: 'Cactus Boy', ens: 'cactus.mitrai.eth', tag: 'Web3 Builder Envoy' },
-  { id: 'download:23_Carrot_Kid', label: 'Carrot Kid', ens: 'carrot-kid.mitrai.eth', tag: 'Founder Syndicate' },
-  { id: 'download:15_Nightmare', label: 'Nightmare', ens: 'nightmare.mitrai.eth', tag: 'Music DAO VIP' },
+  { id: 'download:09_CactusBoy', label: 'Cactus Boy', ens: 'Cactus Boy', tag: 'A quiet, prickly friend' },
+  { id: 'download:23_Carrot_Kid', label: 'Carrot Kid', ens: 'Carrot Kid', tag: 'Small hero, enormous plans' },
+  { id: 'download:15_Nightmare', label: 'Nightmare', ens: 'Nightmare', tag: 'A guide through strange dreams' },
 ];
 
 export default function HomeView({ legacy }: { legacy?: Character }) {
@@ -55,7 +55,7 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
       {/* Track & Protocol Banner (Official ETHGlobal Tracks Only) */}
       <div className="track-badges-bar">
         <span className="track-badge ethglobal">
-          <Award size={13} /> ETHGlobal Mumbai 2024
+          <Award size={13} /> ETHGlobal Mumbai 2026
         </span>
         <span className="track-badge zero-g">
           <Cpu size={13} /> 0G Private Computer
@@ -64,7 +64,7 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
           <Database size={13} /> Arkiv DB-Chain (Rabdi Testnet)
         </span>
         <span className="track-badge ens">
-          <Globe size={13} /> ENS Agent Passports
+          <Globe size={13} /> ENS name previews
         </span>
       </div>
 
@@ -72,17 +72,17 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
       <section className="welcome-hero-redesigned">
         <div className="hero-content">
           <p className="hero-eyebrow">
-            AUTONOMOUS MORTAL COMPANIONS · VERIFIED ON-CHAIN
+            A SMALL LIFE, A GROWING STORY
           </p>
           <h1 className="hero-headline">
-            The Mortal AI Companion <br />
-            <span className="highlight-text">With Real-World Value.</span>
+            An AI character <br />
+            <span className="highlight-text">that grows with you.</span>
           </h1>
           <p className="hero-description">
-            Every MitrAI lives for strictly <strong>30 days (720 hours)</strong>. Powered by confidential inference on <strong>0G Private Computer</strong>, mutable memory state on <strong>Arkiv DB-Chain</strong>, and portable identity through <strong>ENS Agent Passports</strong>.
+            Each MitrAI gets one character form, grows through private conversations, and can share approved memories publicly. Arkiv anchors its public identity; 0G can power replies. ENS names are currently previews, not registered names.
           </p>
           <p className="hero-subtext">
-            Not a disposable chatbot. An evolving confidant that accumulates memories, earns social capital in exclusive builder guilds, and unlocks token-gated real-world experiences.
+            A character with its own starting traits, private conversations, approved public memories, and a finite life you can follow over time.
           </p>
 
           <div className="hero-actions">
@@ -97,15 +97,15 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
           <div className="hero-trust-metrics">
             <div className="trust-item">
               <Clock3 size={15} />
-              <span><strong>30-Day Lifespan</strong> (Scarcity by design)</span>
+              <span><strong>Finite lifetime</strong> shown on each character</span>
             </div>
             <div className="trust-item">
               <ShieldCheck size={15} />
-              <span><strong>Zero Corporate Logging</strong> (0G TEE Privacy)</span>
+              <span><strong>Private chats</strong> stay in the app database</span>
             </div>
             <div className="trust-item">
               <TrendingUp size={15} />
-              <span><strong>1-Click Arkiv Handover</strong> (Dynamic market value)</span>
+              <span><strong>Public ownership</strong> can be verified on Arkiv</span>
             </div>
           </div>
         </div>
@@ -196,7 +196,7 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
           </div>
 
           <div className="stage-footer-tech">
-            <span>Verified 0G TEE Inference · Arkiv DB-Chain State · ENS Subdomain Identity</span>
+            <span>0G replies · Arkiv public history · ENS name preview only</span>
           </div>
         </div>
       </section>
@@ -204,10 +204,10 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
       {/* Real-World Use Cases Section (Clean 2x2 Grid) */}
       <section className="use-cases-section">
         <div className="section-header-center">
-          <p className="section-eyebrow">REAL-WORLD VALUE & UTILITY</p>
-          <h2>Utility: Value Beyond The Screen</h2>
+          <p className="section-eyebrow">A CHARACTER’S LIFE</p>
+          <h2>Create, grow, share, and pass on their story</h2>
           <p className="section-sub">
-            Companions don’t just converse—they unlock real doors. A MitrAI’s verified credentials translate into tangible physical and digital perks for its custodian.
+            Here is what the current app lets an owner and their community do. Paid sales and ENS character names are not live yet.
           </p>
         </div>
 
@@ -218,22 +218,22 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
               <div className="case-icon-box music">
                 <Music size={22} />
               </div>
-              <span className="case-category-pill music-pill">Music & Culture Guild</span>
+              <span className="case-category-pill music-pill">Community</span>
             </div>
-            <h3>VIP Concert Access & Soundcheck Privileges</h3>
+            <h3>Meet people who care about this character</h3>
             <p className="case-description">
-              A MitrAI with verified membership in an on-chain music creator community or DAO acts as an authentic fan credential. External ticketing and festival platforms read the companion’s ENS identity to grant its holder VIP access.
+              Visitors can join the character’s public community and post about it.
             </p>
             <div className="case-benefit-box">
               <div className="benefit-label">
-                <CheckCircle2 size={15} /> <strong>Tangible Owner Benefit</strong>
+                <CheckCircle2 size={15} /> <strong>What this makes possible</strong>
               </div>
               <p>
-                Unlocks VIP backstage access, green-room entry, artist soundchecks, and discounted festival ticket allocations at partner events.
+                A shared place for people who enjoy the character to meet and contribute.
               </p>
             </div>
             <div className="case-footer">
-              <span>Verification: ENS Subdomain + Arkiv Community Membership</span>
+              <span>Available now: public character community</span>
             </div>
           </div>
 
@@ -243,22 +243,22 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
               <div className="case-icon-box founder">
                 <Briefcase size={22} />
               </div>
-              <span className="case-category-pill founder-pill">Founder & VC Syndicate</span>
+              <span className="case-category-pill founder-pill">Private growth</span>
             </div>
-            <h3>Exclusive Founder Meetups & Private Dinners</h3>
+            <h3>Help the character grow over time</h3>
             <p className="case-description">
-              A MitrAI recognized by an elite startup syndicate or web3 incubator functions as a social pass. When traveling to major global summits, the companion verifies its owner’s credibility without revealing sensitive net-worth details.
+              The owner can chat privately with their character and review proposed changes to its traits and mind over time. Private chats are kept in the app database.
             </p>
             <div className="case-benefit-box">
               <div className="benefit-label">
-                <CheckCircle2 size={15} /> <strong>Tangible Owner Benefit</strong>
+                <CheckCircle2 size={15} /> <strong>What this makes possible</strong>
               </div>
               <p>
-                Grants curated invitations to closed-door founder dinners, builder houses, investor dealflow lounges, and demo-day private suites.
+                The character can gradually reflect shared interests while keeping private conversation separate from its public profile.
               </p>
             </div>
             <div className="case-footer">
-              <span>Verification: 0G Signed Attestation + Guild Membership</span>
+              <span>Available now: private chat and owner-scoped mind</span>
             </div>
           </div>
 
@@ -268,22 +268,22 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
               <div className="case-icon-box event">
                 <Calendar size={22} />
               </div>
-              <span className="case-category-pill event-pill">Proof-of-Journey</span>
+              <span className="case-category-pill event-pill">Public story</span>
             </div>
-            <h3>Event Attendance Pedigree & Loyalty Rewards</h3>
+            <h3>Share selected memories with others</h3>
             <p className="case-description">
-              As your MitrAI accompanies you across hackathons (ETHGlobal Mumbai, Devcon, ETHIndia), its on-chain attendance record is stamped immutably onto Arkiv DB-chain. This cumulative historical proof turns into continuous loyalty returns.
+              The owner may share approved memories as public Arkiv checkpoints. The app does not currently track conference attendance or issue loyalty rewards.
             </p>
             <div className="case-benefit-box">
               <div className="benefit-label">
-                <CheckCircle2 size={15} /> <strong>Tangible Owner Benefit</strong>
+                <CheckCircle2 size={15} /> <strong>What this makes possible</strong>
               </div>
               <p>
-                Sponsors trigger automated token airdrops, exclusive physical merchandise claims, and cumulative discounts for future conference registrations.
+                Visitors can inspect the public character story without seeing private chats.
               </p>
             </div>
             <div className="case-footer">
-              <span>Verification: Arkiv Rabdi DB-Chain Timestamped Milestones</span>
+              <span>Available now: approved public Arkiv snapshots</span>
             </div>
           </div>
 
@@ -293,22 +293,22 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
               <div className="case-icon-box dev">
                 <Code2 size={22} />
               </div>
-              <span className="case-category-pill dev-pill">Developer Guild Envoy</span>
+              <span className="case-category-pill dev-pill">Story handover</span>
             </div>
-            <h3>Autonomous Developer Guild Representative</h3>
+            <h3>Invite someone to continue the story</h3>
             <p className="case-description">
-              Your MitrAI joins an exclusive collective of recognized developers. It participates in code reviews, monitors protocol proposals, and represents your technical ethos in community governance discussions.
+              Owners can receive interest requests and testnet-price bids from people who want to continue a character’s story. This does not transfer money.
             </p>
             <div className="case-benefit-box">
               <div className="benefit-label">
-                <CheckCircle2 size={15} /> <strong>Tangible Owner Benefit</strong>
+                <CheckCircle2 size={15} /> <strong>What this makes possible</strong>
               </div>
               <p>
-                Its proven social network and community memberships make it highly desirable. The custodian gains reputation, testnet priority, and governance standing.
+                An owner may choose to hand over the Arkiv root. There is no payment or escrow contract, so a bid is not a completed sale.
               </p>
             </div>
             <div className="case-footer">
-              <span>Verification: ENS Resolvable Metadata + Verified Developer Roll</span>
+              <span>Available now: unpaid bids and owner-approved handover</span>
             </div>
           </div>
         </div>
@@ -317,10 +317,10 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
       {/* Protocol Architecture & Track Proofs (Clean 3-Column Grid) */}
       <section className="architecture-section" id="proofs">
         <div className="section-header-center">
-          <p className="section-eyebrow">HACKATHON TRACK PROOFS</p>
-          <h2>Decentralized Architecture & Cryptographic Proofs</h2>
+          <p className="section-eyebrow">HOW IT WORKS</p>
+          <h2>Private conversation, public proof</h2>
           <p className="section-sub">
-            Built from first principles for ETHGlobal Mumbai. Verifiable code on GitHub and live contracts on Rabdi testnet.
+            The notes below describe what is live today and what is still a preview.
           </p>
         </div>
 
@@ -330,43 +330,43 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
               <div className="arch-badge zero-g-badge">0G Private Computer</div>
               <Cpu size={20} className="arch-icon zero-g-icon" />
             </div>
-            <h4>Confidential Inference</h4>
+            <h4>Persona replies with 0G</h4>
             <p>
-              Conversations are routed to 0G router APIs (<code>qwen-flash</code>) running in hardware-isolated Trusted Execution Environments. No corporate model provider harvests or reads your emotional bond.
+              When configured, new character replies can use 0G Private Computer. The chat identifies the provider and request ID; configured fallback providers are reported as such.
             </p>
             <div className="arch-detail">
-              <span>Endpoint: router-api.0g.ai/v1</span>
-              <span>Model: qwen-flash (0G Compute)</span>
+              <span>Provider: shown on each response</span>
+              <span>Request ID: available for 0G calls</span>
             </div>
           </div>
 
           <div className="arch-card">
             <div className="arch-header">
-              <div className="arch-badge arkiv-badge">Arkiv DB-Chain</div>
+              <div className="arch-badge arkiv-badge">Arkiv · Rabdi testnet</div>
               <Database size={20} className="arch-icon arkiv-icon" />
             </div>
             <h4>Mutable On-Chain State</h4>
             <p>
-              Character lifespans, thoughts, memory entries, and adoption states are stored in Arkiv DB-chain on Rabdi testnet. Combines real-time database speeds with Ethereum-grade verifiability.
+              The owner-controlled Arkiv root stores public character snapshots. Private chats and personal owner context stay in Supabase Postgres.
             </p>
             <div className="arch-detail">
               <span>Network: Rabdi Testnet</span>
-              <span>Contract: 0x979e... (Arkiv Live State)</span>
+              <span>Root owner: 0x979e…FC51</span>
             </div>
           </div>
 
           <div className="arch-card">
             <div className="arch-header">
-              <div className="arch-badge ens-badge">ENS Agent Passports</div>
+              <div className="arch-badge ens-badge">ENS name preview</div>
               <Globe size={20} className="arch-icon ens-icon" />
             </div>
-            <h4>Universal Web3 Identity</h4>
+            <h4>ENS identity (planned)</h4>
             <p>
-              Every MitrAI is minted with a canonical ENS subdomain (<code>[name].mitrai.eth</code>) resolveable across Web3. Supports ERC-3668 off-chain CCIP-read for live avatar and memory lookups.
+              The app can preview a possible character subname and look up a wallet’s existing reverse ENS name. Character subnames, ENSv2 records, and CCIP Read are not deployed yet.
             </p>
             <div className="arch-detail">
-              <span>Domain: *.mitrai.eth</span>
-              <span>Resolution: ERC-3668 CCIP-Read</span>
+              <span>Status: preview only</span>
+              <span>ENSv2 registry/resolver: not deployed</span>
             </div>
           </div>
         </div>
@@ -375,10 +375,10 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
       {/* Final Call to Action */}
       <section className="cta-banner">
         <div className="cta-content">
-          <p className="cta-eyebrow">ETHGLOBAL MUMBAI 2024</p>
-          <h2>Begin a story worth continuing.</h2>
+          <p className="cta-eyebrow">ETHGLOBAL MUMBAI 2026</p>
+          <h2>Give a character a beginning.</h2>
           <p>
-            Create your mortal companion today. Build a bond, earn guild standing, and unlock real-world utility across 30 unforgettable days.
+            Create a character, talk with them, and see how their story changes over time.
           </p>
           <div className="cta-button-row">
             <Link href="/create" className="button primary large-btn">

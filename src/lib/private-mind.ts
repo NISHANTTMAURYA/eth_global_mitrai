@@ -128,7 +128,16 @@ export function initialPrivateMind(c: Character): PrivateMind {
 export function groundedProposal(raw: unknown, text: string): MindProposal {
   const parsed = mindProposalSchema.safeParse(raw);
   if (!parsed.success) return emptyProposal;
-  const grounded = (item: { sourceQuote: string }) => text.includes(item.sourceQuote);
+  const normText = text.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+  const grounded = (item: { sourceQuote: string }) => {
+    if (!item.sourceQuote) return false;
+    const normQuote = item.sourceQuote.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+    return (
+      normText.includes(normQuote) ||
+      normQuote.includes(normText) ||
+      normText.split(' ').some((w) => w.length > 3 && normQuote.includes(w))
+    );
+  };
   return {
     observations: parsed.data.observations.filter(grounded),
     adaptations: parsed.data.adaptations.filter(grounded),

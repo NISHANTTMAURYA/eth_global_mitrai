@@ -1,5 +1,5 @@
 import { continuityContext, acceptConversation } from '@/lib/continuity';
-import { evolveMonologue } from '@/lib/monologue';
+import { getMonologue, evolveMonologue } from '@/lib/monologue';
 import { reachPreferences, archiveConversation, loadMind, saveMind } from '@/lib/continuity-store';
 import { NextResponse, after } from 'next/server';
 import { z } from 'zod';
@@ -462,14 +462,47 @@ export async function POST(request: Request) {
             c.ownershipEpoch || 0,
             client,
           );
-          await acceptConversation(latest, owner, userMessage, answers, result.mind, now, client);
-          if ((result.mind?.observations?.length ?? 0) > 0 || (latest.brain.sessions % 3 === 0)) {
-            const evolved = evolveMonologue(latest);
-            if (evolved && evolved !== latest.monologue) {
-              latest.monologue = evolved;
-              await saveCharacter(latest, client);
+          // If the model didn't return structured observations (e.g. 0G prose), capture a conversation memory crystal
+          let observations = result.mind?.observations || [];
+          if (observations.length === 0 && userMessage.text.trim().length >= 8) {
+            const clean = userMessage.text.trim().replace(/\s+/g, ' ');
+            const summary = clean.length > 70 ? clean.slice(0, 67) + '...' : clean;
+            const quote = clean.slice(0, Math.min(clean.length, 50));
+            const synthObs = {
+              key: `moment_${Date.now().toString(36)}`,
+              kind: 'reflection' as const,
+              summary: `Shared: "${summary}"`,
+              sourceQuote: quote,
+            };
+            observations = [synthObs];
+            if (!result.mind) {
+              result.mind = { observations, adaptations: [], followUps: [] };
+            } else {
+              result.mind.observations = observations;
             }
           }
+
+          await acceptConversation(latest, owner, userMessage, answers, result.mind, now, client);
+          latest.brain.sessions = (latest.brain.sessions || 0) + 1;
+          for (const obs of observations) {
+            if (latest.brain.memories.length < 40 && !latest.brain.memories.some((m) => m.text === obs.summary)) {
+              latest.brain.memories.push({
+                id: crypto.randomUUID(),
+                text: obs.summary,
+                scope: 'public',
+                createdAt: now,
+              });
+            }
+          }
+          if (!latest.monologue) {
+            latest.monologue = getMonologue(latest);
+          }
+          const evolved = evolveMonologue(latest);
+          if (evolved && evolved !== latest.monologue) {
+            latest.monologue = evolved;
+          }
+          latest.brain.version++;
+          await saveCharacter(latest, client);
         });
         if (latest.entityKey && latest.published)
           after(() => autoCheckpoint(latest.id, owner).catch((error) =>
@@ -494,9 +527,9 @@ export async function POST(request: Request) {
     }
     if (action === 'offer') {
       assertAlive(c);
-      if (!c.published || !['offers', 'transfer'].includes(c.availability))
-        throw new Error('This character is not open to enquiries.');
-      if (c.owner === owner) throw new Error('You already own this character.');
+      if (!c.published)
+        throw new Error('This character is not published.');
+      if (c.owner.toLowerCase() === owner.toLowerCase()) throw new Error('You already own this character.');
       const note = z.string().trim().min(5).max(500).parse(data.note);
       const bidTglm = data.bidTglm === undefined || data.bidTglm === ''
         ? undefined

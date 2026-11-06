@@ -1,7 +1,7 @@
-# ENS use case and present limit
+# ENS use case and current limit
 
-A portable name could help a character keep the same identity as its Arkiv owner changes. The intended name is `<character>.mitrai.eth`, with an Arkiv entity pointer and public profile records.
+A portable, human-readable name could make a character easier to find as its Arkiv owner changes. MitrAI could publish only public identity pointers and profile fields to a character subname while keeping chat and personal memories private.
 
-The current application only **previews** that name. It performs real reverse ENS lookup for a connected wallet and checks whether the proposed subname resolves. It has no ENSv2 registry, resolver, or registered subname. A standard ENS client cannot resolve character records today. The app JSON gateway is not CCIP Read.
+Today, the project previews `<character>.<configured-parent>` and performs reverse ENS lookup for connected wallets. It does not control the current preview parent `mitrai.eth`; it has no deployed ENSv2 registry or resolver, and the JSON endpoint is not an ENS resolver or CCIP Read gateway. A preview is not a registered name.
 
-To make ENS central to the product, register a controlled parent namespace on ENSv2, let the character's current owner update bounded records, preserve the name across Arkiv transfers, and verify resolution with an independent client. [Prize requirements](https://ethglobal.com/events/mumbai/prizes#ens).
+For the Mumbai Best Use of ENSv2 prize, the next step is a working Sepolia or mainnet ENSv2 flow with a parent namespace the project controls, real onchain records, a user-visible read of those records, and independent resolution. Sepolia is accepted for this prize; buying a mainnet `.eth` name is not required solely for qualification. See [current status and implementation plan](README.md) and the [official requirements](https://ethglobal.com/events/mumbai/prizes#ens).
