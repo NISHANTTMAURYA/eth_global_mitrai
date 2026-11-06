@@ -2,6 +2,8 @@
 
 Runnable local MVP for ETHGlobal Mumbai · updated 6 November 2026.
 
+For the current expected-versus-implemented journey and remaining work, read [the user-flow audit](docs/current-flow-audit.md). Product/design sections below contain roadmap material and some older stack assumptions; the audit distinguishes these from working behavior.
+
 ## Run the implementation
 
 Requires Node.js 22.13+ (tested with Node 25.6).
@@ -11,7 +13,7 @@ npm ci
 npm run dev
 ```
 
-Open `http://localhost:3000`. Connect → **Try the local demo**. Browse → create a robot or human character → talk/play → save a checkpoint → add private/public memories → publish → open a second session to audition and enquire. The studio Milo also supports free local adoption. Use the ten-minute lifespan to observe an actual Sunset.
+Open `http://localhost:3000` in a browser with an Ethereum wallet. **Connect wallet → create a character → approve its Rabdi transaction → converse → review/checkpoint → publish**. A cancelled activation keeps a resumable draft. Local rehearsal is available only with `MITRAI_DEMO_MODE=1`; it is disabled by default.
 
 ```sh
 npm run typecheck
@@ -37,7 +39,7 @@ See [the growing-mind research and implementation](docs/growing-mind.md) and [ch
 
 Google Vertex AI is currently the primary live model path. These integrations are roadmap items and are not claimed as working prize integrations.
 
-Sign in with a browser wallet, create a character, then choose **The mind → Sync to Arkiv**. Wallet approval signs the public snapshot write. The server verifies the result before recording the entity key. **Discover on Arkiv** queries public records and accepts only this app verifier’s signed snapshots. The script `npm run query:arkiv` reproduces the schema query, optionally filtered with `ARKIV_OWNER`. No live transaction was executed during implementation, so writer addresses and live entity evidence remain pending.
+Sign in with a browser wallet and create a character. Activation requests its initial Arkiv write; **The mind → Sync to Arkiv** signs later public checkpoints. The server verifies the result before recording the entity key. **Discover on Arkiv** queries public records and accepts only this app verifier’s signed snapshots. The script `npm run query:arkiv` reproduces the schema query, optionally filtered with `ARKIV_OWNER`. No live transaction was executed during implementation, so writer addresses and live entity evidence remain pending.
 
 Real handover first requires the existing owner to sign Arkiv ownership transfer, then the app reconciles the new owner and starts a new private ownership epoch. There is no payment or escrow contract.
 
