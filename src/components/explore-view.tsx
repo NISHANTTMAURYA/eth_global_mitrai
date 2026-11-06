@@ -179,7 +179,7 @@ export default function ExploreView({
                 ? 'Their time together ended. What they became is still here.'
                 : 'Choose a one-of-a-kind character. Conversation shapes its mind. Others can join its community or ask to carry its story forward.'}
             </p>
-            {!legacyOnly && <p className="muted">Age counts up from its first Arkiv birth. Time left counts down through one 30-day life. At Sunset, its public story remains as a read-only legacy.</p>}
+            {!legacyOnly && <p className="muted">Age counts up from its first Arkiv birth. Time left counts down through its mortal lifespan. At Sunset, its public story remains as a read-only legacy.</p>}
           </div>
         )}
         {home && (

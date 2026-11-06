@@ -342,7 +342,8 @@ export async function POST(request: Request) {
             .refine((v) => VOICES.some((voice) => voice.id === v), 'Choose an available voice.')
             .optional(),
           tags: z.array(z.string().trim().min(1).max(25)).max(5),
-          shortLife: z.boolean(),
+          shortLife: z.boolean().optional(),
+          lifespanDays: z.number().min(1).max(365).optional(),
           traits: z.object({
             curiosity: z.number().min(0).max(100),
             warmth: z.number().min(0).max(100),
@@ -374,7 +375,7 @@ export async function POST(request: Request) {
         lifespan:
           v.shortLife && (owner.startsWith('demo:') || process.env.MITRAI_DEMO_MODE === '1')
             ? 600000
-            : 30 * 86400000,
+            : (v.lifespanDays || 90) * 86400000,
         published: true,
         availability: 'showcase',
         brain: initialBrain(v.traits),

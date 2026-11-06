@@ -101,6 +101,7 @@ export default function CreateView({
   const [behavior, setBehavior] = useState(starter.behavior);
   const [tags, setTags] = useState(starter.tags.join(', '));
   const [traits, setTraits] = useState(starter.traits);
+  const [lifespanDays, setLifespanDays] = useState<number>(90);
   const [shortLife, setShortLife] = useState(false);
   const [agree, setAgree] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -264,6 +265,7 @@ export default function CreateView({
           .filter(Boolean)
           .slice(0, 5),
         shortLife,
+        lifespanDays,
         traits,
       });
       await activateCharacter(r.character, owner);
@@ -598,20 +600,55 @@ export default function CreateView({
             <div className="form-step">
               <h2>A lifetime worth making.</h2>
               <p className="muted">
-                Their 30-day life starts when creation is confirmed. Reviewing this draft takes no
-                time from their life.
+                Your companion's life clock starts when on-chain activation is confirmed.
+                Choose how long you want to explore and grow together before their story enters Arkiv Legacy.
               </p>
-              <div className="lifetime-options">
-                <button className={!shortLife ? 'chosen' : ''} onClick={() => setShortLife(false)}>
+              <div className="lifetime-options" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: 10 }}>
+                <button
+                  type="button"
+                  className={!shortLife && lifespanDays === 90 ? 'chosen' : ''}
+                  onClick={() => {
+                    setShortLife(false);
+                    setLifespanDays(90);
+                  }}
+                >
                   <Sun size={21} />
-                  <strong>30 days together</strong>
-                  <small>The initial product lifespan</small>
+                  <strong>90 Days</strong>
+                  <small>Full quarter journey (Recommended)</small>
                 </button>
-                {owner?.startsWith('demo:') && (
-                  <button className={shortLife ? 'chosen' : ''} onClick={() => setShortLife(true)}>
+                <button
+                  type="button"
+                  className={!shortLife && lifespanDays === 180 ? 'chosen' : ''}
+                  onClick={() => {
+                    setShortLife(false);
+                    setLifespanDays(180);
+                  }}
+                >
+                  <Sparkles size={21} />
+                  <strong>180 Days</strong>
+                  <small>Half year (Max Arkiv storage term)</small>
+                </button>
+                <button
+                  type="button"
+                  className={!shortLife && lifespanDays === 30 ? 'chosen' : ''}
+                  onClick={() => {
+                    setShortLife(false);
+                    setLifespanDays(30);
+                  }}
+                >
+                  <Clock3 size={21} />
+                  <strong>30 Days</strong>
+                  <small>Seasonal companion</small>
+                </button>
+                {(owner?.startsWith('demo:') || process.env.NODE_ENV !== 'production') && (
+                  <button
+                    type="button"
+                    className={shortLife ? 'chosen' : ''}
+                    onClick={() => setShortLife(true)}
+                  >
                     <Clock3 size={21} />
-                    <strong>10-minute demo</strong>
-                    <small>See the whole life cycle</small>
+                    <strong>10-Min Demo</strong>
+                    <small>Hackathon test mode</small>
                   </button>
                 )}
               </div>
