@@ -5,23 +5,17 @@ import Link from 'next/link';
 import {
   ArrowRight,
   Clock3,
-  Sparkles,
   ShieldCheck,
   Cpu,
   Database,
   Globe,
-  Ticket,
   Briefcase,
   Music,
   Calendar,
   Code2,
   TrendingUp,
   CheckCircle2,
-  ExternalLink,
   Award,
-  Zap,
-  Users,
-  Heart,
 } from 'lucide-react';
 import { Stage } from './ui';
 import type { Character, ModelId } from '@/lib/domain';
@@ -58,7 +52,7 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
         </div>
       )}
 
-      {/* Track & Protocol Banner */}
+      {/* Track & Protocol Banner (Official ETHGlobal Tracks Only) */}
       <div className="track-badges-bar">
         <span className="track-badge ethglobal">
           <Award size={13} /> ETHGlobal Mumbai 2024
@@ -71,9 +65,6 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
         </span>
         <span className="track-badge ens">
           <Globe size={13} /> ENS Agent Passports
-        </span>
-        <span className="track-badge sarvam">
-          <Zap size={13} /> Sarvam AI v4-Flash Voice
         </span>
       </div>
 
@@ -205,112 +196,18 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
           </div>
 
           <div className="stage-footer-tech">
-            <span>Verified 0G TEE Inference · Arkiv DB-Chain State · Sarvam Real-Time TTS</span>
+            <span>Verified 0G TEE Inference · Arkiv DB-Chain State · ENS Subdomain Identity</span>
           </div>
         </div>
       </section>
 
-      {/* The Anti-Chatbot Thesis / Mortality Banner */}
-      <section className="thesis-banner">
-        <div className="thesis-badge">
-          <Sparkles size={14} /> THE ANTI-CHATBOT PARADIGM
-        </div>
-        <h2>Why 30-Day Mortality Creates Real Value</h2>
-        <p className="thesis-lead">
-          Web2 AI gave us infinite, commoditized chatbots. You open a tab, chat with an amnesiac assistant, close the tab, and forget it. There is zero emotional stake, zero scarcity, and zero value.
-        </p>
-        <div className="comparison-grid">
-          <div className="comparison-card traditional">
-            <div className="comp-tag">Standard Web2 Chatbots</div>
-            <ul className="comp-list">
-              <li>❌ Infinite, disposable, zero scarcity</li>
-              <li>❌ Centralized servers harvest and train on your personal emotions</li>
-              <li>❌ Amnesiac: no persistent living memory across owners</li>
-              <li>❌ Zero real-world privileges or external platform utility</li>
-              <li>❌ Zero financial or adoption value</li>
-            </ul>
-          </div>
-          <div className="comparison-card mitrai-card">
-            <div className="comp-tag mitrai-tag">MitrAI Mortal Companions</div>
-            <ul className="comp-list">
-              <li>✅ Strictly 30-day life (720h) creates emotional gravity & authentic care</li>
-              <li>✅ 0G Confidential AI ensures private thoughts stay in hardware TEEs</li>
-              <li>✅ Arkiv DB-chain preserves mutable personality growth & milestones</li>
-              <li>✅ Unlocks VIP events, founder meetups, and developer collectives</li>
-              <li>✅ Dynamic market value for adoption & 1-click Arkiv handover</li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      {/* Three Dimensions of MitrAI Value */}
-      <section className="value-pillars-section">
-        <div className="section-header-center">
-          <p className="section-eyebrow">ECONOMIC & SOCIAL FOUNDATION</p>
-          <h2>Three Pillars of MitrAI Value</h2>
-          <p className="section-sub">
-            How a companion transitions from a private listener into an appreciating on-chain asset.
-          </p>
-        </div>
-
-        <div className="pillars-grid">
-          <div className="pillar-card">
-            <div className="pillar-icon-box mind">
-              <Clock3 size={24} />
-            </div>
-            <div className="pillar-badge">Dimension 1</div>
-            <h3>Accumulated Mind & Scarcity</h3>
-            <p>
-              Unlike static NFTs, a MitrAI matures. Every conversation etches semantic insights onto Arkiv DB-chain through 0G's confidential compute. As its 30-day life ticks forward, its accumulated memories make it increasingly rare and deeply attuned to its custodian.
-            </p>
-            <div className="pillar-metrics">
-              <span>720h Life Scarcity</span>
-              <span>Arkiv Memory Index</span>
-              <span>0G Hardware TEE</span>
-            </div>
-          </div>
-
-          <div className="pillar-card">
-            <div className="pillar-icon-box social">
-              <Users size={24} />
-            </div>
-            <div className="pillar-badge">Dimension 2</div>
-            <h3>Social Capital & Guild Envoys</h3>
-            <p>
-              Your MitrAI doesn’t remain isolated in a chat box. It joins recognized developer collectives, founder circles, and creator communities. Its social memberships and peer endorsements belong to its on-chain identity, turning it into a prestigious digital envoy.
-            </p>
-            <div className="pillar-metrics">
-              <span>Exclusive Guilds</span>
-              <span>Founder Networks</span>
-              <span>Portable Reputation</span>
-            </div>
-          </div>
-
-          <div className="pillar-card">
-            <div className="pillar-icon-box utility">
-              <Ticket size={24} />
-            </div>
-            <div className="pillar-badge">Dimension 3</div>
-            <h3>Tangible Real-World Utility</h3>
-            <p>
-              Owning a particular MitrAI grants direct real-world access. External platforms and physical events verify the companion’s ENS credentials and on-chain history to unlock VIP perks, conference privileges, and closed-door dealflow.
-            </p>
-            <div className="pillar-metrics">
-              <span>VIP Event Passes</span>
-              <span>Founder Dinners</span>
-              <span>Loyalty Rewards</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Real-World Use Cases Section */}
+      {/* Real-World Use Cases Section (Clean 2x2 Grid) */}
       <section className="use-cases-section">
         <div className="section-header-center">
-          <p className="section-eyebrow">TANGIBLE PLATFORM BENEFITS</p>
-          <h2>Real-World Utility: Value Beyond The Screen</h2>
+          <p className="section-eyebrow">REAL-WORLD VALUE & UTILITY</p>
+          <h2>Utility: Value Beyond The Screen</h2>
           <p className="section-sub">
-            Companions don’t just converse—they unlock real doors. Here is how MitrAI credentialing translates into physical and digital perks for its custodian.
+            Companions don’t just converse—they unlock real doors. A MitrAI’s verified credentials translate into tangible physical and digital perks for its custodian.
           </p>
         </div>
 
@@ -417,7 +314,7 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
         </div>
       </section>
 
-      {/* Protocol Architecture & Track Proofs */}
+      {/* Protocol Architecture & Track Proofs (Clean 3-Column Grid) */}
       <section className="architecture-section" id="proofs">
         <div className="section-header-center">
           <p className="section-eyebrow">HACKATHON TRACK PROOFS</p>
@@ -427,7 +324,7 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
           </p>
         </div>
 
-        <div className="arch-grid">
+        <div className="arch-grid-three">
           <div className="arch-card">
             <div className="arch-header">
               <div className="arch-badge zero-g-badge">0G Private Computer</div>
@@ -471,70 +368,6 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
               <span>Domain: *.mitrai.eth</span>
               <span>Resolution: ERC-3668 CCIP-Read</span>
             </div>
-          </div>
-
-          <div className="arch-card">
-            <div className="arch-header">
-              <div className="arch-badge sarvam-badge">Sarvam AI Speech</div>
-              <Zap size={20} className="arch-icon sarvam-icon" />
-            </div>
-            <h4>Sub-Second Neural Voice</h4>
-            <p>
-              Powered by Sarvam AI’s real-time <code>bulbul:v4-flash</code> engine. Delivers expressive Indian voice personas with real-time lip-sync phonemes and situational 3D gesture triggers.
-            </p>
-            <div className="arch-detail">
-              <span>Engine: bulbul:v4-flash</span>
-              <span>Latency: &lt;500ms Conversational</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* The 4-Stage Lifecycle */}
-      <section className="lifecycle-section">
-        <div className="section-header-center">
-          <p className="section-eyebrow">THE 30-DAY JOURNEY</p>
-          <h2>From Genesis to Eternal Legacy</h2>
-          <p className="section-sub">
-            A defined mortal existence transforms interactions from casual chatting into meaningful chapters.
-          </p>
-        </div>
-
-        <div className="lifecycle-stepper">
-          <div className="step-card">
-            <div className="step-num">01</div>
-            <h4>Genesis & Creation</h4>
-            <p>
-              Select a unique 3D avatar and set their initial emotional temperament. Minted with an ENS passport and instant Arkiv state.
-            </p>
-            <span className="step-time">Day 1</span>
-          </div>
-
-          <div className="step-card">
-            <div className="step-num">02</div>
-            <h4>Intimate Bonding & 0G Compute</h4>
-            <p>
-              Daily spoken dialogue builds persistent semantic memory. Personality evolves gradually while 0G guarantees total conversation privacy.
-            </p>
-            <span className="step-time">Days 1–15</span>
-          </div>
-
-          <div className="step-card">
-            <div className="step-num">03</div>
-            <h4>Guild Admission & Handover</h4>
-            <p>
-              The companion earns community recognition and unlocks real-world perks. Keep in private showcase or offer for adoption via 1-click Arkiv handover.
-            </p>
-            <span className="step-time">Days 15–29</span>
-          </div>
-
-          <div className="step-card">
-            <div className="step-num">04</div>
-            <h4>Sunset & Eternal Legacy</h4>
-            <p>
-              At Day 30, the active conversation concludes. The companion's approved memories freeze forever as an immortal, read-only Arkiv monument.
-            </p>
-            <span className="step-time">Day 30+</span>
           </div>
         </div>
       </section>

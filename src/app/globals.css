@@ -3868,10 +3868,11 @@ p {
   margin-bottom: 72px;
   scroll-margin-top: 100px;
 }
-.arch-grid {
+.arch-grid,
+.arch-grid-three {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 18px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
 }
 .arch-card {
   background: #ffffff;
@@ -4051,8 +4052,9 @@ p {
   .use-case-grid {
     grid-template-columns: 1fr;
   }
-  .arch-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .arch-grid,
+  .arch-grid-three {
+    grid-template-columns: 1fr;
   }
   .lifecycle-stepper {
     grid-template-columns: repeat(2, 1fr);
