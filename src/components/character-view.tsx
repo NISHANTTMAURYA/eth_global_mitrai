@@ -31,6 +31,7 @@ import { lifecycle, shortAddress, type Character, type Message } from '@/lib/dom
 import { api } from '@/lib/client';
 import { Stage, Flower, TimeLeft, LifecyclePill, Modal } from './ui';
 import { writeArkiv, transferArkiv } from '@/lib/arkiv';
+import { validateSpeechTrack, type SpeechTrack } from '@/lib/lip-sync';
 import type { Address, Hex } from 'viem';
 export default function CharacterView({
   c,
@@ -59,7 +60,8 @@ export default function CharacterView({
   const [pending, setPending] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [speaking, setSpeaking] = useState(false);
-  const [vowel, setVowel] = useState(0);
+  const [speech, setSpeech] = useState<{audio: HTMLAudioElement; track: SpeechTrack} | null>(null);
+  const [speechLoading, setSpeechLoading] = useState(false);
   const [voice, setVoice] = useState(false);
   const [gesture, setGesture] = useState('Wave');
   const [gestureKey, setGestureKey] = useState(0);
@@ -81,6 +83,8 @@ export default function CharacterView({
   const audio = useRef<HTMLAudioElement | null>(null);
   const animation = useRef<number>(0);
   const speechTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const speechRequest = useRef<AbortController | null>(null);
+  const speechSequence = useRef(0);
   const l = lifecycle(c, now);
   useEffect(() => {
     fetch(`/api/app?id=${c.id}`)
@@ -100,66 +104,70 @@ export default function CharacterView({
     end.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [chat, pending]);
   const stopSpeech = useCallback(() => {
+    speechSequence.current++;
+    speechRequest.current?.abort();
     window.speechSynthesis?.cancel();
-    audio.current?.pause();
+    if (audio.current) {
+      audio.current.onended = null; audio.current.onerror = null;
+      audio.current.onpause = null; audio.current.onplay = null;
+      audio.current.pause(); audio.current = null;
+    }
     cancelAnimationFrame(animation.current);
     if (speechTimeout.current) clearTimeout(speechTimeout.current);
     setSpeaking(false);
     setGreeting(false);
+    setSpeech(null);
+    setSpeechLoading(false);
   }, []);
-  useEffect(() => () => stopSpeech(), [stopSpeech]);
+  useEffect(() => () => stopSpeech(), [stopSpeech, c.id]);
   useEffect(() => {
     if (!l.alive) stopSpeech();
   }, [l.alive, stopSpeech]);
-  const speak = (text: string) => {
+  const speak = async (text: string) => {
     stopSpeech();
-    if (!window.speechSynthesis) {
-      notify('Speech is not available in this browser.');
-      return;
+    const sequence = speechSequence.current;
+    const controller = new AbortController(); speechRequest.current = controller;
+    setSpeechLoading(true);
+    try {
+      const res = await fetch('/api/speech', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, id: c.id }),
+        signal: controller.signal,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (sequence !== speechSequence.current) return;
+        if (data.audio) {
+          const player = new Audio(data.audio);
+          audio.current = player;
+          setSpeech({audio:player,track:validateSpeechTrack(data)});
+          setSpeechLoading(false);
+          player.onplay = () => setSpeaking(true);
+          player.onpause = () => setSpeaking(false);
+          player.onended = stopSpeech;
+          player.onerror = () => {
+            stopSpeech();
+            notify('Could not play speech audio.');
+          };
+          await player.play();
+          return;
+        }
+        throw new Error('Speech returned no audio.');
+      } else {
+        const result = await res.json();
+        throw new Error(result.error || 'Could not prepare timed speech.');
+      }
+    } catch (error) {
+      if (sequence !== speechSequence.current) return;
+      stopSpeech();
+      notify(error instanceof Error ? error.message : 'Could not prepare voice.');
     }
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.95;
-    utterance.onstart = () => setSpeaking(true);
-    utterance.onboundary = (e) => {
-      const word = text.slice(e.charIndex, e.charIndex + (e.charLength || 5)).toLowerCase();
-      const found = word.match(/[aiueo]/)?.[0] || 'a';
-      setVowel('aiueo'.indexOf(found));
-    };
-    utterance.onend = () => setSpeaking(false);
-    utterance.onerror = () => setSpeaking(false);
-    window.speechSynthesis.speak(utterance);
-    speechTimeout.current = setTimeout(() => {
-      setSpeaking(false);
-    }, 60000);
   };
   const playGreeting = async () => {
-    stopSpeech();
-    try {
-      const name = c.model === 'human' ? 'mira' : 'milo';
-      const cues = await fetch(`/audio/${name}-greeting.json`).then((r) => r.json());
-      const player = new Audio(`/audio/${name}-greeting.mp3`);
-      audio.current = player;
-      const map: Record<string, number> = { B: 1, C: 3, D: 0, E: 4, F: 2, G: 3, H: 0 };
-      player.onended = stopSpeech;
-      player.onerror = () => {
-        stopSpeech();
-        notify('Could not play the greeting.');
-      };
-      await player.play();
-      setGreeting(true);
-      const tick = () => {
-        const cue = cues.mouthCues.find(
-          (cue: { start: number; end: number }) =>
-            player.currentTime >= cue.start && player.currentTime < cue.end,
-        );
-        setSpeaking(!!cue && !['A', 'X'].includes(cue.value));
-        setVowel(map[cue?.value] ?? 0);
-        if (!player.paused && !player.ended) animation.current = requestAnimationFrame(tick);
-      };
-      tick();
-    } catch (e) {
-      notify(e instanceof Error ? e.message : 'Could not play greeting.');
-    }
+    if (!ensure()) return;
+    await speak(`Hello, I'm ${c.name}. A little conversation can start a new adventure. What shall we explore together?`);
+    if (audio.current && !audio.current.paused) setGreeting(true);
   };
   const action = async (fn: () => Promise<void>) => {
     if (!ensure()) return;
@@ -254,7 +262,7 @@ export default function CharacterView({
               model={c.model}
               modelZoom={1.1}
               speaking={speaking}
-              vowel={vowel}
+              speech={speech}
               gesture={gesture}
               gestureKey={gestureKey}
               legacy={!l.alive}
@@ -296,7 +304,7 @@ export default function CharacterView({
                 ))}
                 <button
                   onClick={greeting ? stopSpeech : playGreeting}
-                  aria-label={greeting ? 'Stop greeting' : 'Play prerecorded voice sample'}
+                  aria-label={greeting ? 'Stop greeting' : 'Play timed voice greeting'}
                 >
                   {greeting ? <VolumeX size={18} /> : <Volume2 size={18} />}
                 </button>
@@ -437,7 +445,7 @@ export default function CharacterView({
                   }}
                   aria-label={voice ? 'Mute spoken replies' : 'Enable spoken replies'}
                 >
-                  {voice ? <Volume2 size={18} /> : <VolumeX size={18} />}
+                  {speechLoading ? <Loader2 className="spin" size={18} /> : voice ? <Volume2 size={18} /> : <VolumeX size={18} />}
                 </button>
               </div>
               {!own && l.alive && (

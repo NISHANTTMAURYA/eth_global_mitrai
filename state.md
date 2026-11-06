@@ -102,3 +102,7 @@ Removed active-motion-driven recentering, rescaling and camera fitting. The stan
 ### Requested size increases and lip-sync research
 
 Gallery camera projection zoom is 1.15; detail zoom is 1.10. Neither depends on current animation. Audited all 24 models: 13 embedded-animation, 10 retargeted humanoid, 1 procedural VRM. Researched primary documentation for Rhubarb, Polly, Azure Speech, TalkingHead, HeadAudio and browser boundary events; saved comparison, capability audit and concrete implementation plan in docs/lip-sync-research.md. No new speech service is configured or claimed integrated.
+
+### Timed speech implementation
+
+Added authenticated `/api/speech`, local eSpeak NG/Sarvam WAV generation, Rhubarb phonetic alignment and MP3 playback. Private temporary files are cleaned up. Face weights use audio.currentTime with smoothing/closures; replaced random vowel and sine-mouth behavior in the precise path. Cancelled generations cannot start stale playback; speech pauses showcase gestures. Verified real local synthesis, cue sampling and authenticated HTTP flow (including wrong-origin and Sunset rejection), plus typecheck and production build. Browser visual/audio and live Sarvam validation remain pending. Configuration in docs/timed-speech-setup.md.

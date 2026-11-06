@@ -1,5 +1,7 @@
 # Lip-sync research and implementation plan
 
+Implementation update: the buffered audio + Rhubarb pipeline is now implemented for dynamic replies and greetings. See [setup and actual verification](timed-speech-setup.md). Earlier descriptions below record the previous state and research; advanced provider viseme streams and authoring missing facial shapes remain future work.
+
 Researched 6 November 2026. Recommendations below are engineering conclusions from the primary documentation and a fresh inspection of our local GLBs. No new paid speech service is integrated by this document.
 
 ## What the current application does

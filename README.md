@@ -45,6 +45,8 @@ SQLite and the Ed25519 verifier key live in ignored `.data/` (or `MITRAI_DATA_DI
 
 ### Character media
 
+Dynamic spoken replies and greetings now use actual speech audio with Rhubarb timing. See [timed speech setup](docs/timed-speech-setup.md) for local executables, optional Sarvam voice configuration, model capabilities and verified limits. Named speech morphs and VRM vowel shapes are driven from audio playback time; arbitrary numeric facial shapes still require mapping.
+
 Gallery characters use a 15% projection-size increase; the chat scene uses a 10% increase. All 24 model forms have embedded, retargeted or procedural body animations. See [lip-sync research and plan](docs/lip-sync-research.md) for techniques, model mouth capabilities and the proposed audio/viseme pipeline. New speech-provider integration remains planned.
 
 Sixteen rigged GLB models from Downloads are copied to `public/models/downloads`. Each is seeded as a public studio example and offered in the creation picker; existing personas occupy robot, fox and human forms. A form can belong to only one character globally: used forms are disabled in the picker and duplicate API requests are rejected. Some imported models have no body clips; named facial visemes animate when available. Source licences need confirmation before redistributing imported models publicly.

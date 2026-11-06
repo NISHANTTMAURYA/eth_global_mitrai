@@ -21,12 +21,14 @@ import { modelPath } from '@/lib/models';
 import { createCompanionClips, companionAction } from '@/lib/character-motion';
 import { libraryMotions, retargetLibraryMotion } from '@/lib/motion-library';
 import { characterBounds, boxFitDistance } from '@/lib/character-framing';
+import { speechWeights, vowelWeights, type SpeechTrack } from '@/lib/lip-sync';
 const motionLoader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 const motionPaths = libraryMotions.map(([file]) => `/animations/mesh2motion/${file}.glb`);
 type Props = {
   model: ModelId;
   speaking?: boolean;
   vowel?: number;
+  speech?: { audio: HTMLAudioElement; track: SpeechTrack } | null;
   gesture?: string;
   gestureKey?: number;
   interactive?: boolean;
@@ -53,6 +55,7 @@ function Character({
   model,
   speaking = false,
   vowel = 0,
+  speech,
   gesture = 'Idle',
   gestureKey = 0,
   legacy = false,
@@ -129,6 +132,12 @@ function Character({
   }, [actions, idleName, legacy]);
   useEffect(() => {
     if (legacy || (!gestureKey && !cycleStep)) return;
+    if (speaking) {
+      Object.values(actions).forEach((a) => a?.fadeOut(.2));
+      const idle = idleName ? actions[idleName] : undefined;
+      idle?.reset().fadeIn(.2).play();
+      return;
+    }
     wavingUntil.current = time.current + 2.5;
     const playlist = clips.filter((c) => c.name !== idleName && !/death|dead|dying|defeat|hit|attack|bite|punch|shoot|slash|kick/i.test(c.name));
     const manual = gestureKey !== previousGesture.current;
@@ -153,18 +162,19 @@ function Character({
       );
       return () => clearTimeout(timeout);
     }
-  }, [actions, gesture, gestureKey, legacy, clips, idleName, cycleStep]);
+  }, [actions, gesture, gestureKey, legacy, clips, idleName, cycleStep, speaking]);
   useEffect(() => {
-    if (legacy) return;
+    if (legacy || speaking) return;
     const longest = Math.max(0, ...clips.map((clip) => clip.duration));
     const timer = setInterval(() => setCycleStep((step) => step + 1), Math.max(9000, longest * 1000 + 4000));
     return () => clearInterval(timer);
-  }, [clips, legacy]);
+  }, [clips, legacy, speaking]);
   useFrame((state, delta) => {
     if (legacy) return;
     time.current += delta;
     const t = time.current;
-    const proceduralActive = vrm && t < wavingUntil.current;
+    const timed = speech ? speechWeights(speech.track, speech.audio.paused || speech.audio.ended ? -1 : speech.audio.currentTime) : null;
+    const proceduralActive = vrm && !speaking && t < wavingUntil.current;
     if (group.current && !legacy) {
       group.current.rotation.y = proceduralActive && proceduralMotion.current === 'Dance' ? Math.sin(t * 3) * .25 : Math.sin(t * 0.35) * 0.04;
       group.current.rotation.z = proceduralActive && proceduralMotion.current === 'Dance' ? Math.sin(t * 6) * .06 : 0;
@@ -177,7 +187,7 @@ function Character({
       const head = vrm.humanoid.getNormalizedBoneNode('head');
       const hand = vrm.humanoid.getNormalizedBoneNode('leftHand');
       const chest = vrm.humanoid.getNormalizedBoneNode('chest');
-      const wave = t < wavingUntil.current && proceduralMotion.current === 'Wave';
+      const wave = !speaking && t < wavingUntil.current && proceduralMotion.current === 'Wave';
       if (hand) hand.rotation.z = wave ? Math.sin(t * 9) * 0.3 : 0;
       if (chest) chest.rotation.x = Math.sin(t * 1.8) * 0.01;
       if (arm) {
@@ -192,12 +202,13 @@ function Character({
         if (wave) head.rotation.z = Math.sin(t * 5) * 0.035;
       }
       const names = ['aa', 'ih', 'ou', 'ee', 'oh'];
+      const timedVowels = timed ? vowelWeights(timed) : null;
       names.forEach((n, i) =>
         vrm.expressionManager?.setValue(
           n,
           MathUtils.damp(
             vrm.expressionManager?.getValue(n) || 0,
-            speaking && i === vowel ? Math.sin(t * 23) * 0.12 + 0.55 : 0,
+            timedVowels ? timedVowels[n] || 0 : speaking && i === vowel ? .55 : 0,
             18,
             delta,
           ),
@@ -210,9 +221,11 @@ function Character({
         const mesh = o as Mesh;
         if (mesh.morphTargetDictionary && mesh.morphTargetInfluences) {
           for (const [name, i] of Object.entries(mesh.morphTargetDictionary)) {
-            if (/v_(aa|ih|ou|ee|oh)$/.test(name)) {
+            if (/v_(aa|ih|ou|ee|oh|pp|ff|th|dd|kk|ss|nn|rr|ch|sil)$/.test(name)) {
+              const key = name.split('v_').at(-1)!;
               const active = name.endsWith(`v_${['aa', 'ih', 'ou', 'ee', 'oh'][vowel]}`);
-              mesh.morphTargetInfluences[i] = MathUtils.damp(mesh.morphTargetInfluences[i], speaking && active ? 0.65 : 0, 18, delta);
+              const target = timed ? timed[key] || 0 : speaking && active ? .65 : 0;
+              mesh.morphTargetInfluences[i] = MathUtils.damp(mesh.morphTargetInfluences[i], target, key === 'pp' ? 45 : 28, delta);
             } else if (/blink$/.test(name)) {
               mesh.morphTargetInfluences[i] = Math.pow(Math.max(0, Math.sin(t * 0.65)), 24);
             }
@@ -221,7 +234,7 @@ function Character({
           if (index !== undefined)
             mesh.morphTargetInfluences[index] = MathUtils.damp(
               mesh.morphTargetInfluences[index],
-              speaking ? 0.2 + Math.abs(Math.sin(t * 17)) * 0.5 : 0,
+              timed ? Math.min(.7,(timed.aa || 0) + (timed.oh || 0) * .6 + (timed.ee || 0) * .3) : speaking ? .3 : 0,
               14,
               delta,
             );
