@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Modal } from './ui';
 import { getCharacterEnsPassport, type EnsPassport } from '@/lib/ens';
 import type { Character } from '@/lib/domain';
-import { Globe, Copy, Check, ExternalLink, ShieldCheck, Database, Clock, Fingerprint } from 'lucide-react';
+import { Globe, Copy, Check, Database, Clock, Fingerprint } from 'lucide-react';
 
 export default function EnsPassportModal({
   character,
@@ -29,7 +29,7 @@ export default function EnsPassportModal({
             <Globe size={18} className="ens-icon-glow" />
             <span className="ens-subname-text">{passport.subname}</span>
             <span className="ens-verified-tag">
-              <ShieldCheck size={12} /> Name preview
+              Name preview
             </span>
           </div>
           <p className="ens-passport-desc">
@@ -39,7 +39,7 @@ export default function EnsPassportModal({
 
         <div className="ens-records-card">
           <div className="ens-card-header">
-            <span>Proposed text records</span>
+            <span>Local preview data (not on ENS)</span>
             <button
               className="text-button ens-copy-all"
               onClick={() =>
@@ -146,15 +146,6 @@ export default function EnsPassportModal({
         </div>
 
         <div className="ens-passport-actions">
-          <a
-            href={`https://app.ens.domains/${passport.subname}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="button secondary small-button"
-          >
-            <span>View on ENS App</span>
-            <ExternalLink size={13} />
-          </a>
           <button
             className="button primary small-button"
             onClick={() => handleCopy(passport.subname, 'subname')}
