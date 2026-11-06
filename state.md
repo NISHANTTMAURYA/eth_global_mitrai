@@ -84,3 +84,6 @@ Restored the reference stylesheet import removed from layout. Desktop scene and 
 ### Navigation polish
 
 Straightened the site navbar. Removed character-tab underlines and divider. A shared highlight slides between four equal tabs with press feedback and a brief icon settle; reduced-motion preferences disable movement. Typecheck and production build pass. Browser visual verification remains pending.
+### Showcase status correction
+
+Replaced the disabled Showcase only action with a small status badge beside attribution. Showcase personas no longer render an adoption button or payment caption in the lifetime card. Adoption and offers actions remain for available personas.

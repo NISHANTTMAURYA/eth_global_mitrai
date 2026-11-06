@@ -294,6 +294,9 @@ export default function CharacterView({
               {own
                 ? 'YOUR LITTLE SOMEONE'
                 : `CULTIVATED BY ${c.creator === 'MitrAI studio' ? 'MITRAI STUDIO' : shortAddress(c.creator)}`}
+              {c.availability === 'showcase' && l.alive && (
+                <span className="showcase-status">Showcase only</span>
+              )}
             </div>
             <h1>
               {c.name}
@@ -330,11 +333,11 @@ export default function CharacterView({
               <div className="note">Ten-minute demo lifespan. This clock is real.</div>
             )}
             <p className="bio-description">{c.description}</p>
-            {!own && l.alive && (
+            {!own && l.alive && c.availability !== 'showcase' && (
               <>
                 <button
                   className="button primary full"
-                  disabled={actionBusy || c.availability === 'showcase'}
+                  disabled={actionBusy}
                   onClick={() => {
                     if (!ensure()) return;
                     if (c.availability === 'transfer' && c.owner === 'studio' && c.demo)
@@ -353,9 +356,7 @@ export default function CharacterView({
                     ? c.owner === 'studio' && c.demo
                       ? 'Adopt in demo'
                       : 'Request handover'
-                    : c.availability === 'offers'
-                      ? 'Start a conversation about adoption'
-                      : 'Showcase only'}
+                    : 'Start a conversation about adoption'}
                 </button>
                 <small className="form-caption">
                   {c.availability === 'transfer' && c.owner === 'studio'
