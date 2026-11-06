@@ -20,3 +20,8 @@ test('Arkiv uses the keyed SDK URL unless an explicit custom RPC is configured',
     else process.env.NEXT_PUBLIC_ARKIV_RPC = previousRpc;
   }
 });
+
+import { DEFAULT_OG_API_URL } from '../src/lib/chat';
+test('0G defaults to testnet, not the paid mainnet router', () => {
+  assert.equal(DEFAULT_OG_API_URL, 'https://router-api-testnet.integratenetwork.work/v1');
+});

@@ -1,9 +1,10 @@
+export const DEFAULT_OG_API_URL = 'https://router-api-testnet.integratenetwork.work/v1';
 import { publicCharacter, retrieve, type Character, type Message } from './domain';
 export async function reply(c: Character, text: string, history: Message[], audition: boolean) {
   const context = audition ? publicCharacter(c) : c;
   const memories = retrieve(context.brain, text);
   if (process.env.OG_API_KEY && process.env.OG_MODEL) {
-    const base = process.env.OG_API_URL || 'https://router-api.0g.ai/v1';
+    const base = process.env.OG_API_URL || DEFAULT_OG_API_URL;
     const response = await fetch(`${base.replace(/\/$/, '')}/chat/completions`, {
       method: 'POST',
       headers: {

@@ -22,3 +22,5 @@
 - Browser preview access was declined by the browser permission gate. No alternate browser surface or automation workaround was used; visual/rendered responsive QA remains unverified.
 
 - Default Arkiv transport must inherit the SDK-generated keyed URL. An explicit custom RPC is optional and overrides that authentication path.
+
+- Testnet only: default 0G endpoint is the separate testnet router. Do not direct the user to buy real tokens or paid credits for hackathon testing.
