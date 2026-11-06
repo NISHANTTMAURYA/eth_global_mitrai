@@ -1,4 +1,4 @@
-export type ModelId = 'robot' | 'fox' | 'human';
+export type ModelId = string;
 export type Memory = { id: string; text: string; scope: 'private' | 'public'; createdAt: number };
 export type Brain = {
   traits: { curiosity: number; warmth: number; playfulness: number };

@@ -32,3 +32,6 @@
 - 0G remains an optional ETHGlobal sponsor integration/fallback: it demonstrates testnet decentralized compute when Bedrock is disabled, but it is not required for local demo mode.
 - The persistent brain remains the deterministic state reducer in the app. Bedrock/0G only interpret the current state; neither provider writes memory directly.
 - The shared MitrAI system prompt explicitly prevents private-memory leakage, invented memories, hidden-context disclosure, and post-Sunset learning.
+### User-supplied character catalog
+
+Use the 16 skeletal models supplied in Downloads through a shared catalog. Preserve source files by copying. Exclude the three object-animated animals without skeletal skins. Enable existing clips and named speech morphs without guessing numeric morph meanings. User-supplied licences need verification before public redistribution.

@@ -6,6 +6,7 @@ import { ArrowRight, Sparkles, ArrowLeft, Check, Hand, Clock3, Loader2, Sun } fr
 import { type Character, type ModelId } from '@/lib/domain';
 import { api } from '@/lib/client';
 import { Stage, Flower } from './ui';
+import { models } from '@/lib/models';
 export default function CreateView({
   owner,
   mine,
@@ -220,21 +221,14 @@ export default function CreateView({
               </div>
               <label>
                 Choose their form
-                <small>Licensed shared bodies. The character you cultivate becomes distinct.</small>
+                <small>Choose a body for the character you cultivate.</small>
               </label>
               <div className="model-options">
-                <button
-                  className={model === 'robot' ? 'chosen' : ''}
-                  onClick={() => setModel('robot')}
-                >
-                  <span>◉</span>Little robot<small>Expressive & playful</small>
-                </button>
-                <button
-                  className={model === 'human' ? 'chosen' : ''}
-                  onClick={() => setModel('human')}
-                >
-                  <span>✧</span>Human explorer<small>Voice & vowel expressions</small>
-                </button>
+                {models.map((option) => (
+                  <button key={option.id} className={model === option.id ? 'chosen' : ''} onClick={() => setModel(option.id)}>
+                    <span>✧</span>{option.name}
+                  </button>
+                ))}
               </div>
               <button
                 className="button primary full"

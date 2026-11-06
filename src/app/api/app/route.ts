@@ -24,6 +24,7 @@ import {
   type Memory,
 } from '@/lib/domain';
 import { configuredProvider, reply } from '@/lib/chat';
+import { models } from '@/lib/models';
 import { readArkivCharacter, discoverArkiv } from '@/lib/arkiv';
 import { signSnapshot, verifySnapshot } from '@/lib/proof';
 export const runtime = 'nodejs';
@@ -167,7 +168,7 @@ export async function POST(request: Request) {
           tagline: z.string().trim().min(4).max(100),
           description: z.string().trim().min(12).max(1000),
           behavior: z.string().trim().min(5).max(1000),
-          model: z.enum(['robot', 'fox', 'human']),
+          model: z.string().refine((id) => models.some((m) => m.id === id), 'Unknown character model'),
           tags: z.array(z.string().trim().min(1).max(25)).max(5),
           shortLife: z.boolean(),
           traits: z.object({

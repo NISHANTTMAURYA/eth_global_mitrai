@@ -61,3 +61,9 @@ Removed Drei Html from the model Suspense fallback after the reported React sync
 - Bedrock Converse support is implemented in `src/lib/chat.ts` and is selected first when `ENABLE_BEDROCK=true` plus `AWS_BEDROCK_MODEL`.
 - Provider order is Bedrock → optional 0G testnet → clearly labeled scripted demo.
 - AWS credentials are server-only; no key is read by browser code.
+### Downloads character expansion
+
+- Copied all 16 skeletal GLB models from Downloads into public/models/downloads; originals preserved.
+- All are selectable through the shared model catalog and accepted by the creation API.
+- Embedded Idle/idle clips play where available. Named vowel and blink morphs animate on compatible characters. Ten models have no embedded body animation; numeric facial targets require manual mapping.
+- File structure, typecheck, tests and production build pass. Visual deformation and redistribution licences for the user-supplied models remain unverified.

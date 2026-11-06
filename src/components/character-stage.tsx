@@ -16,6 +16,7 @@ import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { VRMLoaderPlugin, type VRM } from '@pixiv/three-vrm';
 import { Box3, Vector3, Group, Mesh, LoopOnce, MathUtils } from 'three';
 import type { ModelId } from '@/lib/domain';
+import { modelPath } from '@/lib/models';
 type Props = {
   model: ModelId;
   speaking?: boolean;
@@ -51,12 +52,7 @@ function Character({
   loader,
   onReady,
 }: Props & { loader: GLTFLoader; onReady: () => void }) {
-  const path =
-    model === 'human'
-      ? '/models/pixiv-sample.vrm'
-      : model === 'fox'
-        ? '/models/fox.glb'
-        : '/models/robot-expressive.glb';
+  const path = modelPath(model);
   const gltf = useLoader(loader, path);
   useEffect(() => {
     onReady();
@@ -86,7 +82,7 @@ function Character({
       Object.values(actions).forEach((a) => a?.stop());
       return;
     }
-    const idle = actions[model === 'fox' ? 'Survey' : 'Idle'];
+    const idle = actions[model === 'fox' ? 'Survey' : 'Idle'] || actions.idle;
     idle?.reset().fadeIn(0.3).play();
     return () => {
       Object.values(actions).forEach((a) => a?.stop());
@@ -97,7 +93,7 @@ function Character({
     wavingUntil.current = time.current + 2.5;
     const clip = actions[gesture];
     if (clip) {
-      const idle = actions[model === 'fox' ? 'Survey' : 'Idle'];
+      const idle = actions[model === 'fox' ? 'Survey' : 'Idle'] || actions.idle;
       idle?.fadeOut(0.25);
       clip.reset().setLoop(LoopOnce, 1);
       clip.clampWhenFinished = true;
@@ -157,6 +153,14 @@ function Character({
       object.traverse((o) => {
         const mesh = o as Mesh;
         if (mesh.morphTargetDictionary && mesh.morphTargetInfluences) {
+          for (const [name, i] of Object.entries(mesh.morphTargetDictionary)) {
+            if (/v_(aa|ih|ou|ee|oh)$/.test(name)) {
+              const active = name.endsWith(`v_${['aa', 'ih', 'ou', 'ee', 'oh'][vowel]}`);
+              mesh.morphTargetInfluences[i] = MathUtils.damp(mesh.morphTargetInfluences[i], speaking && active ? 0.65 : 0, 18, delta);
+            } else if (/blink$/.test(name)) {
+              mesh.morphTargetInfluences[i] = Math.pow(Math.max(0, Math.sin(t * 0.65)), 24);
+            }
+          }
           const index = mesh.morphTargetDictionary.Surprised;
           if (index !== undefined)
             mesh.morphTargetInfluences[index] = MathUtils.damp(
