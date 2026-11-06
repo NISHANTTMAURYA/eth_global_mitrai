@@ -35,3 +35,5 @@
 ### User-supplied character catalog
 
 Use the 16 skeletal models supplied in Downloads through a shared catalog. Preserve source files by copying. Exclude the three object-animated animals without skeletal skins. Enable existing clips and named speech morphs without guessing numeric morph meanings. User-supplied licences need verification before public redistribution.
+
+Each model is a unique persona form. Enforce availability in both the creator UI and server create action; keep forms reserved after Sunset because each body's Legacy remains discoverable.

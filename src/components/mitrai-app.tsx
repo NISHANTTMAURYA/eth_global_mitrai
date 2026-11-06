@@ -118,6 +118,7 @@ export default function MitraiApp() {
       <CreateView
         owner={owner}
         mine={mine}
+        characters={characters}
         connect={() => setConnect(true)}
         refresh={refresh}
         notify={notify}

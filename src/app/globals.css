@@ -1097,6 +1097,10 @@ p {
   background: #eef0df;
   border-color: #a7b18b;
 }
+.model-options button.model-taken {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
 .model-options button > span {
   font-size: 26px;
   color: #8f9b73;

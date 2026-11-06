@@ -10,12 +10,14 @@ import { models } from '@/lib/models';
 export default function CreateView({
   owner,
   mine,
+  characters,
   connect,
   refresh,
   notify,
 }: {
   owner: string | null;
   mine?: Character;
+  characters: Character[];
   connect: () => void;
   refresh: () => Promise<void>;
   notify: (s: string) => void;
@@ -224,11 +226,14 @@ export default function CreateView({
                 <small>Choose a body for the character you cultivate.</small>
               </label>
               <div className="model-options">
-                {models.map((option) => (
-                  <button key={option.id} className={model === option.id ? 'chosen' : ''} onClick={() => setModel(option.id)}>
-                    <span>✧</span>{option.name}
-                  </button>
-                ))}
+                {models.map((option) => {
+                  const occupied = characters.some((character) => character.model === option.id);
+                  return (
+                    <button key={option.id} disabled={occupied} className={`${model === option.id ? 'chosen' : ''} ${occupied ? 'model-taken' : ''}`} onClick={() => setModel(option.id)}>
+                      <span>✧</span>{option.name}{occupied && <small>Already in use</small>}
+                    </button>
+                  );
+                })}
               </div>
               <button
                 className="button primary full"

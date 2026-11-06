@@ -178,6 +178,8 @@ export async function POST(request: Request) {
           }),
         })
         .parse(data);
+      if (allCharacters().some((character) => character.model === v.model))
+        throw new Error('That character form is already in use. Choose an unused model.');
       const now = Date.now();
       const c: Character = {
         id: crypto.randomUUID(),

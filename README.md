@@ -26,7 +26,14 @@ The integration command starts a production server with a disposable isolated SQ
 
 Follow [the configuration checklist](docs/configuration.md) for account links, keys, test gas and the first live run.
 
-Copy `.env.example` to `.env.local`. For live AI, set `ENABLE_BEDROCK=true`, an AWS region, and a Bedrock Converse-compatible `AWS_BEDROCK_MODEL` ID. Bedrock is the primary model path and its credentials stay server-side. 0G is retained as an optional testnet fallback/integration (`OG_API_KEY` + `OG_MODEL`) when Bedrock is disabled. Without either provider the UI explicitly says **Scripted demo**. Provider failures are surfaced, not replaced with invented replies. Set the public Rabdi access key/RPC for reliable chain access. Browser-exposed keys are public configuration, never wallet private keys.
+Copy `.env.example` to `.env.local`. For live AI, set `ENABLE_BEDROCK=true`, an AWS region, and a Bedrock Converse-compatible `AWS_BEDROCK_MODEL` ID. Bedrock is the primary model path and its credentials stay server-side. Without Bedrock the UI explicitly says **Scripted demo**. Provider failures are surfaced, not replaced with invented replies. Set the public Rabdi access key/RPC for reliable chain access. Browser-exposed keys are public configuration, never wallet private keys.
+
+### Future sponsor integrations (not currently used)
+
+- **0G Compute:** planned as the decentralized inference option for persona conversations. The server would send the persona's approved state and relevant memory to a 0G model and record its actual request ID. This could make conversation inference part of the product's 0G integration. No 0G API calls or storage are part of the current application.
+- **World ID:** planned as an optional verified-person creation allowance to discourage duplicate persona creation. It would verify the person on the server before allowing creation. It is not implemented and does not gate onboarding today.
+
+Bedrock is currently the live model path. These integrations are roadmap items and are not claimed as working prize integrations.
 
 Sign in with a browser wallet, create a character, then choose **The mind → Sync to Arkiv**. Wallet approval signs the public snapshot write. The server verifies the result before recording the entity key. **Discover on Arkiv** queries public records and accepts only this app verifier’s signed snapshots. The script `npm run query:arkiv` reproduces the schema query, optionally filtered with `ARKIV_OWNER`. No live transaction was executed during implementation, so writer addresses and live entity evidence remain pending.
 
@@ -38,7 +45,7 @@ SQLite and the Ed25519 verifier key live in ignored `.data/` (or `MITRAI_DATA_DI
 
 ### Character media
 
-Two primary rigged models are locally served: RobotExpressive with embedded body clips, and the pixiv humanoid VRM with five vowel expressions and procedural hand/head animation. Fox is an optional third creature. The voice button plays a licensed generated greeting with audio-derived Rhubarb timing. Browser-spoken dynamic replies use approximate word/vowel timing. Robot expressions are stylized; no claim of phoneme-accurate robot lip sync. See `docs/character-assets.md` and `docs/speech-assets.md` for source licenses and exact controls.
+Sixteen rigged GLB models from the user's Downloads folder are copied to `public/models/downloads` and offered in the creator. Existing studio personas already use the robot, fox and human models. A model can belong to only one persona; the creator disables occupied forms and the API independently rejects duplicates. Embedded clips and named vowel morphs are used where present. Numeric morph targets are not guessed. Source licences need confirmation before redistributing the imported models publicly.
 
 The remaining sections describe the product flow and longer-term design; implementation status is authoritative in `state.md`.
 
@@ -87,7 +94,7 @@ Discovery comes first. Use warm ivory, charcoal and muted amber, expressive 3D p
 
 ### Cultivation and saving
 
-Load confirmed state from Arkiv → verify current owner and lifecycle → retrieve that ownership epoch's private memories → call 0G → validate proposed events → apply bounded evolution rules → show provisional changes → owner signs a session checkpoint → show confirmed state.
+Load confirmed state from Arkiv → verify current owner and lifecycle → retrieve that ownership epoch's private memories → call the configured conversation model → validate proposed events → apply bounded evolution rules → show provisional changes → owner signs a session checkpoint → show confirmed state.
 
 Keep signing at session boundaries rather than every message. Unsaved changes must be labeled. Backend signing requires explicitly authorized supported delegation; it cannot silently impersonate the owner.
 
@@ -175,8 +182,8 @@ flowchart LR
 | 3D | Three.js through React Three Fiber + Drei; GLB loading, idle/listening/thinking animation |
 | Public state | `@arkiv-network/sdk`; live character and checkpoint reads/writes |
 | Private data | PostgreSQL + Drizzle; per-owner chats, memory evidence and sessions |
-| Model calls | 0G Private Computer, through the documented server API; record actual request IDs |
-| Optional human check | World IDKit with backend verification at character creation |
+| Model calls | Amazon Bedrock (current). 0G Private Computer is a planned alternative; record real request IDs if implemented. |
+| Optional human check | World IDKit is a future option for a one-person creation allowance; not implemented. |
 | Asset storage | Object storage initially; Swarm adapter if time permits |
 | Hosting | Vercel plus hosted PostgreSQL; server-only secrets and model credentials |
 | Background tasks | Expiry monitoring, storage renewal alerts and legacy preparation; correctness must not depend on jobs firing |
@@ -209,7 +216,7 @@ The implementation consolidates these operations into `GET/POST /api/auth` and `
 
 ## Prize strategy and evidence
 
-Primary: **Arkiv — Build on Arkiv (from scratch)**. Extra picks: **0G — Build with 0G Private Computer**, then **World — Best Use of IDKit**. Implement World only after the core works. Swarm is an optional Arkiv bonus. Rules checked 6 November 2026; [official full prize list](https://ethglobal.com/events/mumbai/prizes).
+Primary: **Arkiv — Build on Arkiv (from scratch)**. Potential extra tracks: **0G — Build with 0G Private Computer** and **World — Best Use of IDKit**. These are ideas only; neither integration is currently used. Swarm is an optional Arkiv bonus. Rules checked 6 November 2026; [official full prize list](https://ethglobal.com/events/mumbai/prizes).
 
 ### Arkiv submission checklist
 
@@ -227,11 +234,11 @@ Four judging categories have equal weight. SDK installation alone and unread log
 
 ### Extra 1: 0G
 
-Use inference in the real conversation/update path and show actual request IDs. Demonstrate why the companion merits a return visit and state what fails without the configured model provider. Bedrock is the primary AI provider; 0G remains an optional sponsor integration/fallback for a testnet demo. Submit a working demo, public setup instructions, a video under three minutes, team/contact information and deployment addresses if applicable. A generic chat wrapper is explicitly discouraged. Our distinction must be visible evolving state and a finite lifecycle. The official iAI login/credit feature is optional scope. [0G requirements](https://ethglobal.com/events/mumbai/prizes/0g)
+Future idea only: route persona conversations through 0G Compute, pass relevant approved character context, and display the real request ID. We do not use 0G at present. If added, the integration should make the persona's evolving memory and return visits central to inference rather than present a generic chat wrapper. [0G requirements](https://ethglobal.com/events/mumbai/prizes/0g)
 
 ### Extra 2: World
 
-Use IDKit to ration a finite companion creation allowance per verified human, rather than using it as a cosmetic login. Verify server-side and demonstrate successful creation plus cancellation/rejection with no allowance consumed and no character created. Document integration time, friction and feedback. Bind the verified identity to a wallet with explicit account-change rules. Human verification does not prove every chat is meaningful. [World requirements](https://ethglobal.com/events/mumbai/prizes)
+Future idea only: use IDKit to ration a finite persona creation allowance per verified human. Verify server-side and ensure cancelled/rejected checks create no persona. World is not used in the current product. [World requirements](https://ethglobal.com/events/mumbai/prizes)
 
 ENS was considered but its track needs meaningful ENSv2 functionality on supported networks. Displaying a resolved name is insufficient; a real character namespace and permissions system would add cross-network work. Keep it out of this MVP. [ENS requirements](https://ethglobal.com/events/mumbai/prizes/ens)
 

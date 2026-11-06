@@ -67,3 +67,5 @@ Removed Drei Html from the model Suspense fallback after the reported React sync
 - All are selectable through the shared model catalog and accepted by the creation API.
 - Embedded Idle/idle clips play where available. Named vowel and blink morphs animate on compatible characters. Ten models have no embedded body animation; numeric facial targets require manual mapping.
 - File structure, typecheck, tests and production build pass. Visual deformation and redistribution licences for the user-supplied models remain unverified.
+- The create picker disables forms already used by current or legacy personas, and the server rejects duplicate model assignments. Studio characters already occupy robot, fox and human forms.
+- README records 0G Compute and World ID as future integrations; neither is used by the current application.
