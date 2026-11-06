@@ -19,7 +19,7 @@ export default function GalleryRenderer({ children }: { children: ReactNode }) {
         {children}
         <Canvas
           eventSource={root}
-          dpr={[1, 1.25]}
+          dpr={[1, 2]}
           camera={{ position: [0, 0, 6.4], fov: 35 }}
           gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
           style={{

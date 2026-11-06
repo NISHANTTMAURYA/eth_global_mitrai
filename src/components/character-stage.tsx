@@ -92,6 +92,8 @@ function CardPreview({
     }
     const context = canvas.getContext('2d');
     if (!context) return;
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = 'high';
     context.clearRect(0, 0, width, height);
     context.drawImage(
       source,
@@ -635,7 +637,7 @@ export default function CharacterStage(props: Props) {
         )}
         {started && !sharedGallery && (
           <Canvas
-            dpr={props.compact ? [1, 1.5] : [1, 2]}
+            dpr={[1, 2]}
             frameloop={visible ? 'always' : 'never'}
             camera={{ position: [0, 1.65, 6.4], fov: 35 }}
             gl={{ antialias: true, alpha: true }}
