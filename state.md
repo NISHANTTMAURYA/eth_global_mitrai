@@ -72,3 +72,6 @@ Removed Drei Html from the model Suspense fallback after the reported React sync
 ## UI reference implementation
 
 Used the two images in ui/ for the blue discovery cards, rounded navigation, landscape backgrounds and warm character/chat panels. Added responsive reference.css and an SVG meadow scene. Existing user changes to globals.css were preserved. Typecheck and production build pass; rendered visual matching remains unverified, and the SVG artwork is an approximation of the reference scenery.
+### Character page simplification
+
+Removed the oversized welcome content and starter chips. Reduced visible status/provider banners, retained the voice control and four tabs, and bounded chat height so the composer stays in the panel. Character bio focuses on attribution and lifetime. Build and typecheck pass; browser visual validation remains unavailable.

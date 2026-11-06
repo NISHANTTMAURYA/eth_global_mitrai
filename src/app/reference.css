@@ -446,6 +446,31 @@ body {
 .checkpoint-bar {
   background: transparent;
 }
+/* Keep the conversation surface quiet and the composer visible. */
+.detail-page { max-width: 1360px; }
+.detail-topbar > .button-row > .pill { display: none; }
+.detail-page .character-workspace { min-height: 0; height: 750px; display: flex; flex-direction: column; }
+.detail-page .chat-panel { flex: 1; height: auto; min-height: 0; padding: 0 28px 20px; position: relative; }
+.detail-page .chat-top { position: absolute; right: 28px; top: 10px; padding: 0; border: 0; z-index: 2; }
+.detail-page .chat-top > div { display: none; }
+.detail-page .audition-notice { display: none; }
+.detail-page .messages { background: transparent; padding: 45px 12px 18px; }
+.detail-page .chat-welcome { padding: 45px 0; color: #919188; }
+.detail-page .chat-welcome p { font-size: 16px; }
+.detail-page .workspace-tabs button { outline: none; border: 0; box-shadow: none; }
+.detail-page .workspace-tabs button:focus-visible { outline: 2px solid #ffbd95; outline-offset: 2px; }
+.detail-page .message-label { display: none; }
+.detail-page .message p { margin-top: 0; }
+.detail-page .message small { font-size: 0; }
+.detail-page .message small button { font-size: 12px; }
+.detail-page .chat-caption { font-size: 10px; padding: 8px 12px 0; color: #929087; }
+.detail-page .checkpoint-bar { padding: 8px 12px; border: 0; }
+.detail-page .character-bio > .bio-description { display: none; }
+.detail-page .character-bio .lifetime-meter > small { display: none; }
+.detail-page .character-bio .lifetime-meter { margin-bottom: 0; }
+.detail-page .back-link { color: #54564e; }
+body:has(.detail-page) .nav a.active { color: #ee6b24; background: #fff0e4; }
+body:has(.detail-page) .brand { color: #1e211b; }
 @media (max-width: 1000px) {
   .nav-wrap {
     padding: 0 22px;
@@ -568,6 +593,8 @@ body {
     border-radius: 30px;
     min-height: 550px;
   }
+  .detail-page .character-workspace { height: 610px; min-height: 0; }
+  .detail-page .chat-panel { padding: 0 16px 14px; }
   .character-bio {
     padding: 22px 25px;
   }

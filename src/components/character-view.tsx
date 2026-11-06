@@ -401,7 +401,7 @@ export default function CharacterView({
                         : 'An isolated introduction'
                       : 'A story, complete'}
                   </strong>
-                  <small>
+                  <small title={provider}>
                     {l.alive
                       ? `${provider} · ${own ? 'private conversation' : 'public state only'}`
                       : 'Sunset has arrived · read-only legacy'}
@@ -427,32 +427,12 @@ export default function CharacterView({
               <div className="messages">
                 {!chat.length && (
                   <div className="chat-welcome">
-                    <Flower size={38} />
-                    <h2>
-                      {l.alive ? `A moment with ${c.name}.` : 'Some endings leave a little light.'}
-                    </h2>
                     <p>
                       {l.alive
-                        ? own
-                          ? 'Bring a thought, a question, or a little adventure. What happens next is up to you.'
-                          : 'Try their personality before continuing their story. This introduction uses only approved public state.'
+                        ? `Say hello to ${c.name}.`
                         : c.highlights.at(-1) ||
                           'Their public history and approved memories remain in the story and mind tabs.'}
                     </p>
-                    {l.alive && (
-                      <div className="starter-prompts">
-                        {[
-                          'Tell me a tiny story',
-                          'Let’s explore an idea',
-                          'What do you remember?',
-                        ].map((t) => (
-                          <button key={t} onClick={() => send(t)}>
-                            {t}
-                            <ArrowUpRight size={13} />
-                          </button>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 )}
                 {chat.map((m) => (
