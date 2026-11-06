@@ -24,9 +24,7 @@ import {
   ThumbsUp,
   ThumbsDown,
   WandSparkles,
-  Globe,
 } from 'lucide-react';
-import { characterSubname } from '@/lib/ens';
 import { type Character, type ModelId } from '@/lib/domain';
 import { api } from '@/lib/client';
 import { Stage, Flower } from './ui';
@@ -468,11 +466,7 @@ export default function CreateView({
                   maxLength={32}
                   placeholder="Something that feels like them"
                 />
-                <span className="ens-creation-preview">
-                  <Globe size={11} />
-                  <span>ENS name preview (not registered): <strong>{characterSubname({ name })}</strong></span>
-                </span>
-              </label>
+</label>
               <label>
                 A little introduction
                 <input

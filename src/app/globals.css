@@ -1419,7 +1419,7 @@ p {
 .character-bio {
   padding: 25px;
 }
-.ownership-ens-header {
+.ownership-header {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -1438,26 +1438,7 @@ p {
   font-weight: 600;
   color: #1f2937;
 }
-.ens-badge-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: #f5f3ff;
-  border: 1px solid #ddd6fe;
-  color: #6d28d9;
-  padding: 4px 10px;
-  border-radius: 9999px;
-  font-size: 11px;
-  font-weight: 600;
-  font-family: 'Space Mono', monospace;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-.ens-badge-btn:hover {
-  background: #ede9fe;
-  transform: translateY(-1px);
-}
-.card-ens-owner-bar {
+.card-owner-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1473,21 +1454,6 @@ p {
   font-size: 11px;
   color: #4b5563;
   font-weight: 500;
-}
-.card-ens-subname-btn {
-  background: #f5f3ff;
-  color: #6d28d9;
-  border: 1px solid #ddd6fe;
-  border-radius: 12px;
-  font-size: 10px;
-  font-weight: 600;
-  padding: 2px 8px;
-  font-family: 'Space Mono', monospace;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-.card-ens-subname-btn:hover {
-  background: #ede9fe;
 }
 .marketplace-action-box {
   margin: 18px 0;
@@ -3435,11 +3401,6 @@ p {
   color: #047857;
   border: 1px solid #a7f3d0;
 }
-.track-badge.ens {
-  background: #f5f3ff;
-  color: #6d28d9;
-  border: 1px solid #ddd6fe;
-}
 .track-badge.sarvam {
   background: #fffbeb;
   color: #b45309;
@@ -3563,12 +3524,6 @@ p {
   display: block;
   font-size: 14px;
   color: #111827;
-}
-.ens-sub {
-  display: block;
-  font-size: 11px;
-  color: #6b7280;
-  font-family: 'Space Mono', monospace;
 }
 .stage-pill-tag {
   background: #fff3ee;
@@ -4021,10 +3976,6 @@ p {
   background: #ecfdf5;
   color: #047857;
 }
-.ens-badge {
-  background: #f5f3ff;
-  color: #6d28d9;
-}
 .sarvam-badge {
   background: #fffbeb;
   color: #b45309;
@@ -4245,208 +4196,4 @@ p {
 .preview-motion-toolbar button:hover,.preview-motion-toolbar button.active {background:#fff1e8;color:#d76d45;}
 .preview-motion-toolbar button:focus-visible {outline:2px solid #df8b63;outline-offset:1px;}
 @media(max-width:700px){.template-preview-card {grid-template-columns:1fr;}.starter-brain {min-height:160px;}.template-preview-motions>div:first-child {align-items:flex-start;flex-direction:column;gap:4px;}.template-inner-life {grid-template-columns:1fr;}}
-
-/* ENS Agent Subname & Passport styles */
-.ens-subname-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border-radius: 20px;
-  background: linear-gradient(135deg, rgba(82, 152, 255, 0.12), rgba(66, 184, 255, 0.06));
-  border: 1px solid rgba(82, 152, 255, 0.35);
-  color: #2563eb;
-  font-size: 11px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-.ens-subname-pill:hover {
-  background: linear-gradient(135deg, rgba(82, 152, 255, 0.22), rgba(66, 184, 255, 0.14));
-  border-color: #2563eb;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
-}
-.ens-subname-pill.compact {
-  padding: 2px 7px;
-  font-size: 9px;
-  gap: 3px;
-}
-.ens-subname-icon {
-  color: #3b82f6;
-}
-.ens-subname-label {
-  font-family: var(--font-mono, monospace);
-  letter-spacing: -0.2px;
-}
-.ens-creation-preview {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11px;
-  color: #2563eb;
-  margin-top: 5px;
-  font-family: monospace;
-}
-.ens-creation-preview strong {
-  color: #1e40af;
-}
-
-/* ENS Passport Modal */
-.ens-passport-container {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  padding: 8px 4px;
-}
-.ens-passport-header {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.ens-badge-large {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  border: 1px solid #bfdbfe;
-  width: fit-content;
-}
-.ens-icon-glow {
-  color: #2563eb;
-}
-.ens-subname-text {
-  font-family: monospace;
-  font-size: 15px;
-  font-weight: 600;
-  color: #1e3a8a;
-}
-.ens-verified-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  font-weight: 600;
-  color: #15803d;
-  background: #dcfce7;
-  padding: 2px 8px;
-  border-radius: 20px;
-  border: 1px solid #bbf7d0;
-}
-.ens-passport-desc {
-  font-size: 12px;
-  line-height: 1.6;
-  color: #4b5563;
-  margin: 0;
-}
-.ens-records-card {
-  border: 1px solid #e5e7eb;
-  border-radius: 14px;
-  background: #ffffff;
-  overflow: hidden;
-}
-.ens-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
-  font-size: 11px;
-  font-weight: 600;
-  color: #374151;
-}
-.ens-copy-all {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  color: #2563eb;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-}
-.ens-records-list {
-  display: flex;
-  flex-direction: column;
-}
-.ens-record-row {
-  display: grid;
-  grid-template-columns: 140px 1fr;
-  align-items: center;
-  gap: 12px;
-  padding: 9px 14px;
-  border-bottom: 1px solid #f3f4f6;
-  font-size: 12px;
-}
-.ens-record-row:last-child {
-  border-bottom: none;
-}
-.ens-record-row.highlight {
-  background: #f0fdf4;
-}
-.ens-record-key {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: monospace;
-  font-size: 11px;
-  color: #6b7280;
-}
-.ens-record-val {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  color: #111827;
-}
-.ens-record-val.monospace {
-  font-family: monospace;
-  font-size: 11px;
-  color: #374151;
-}
-.ens-record-val.text-wrap {
-  font-size: 11px;
-  line-height: 1.5;
-  color: #4b5563;
-}
-.icon-copy-btn {
-  background: none;
-  border: none;
-  color: #9ca3af;
-  cursor: pointer;
-  padding: 2px;
-  display: grid;
-  place-items: center;
-  border-radius: 4px;
-}
-.icon-copy-btn:hover {
-  color: #2563eb;
-  background: #eff6ff;
-}
-.stage-pill-mini {
-  display: inline-block;
-  font-size: 9px;
-  font-weight: 600;
-  text-transform: uppercase;
-  padding: 1px 6px;
-  border-radius: 10px;
-  background: #fef3c7;
-  color: #92400e;
-}
-.ens-subval {
-  font-size: 11px;
-  color: #6b7280;
-}
-.ens-passport-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 4px;
-}
 

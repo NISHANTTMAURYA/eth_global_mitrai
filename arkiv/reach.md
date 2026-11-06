@@ -14,7 +14,7 @@
    - DAOs and developer networks looking for autonomous digital representatives and community mascots that accumulate credentials and event memories over time.
 
 3. **Gamers & Virtual World Explorers:**
-   - Players looking for companions with persistent identities that can travel between decentralized worlds and platforms via ENS Agent Passports and open Arkiv resolution.
+   - Players looking for companions with a public, verifiable history that other apps can read from Arkiv.
 
 ---
 

@@ -8,7 +8,6 @@ import {
   ShieldCheck,
   Cpu,
   Database,
-  Globe,
   Briefcase,
   Music,
   Calendar,
@@ -20,10 +19,10 @@ import {
 import { Stage } from './ui';
 import type { Character, ModelId } from '@/lib/domain';
 
-const PREVIEW_MODELS: { id: ModelId; label: string; ens: string; tag: string }[] = [
-  { id: 'download:09_CactusBoy', label: 'Cactus Boy', ens: 'Cactus Boy', tag: 'A quiet, prickly friend' },
-  { id: 'download:23_Carrot_Kid', label: 'Carrot Kid', ens: 'Carrot Kid', tag: 'Small hero, enormous plans' },
-  { id: 'download:15_Nightmare', label: 'Nightmare', ens: 'Nightmare', tag: 'A guide through strange dreams' },
+const PREVIEW_MODELS: { id: ModelId; label: string; tag: string }[] = [
+  { id: 'download:09_CactusBoy', label: 'Cactus Boy', tag: 'A quiet, prickly friend' },
+  { id: 'download:23_Carrot_Kid', label: 'Carrot Kid', tag: 'Small hero, enormous plans' },
+  { id: 'download:15_Nightmare', label: 'Nightmare', tag: 'A guide through strange dreams' },
 ];
 
 export default function HomeView({ legacy }: { legacy?: Character }) {
@@ -63,9 +62,6 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
         <span className="track-badge arkiv">
           <Database size={13} /> Arkiv DB-Chain (Rabdi Testnet)
         </span>
-        <span className="track-badge ens">
-          <Globe size={13} /> ENS name previews
-        </span>
       </div>
 
       {/* Hero Section */}
@@ -79,7 +75,7 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
             <span className="highlight-text">that grows with you.</span>
           </h1>
           <p className="hero-description">
-            Each MitrAI gets one character form, grows through private conversations, and can share approved memories publicly. Arkiv anchors its public identity; 0G can power replies. ENS names are currently previews, not registered names.
+            Each MitrAI gets one character form, grows through private conversations, and can share approved memories publicly. Arkiv anchors its public identity; 0G can power replies.
           </p>
           <p className="hero-subtext">
             A character with its own starting traits, private conversations, approved public memories, and a finite life you can follow over time.
@@ -117,7 +113,7 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
               <span className="status-dot-pulse" />
               <div>
                 <strong>{selectedModel.label}</strong>
-                <span className="ens-sub">{selectedModel.ens}</span>
+
               </div>
             </div>
             <span className="stage-pill-tag">{selectedModel.tag}</span>
@@ -196,7 +192,7 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
           </div>
 
           <div className="stage-footer-tech">
-            <span>0G replies · Arkiv public history · ENS name preview only</span>
+            <span>0G replies · Arkiv public history</span>
           </div>
         </div>
       </section>
@@ -207,7 +203,7 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
           <p className="section-eyebrow">A CHARACTER’S LIFE</p>
           <h2>Create, grow, share, and pass on their story</h2>
           <p className="section-sub">
-            Here is what the current app lets an owner and their community do. Paid sales and ENS character names are not live yet.
+            Here is what the current app lets an owner and their community do. Paid sales are not live yet.
           </p>
         </div>
 
@@ -352,21 +348,6 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
             <div className="arch-detail">
               <span>Network: Rabdi Testnet</span>
               <span>Root owner: 0x979e…FC51</span>
-            </div>
-          </div>
-
-          <div className="arch-card">
-            <div className="arch-header">
-              <div className="arch-badge ens-badge">ENS name preview</div>
-              <Globe size={20} className="arch-icon ens-icon" />
-            </div>
-            <h4>ENS identity (planned)</h4>
-            <p>
-              The app can preview a possible character subname and look up a wallet’s existing reverse ENS name. Character subnames, ENSv2 records, and CCIP Read are not deployed yet.
-            </p>
-            <div className="arch-detail">
-              <span>Status: preview only</span>
-              <span>ENSv2 registry/resolver: not deployed</span>
             </div>
           </div>
         </div>

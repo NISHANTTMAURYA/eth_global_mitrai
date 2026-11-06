@@ -13,6 +13,7 @@ import {
   Hand,
   Heart,
   Globe2,
+  UserRound,
   Clock3,
   Loader2,
   Sun,
@@ -21,9 +22,6 @@ import { lifecycle, shortAddress, type Character } from '@/lib/domain';
 import { api } from '@/lib/client';
 import { lipSyncRank, models } from '@/lib/models';
 import { Stage, Flower, TimeLeft, LifecyclePill } from './ui';
-import { EnsBadge } from './ens-badge';
-import EnsPassportModal from './ens-passport-modal';
-import { characterSubname } from '@/lib/ens';
 export default function ExploreView({
   characters,
   loading,
@@ -42,7 +40,6 @@ export default function ExploreView({
   notify: (s: string) => void;
 }) {
   const [query, setQuery] = useState('');
-  const [ensCharacter, setEnsCharacter] = useState<Character | null>(null);
   const templatesOnly = !legacyOnly && !characters.some((c) => c.published && lifecycle(c).alive);
   const [filter, setFilter] = useState('Available to Adopt');
   const [syncing, setSyncing] = useState(false);
@@ -223,7 +220,7 @@ export default function ExploreView({
             </div>
             <span className="collection-count">
               {filter === 'Owned by Others'
-                ? `${visible.length} community companions · inspect their ENS passports & inner monologues`
+                ? `${visible.length} community companions · explore their public stories`
                 : templatesOnly
                   ? 'Each appearance can begin one story.'
                   : `${visible.length} ${legacyOnly ? 'legacies' : 'personas'} to discover`}
@@ -267,7 +264,6 @@ export default function ExploreView({
                   c={c}
                   mine={!!owner && c.owner.toLowerCase() === owner.toLowerCase()}
                   index={i}
-                  onOpenEns={(char) => setEnsCharacter(char)}
                 />
               ))}
             </div>
@@ -336,9 +332,6 @@ export default function ExploreView({
           </section>
         )}
       </div>
-      {ensCharacter && (
-        <EnsPassportModal character={ensCharacter} close={() => setEnsCharacter(null)} />
-      )}
     </GalleryRenderer>
   );
 }
@@ -346,12 +339,10 @@ function CharacterCard({
   c,
   mine,
   index,
-  onOpenEns,
 }: {
   c: Character;
   mine: boolean;
   index: number;
-  onOpenEns?: (char: Character) => void;
 }) {
   return (
     <article className="character-card">
@@ -406,28 +397,15 @@ function CharacterCard({
           <p className="muted">Owner asks {c.askingPriceTglm} test tGLM · bids are unpaid</p>
         )}
         <div className="tags">
-          <EnsBadge character={c} compact onClick={() => onOpenEns?.(c)} />
           {c.tags.slice(0, 2).map((t) => (
             <span key={t}>{t}</span>
           ))}
         </div>
-        <div className="card-ens-owner-bar">
+        <div className="card-owner-bar">
           <span className="card-owner-tag">
-            <Globe2 size={12} />
+            <UserRound size={12} />
             {mine ? 'Owned by You' : c.owner !== 'studio' ? `Owner: ${shortAddress(c.owner)}` : 'MitrAI Studio'}
           </span>
-          <button
-            type="button"
-            className="card-ens-subname-btn"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onOpenEns?.(c);
-            }}
-            title="Inspect ENS Agent Passport"
-          >
-            {characterSubname(c)}
-          </button>
         </div>
         <div className="card-bottom">
           <span>

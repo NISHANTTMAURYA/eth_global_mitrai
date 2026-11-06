@@ -33,7 +33,6 @@ import {
   Info,
   Sliders,
   UserCheck,
-  Globe,
 } from 'lucide-react';
 import { lifecycle, shortAddress, type Character, type Message } from '@/lib/domain';
 import { api } from '@/lib/client';
@@ -45,9 +44,6 @@ import { messageBatch } from '@/lib/message-batch';
 import { availableGestures, speechSegments } from '@/lib/conversation';
 import { validateSpeechTrack, type SpeechTrack } from '@/lib/lip-sync';
 import type { Address, Hex } from 'viem';
-import EnsPassportModal from './ens-passport-modal';
-import { EnsBadge } from './ens-badge';
-import { characterSubname } from '@/lib/ens';
 import { getMonologue } from '@/lib/monologue';
 export default function CharacterView({
   c,
@@ -111,7 +107,6 @@ export default function CharacterView({
   const [actionBusy, setActionBusy] = useState(false);
   const [portrait, setPortrait] = useState(true);
   const [greeting, setGreeting] = useState(false);
-  const [ensModal, setEnsModal] = useState(false);
   const end = useRef<HTMLDivElement>(null);
   const audioContext = useRef<AudioContext | null>(null);
   const source = useRef<AudioBufferSourceNode | null>(null);
@@ -477,7 +472,6 @@ export default function CharacterView({
           Back to discovery
         </Link>
         <div className="button-row">
-          <EnsBadge character={c} onClick={() => setEnsModal(true)} />
           {own && l.alive && (
             <button className="button primary small-button" onClick={() => setManageModal(true)}>
               <Sliders size={14} />
@@ -594,20 +588,11 @@ export default function CharacterView({
             )}
           </div>
           <div className="character-bio">
-            <div className="ownership-ens-header">
+            <div className="ownership-header">
               <span className="owner-badge-pill">
                 <UserCheck size={13} />
                 <span>{own ? 'Your MitrAI' : c.owner === 'studio' ? 'MitrAI Studio (Unclaimed)' : `Owner: ${shortAddress(c.owner)}`}</span>
               </span>
-              <button
-                type="button"
-                className="ens-badge-btn"
-                onClick={() => setEnsModal(true)}
-                title="View ENS Agent Passport"
-              >
-                <Globe size={13} />
-                <span>{characterSubname(c)}</span>
-              </button>
               {c.availability === 'showcase' && l.alive && (
                 <span className="showcase-status">Showcase only</span>
               )}
@@ -621,7 +606,6 @@ export default function CharacterView({
             </h1>
             <p>{c.tagline}</p>
             <div className="tags">
-              <EnsBadge character={c} onClick={() => setEnsModal(true)} />
               {c.tags.map((t) => (
                 <span key={t}>{t}</span>
               ))}
@@ -686,7 +670,7 @@ export default function CharacterView({
                 </div>
                 <p className="marketplace-box-desc" style={{ fontSize: 12, color: '#475569', margin: '8px 0 12px' }}>
                   {c.availability === 'transfer'
-                    ? 'The custodian is ready to hand over this companion’s ENS identity, memory bank, and remaining life.'
+                    ? 'The custodian is ready to hand over this companion’s public history and remaining life.'
                     : c.availability === 'offers'
                       ? 'The custodian is reviewing adoption requests and bids in test tGLM / ETH.'
                       : 'Currently in private showcase. You can propose an unsolicited buy offer or adoption bid to the custodian.'}
@@ -1520,7 +1504,6 @@ export default function CharacterView({
           </button>
         </Modal>
       )}
-      {ensModal && <EnsPassportModal character={c} close={() => setEnsModal(false)} />}
     </div>
   );
 }

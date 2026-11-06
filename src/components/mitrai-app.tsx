@@ -32,7 +32,6 @@ export default function MitraiApp() {
   const router = useRouter();
   const [characters, setCharacters] = useState<Character[]>([]);
   const [owner, setOwner] = useState<string | null>(null);
-  const [ownerEns, setOwnerEns] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [provider, setProvider] = useState('Scripted demo');
   const [connect, setConnect] = useState(false);
@@ -115,16 +114,7 @@ export default function MitraiApp() {
     if (!loading && pathname === '/' && mine)
       router.replace(mine.entityKey || mine.demo ? `/companion/${mine.id}` : '/create');
   }, [loading, pathname, mine?.id, mine?.entityKey, router]);
-  useEffect(() => {
-    if (!owner?.startsWith('0x')) { setOwnerEns(null); return; }
-    const controller = new AbortController();
-    fetch(`/api/ens/resolve?address=${encodeURIComponent(owner)}`, { signal: controller.signal })
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => { if (!controller.signal.aborted) setOwnerEns(data?.name || null); })
-      .catch(() => { if (!controller.signal.aborted) setOwnerEns(null); });
-    return () => controller.abort();
-  }, [owner]);
-  const mode = owner?.startsWith('demo:') ? 'Demo collector' : owner ? ownerEns || shortAddress(owner) : null;
+  const mode = owner?.startsWith('demo:') ? 'Demo collector' : owner ? shortAddress(owner) : null;
   useEffect(() => {
     if (!owner?.startsWith('0x')) return;
     const p = getWalletProvider() as ReturnType<typeof getWalletProvider> & {

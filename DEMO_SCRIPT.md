@@ -1,10 +1,10 @@
-# MitrAI: ETHGlobal Mumbai 3-Minute Video Demo Script
+# MitrAI: ETHGlobal Mumbai Video Demo Script
 
 > **Time Formula (Strict 3:00 Max Duration):**
 > - **[0:00 – 0:15] Hook (15s):** The mortal companion thesis.
 > - **[0:15 – 1:30] 50% Live Demo (75s):** 3D stage, thinking groove, live voice reply, automatic brain memories, and 1-click Arkiv handover.
-> - **[1:30 – 2:25] 30% Sponsor Proofs (55s):** 0G Private Computer, Arkiv Rabdi Testnet, and ENS Agent Passports.
-> - **[2:25 – 3:00] 20% Utility & Social Capital (35s):** Real-world perks (VIP concert access, founder dinners, event loyalty) deciding market value.
+> - **[1:30 – 2:10] Sponsor Proofs (40s):** 0G Private Computer and Arkiv Rabdi Testnet.
+> - **[2:10 – 3:00] Product thesis (50s):** Character growth, community, and adoption.
 
 ---
 
@@ -75,25 +75,10 @@
 
 ---
 
-### [2:10 – 2:25] Sponsor Proof 3: Ethereum Name Service (ENS)
-* **Screen:** In the app top bar, click the **`⟐ carrot-kid.mitrai.eth`** badge.
-* **Visual:** The **ENS Agent Passport Modal** opens with verifiable EIP-2304 Text Records (`arkiv.entity`, `agent.status`, `agent.lifespan`, `agent.guardian`).
-* **Speak aloud:**
-> *"For our third track, **ENS**: Every companion is provisioned a Web3 Agent Passport under `mitrai.eth`.  
-> Using standard EIP-2304 Text Records, the ENS passport bridges the companion’s Arkiv entity key, life stage, and days remaining. Our open `/api/ens/[name]` route allows external Web3 apps to resolve these records natively."*
-
----
-
-### [2:25 – 3:00] 20% Utility & Real-World Value Thesis
+### [2:10 – 3:00] Product thesis: Growth, community, and adoption
 * **Screen:** Return to homepage and scroll to **"Real-World Utility: Value Beyond The Screen"** (showing the 4 use cases).
 * **Speak aloud:**
-> *"This brings us to the core economic thesis of MitrAI: **Utility and Social Capital.**  
-> Why would someone adopt or acquire a mature MitrAI? Because a companion isn't just an avatar—it becomes your verified digital envoy.  
-> As your MitrAI attends hackathons, builds with you, and joins exclusive networks, it earns on-chain credentials.  
-> Owning a MitrAI recognized by a music community unlocks VIP backstage concert access. A MitrAI recognized by a startup syndicate unlocks closed-door founder dinners. And event attendance across ETHGlobal unlocks sponsor rewards and conference discounts.  
-> When you adopt an established MitrAI, you don’t just get an AI companion—you inherit a trusted reputation with real-world utility.*  
-> *At Sunset, its story freezes forever as an immutable Legacy Monument on Arkiv.*  
-> *MitrAI: A little life. A world of possibility. Built for ETHGlobal Mumbai."*
+> *"MitrAI starts with a character template, then grows through private conversations. The owner can choose which memories become public, and Arkiv records that shared history. People can meet the character through its community or propose an adoption price; a proposal is not a completed sale. At Sunset, the character stops growing and its public story remains. MitrAI: a little life, a growing story."*
 
 ---
 
