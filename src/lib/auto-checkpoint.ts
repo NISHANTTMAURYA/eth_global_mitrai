@@ -39,19 +39,22 @@ export async function autoCheckpoint(id: string, owner: string) {
       await saveCharacter(c);
     }
     const signed = signSnapshot(c);
-    const existing = (await readArkivCheckpoints(c.entityKey as Hex)).some((point) =>
+    const existing = (await readArkivCheckpoints(c.entityKey as Hex)).find((point) =>
       point.owner.toLowerCase() !== owner.toLowerCase() &&
       verifySnapshot(point.character, point.proof, point.verifier) &&
       point.character.brain.version === c.brain.version &&
       samePublicState(point.character, c));
+    let checkpointKey = existing?.key;
     if (!existing) {
       const receipt = await writeAppCheckpoint(c, signed.proof, signed.verifier);
-      if (receipt.createdEntities[0])
+      checkpointKey = receipt.createdEntities[0];
+      if (checkpointKey)
         await recordArkivReceipt(c.id, receipt.createdEntities[0] as Hex, receipt.txHash);
     }
     const current = await getCharacter(id);
     if (current.owner === c.owner && current.brain.version === c.brain.version) {
       current.chainVersion = c.brain.version;
+      current.checkpointKey = checkpointKey;
       current.history.push({ at: Date.now(), text: `Automatic Arkiv checkpoint ${c.brain.version} confirmed` });
       await saveCharacter(current);
     }

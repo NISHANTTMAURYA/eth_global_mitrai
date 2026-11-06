@@ -32,6 +32,7 @@ export type Character = {
   demo: boolean;
   ownershipEpoch?: number;
   entityKey?: string;
+  checkpointKey?: string;
   chainVersion?: number;
   activation?: 'draft' | 'submitted' | 'active' | 'cancelled';
   birth?: { at: number; blockNumber: string };

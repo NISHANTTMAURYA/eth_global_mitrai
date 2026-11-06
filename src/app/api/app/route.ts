@@ -29,7 +29,13 @@ import {
 import { configuredProvider, reply } from '@/lib/chat';
 import { models } from '@/lib/models';
 import { defaultVoiceForModel, VOICES } from '@/lib/voices';
-import { readArkivCharacter, readArkivCheckpoints, discoverArkiv, findArkivCharacter } from '@/lib/arkiv';
+import {
+  readArkivCharacter,
+  readArkivCheckpoint,
+  readArkivCheckpoints,
+  discoverArkiv,
+  findArkivCharacter,
+} from '@/lib/arkiv';
 import { autoCheckpoint } from '@/lib/auto-checkpoint';
 import { signSnapshot, verifySnapshot } from '@/lib/proof';
 import { recordArkivReceipt } from '@/lib/chain-ledger';
@@ -116,8 +122,18 @@ async function verifiedCharacter(id: string, capture?: { remote?: Awaited<Return
   }
   return c;
 }
-async function latestPublicSnapshot<T extends { key: `0x${string}`; owner: string; updatedBlock: string; character: Character; proof: string; verifier: string }>(root: T) {
-  const checkpoints = await readArkivCheckpoints(root.key);
+async function latestPublicSnapshot<T extends { key: `0x${string}`; owner: string; updatedBlock: string; character: Character; proof: string; verifier: string }>(
+  root: T,
+  checkpointKey?: string,
+) {
+  let checkpoints: Awaited<ReturnType<typeof readArkivCheckpoints>>;
+  if (checkpointKey) {
+    try {
+      checkpoints = [await readArkivCheckpoint(checkpointKey as `0x${string}`)];
+    } catch {
+      checkpoints = await readArkivCheckpoints(root.key);
+    }
+  } else checkpoints = await readArkivCheckpoints(root.key);
   const candidates = checkpoints.filter((entry) =>
     verifySnapshot(entry.character, entry.proof, entry.verifier) &&
     entry.character.id === root.character.id &&
@@ -127,7 +143,10 @@ async function latestPublicSnapshot<T extends { key: `0x${string}`; owner: strin
     BigInt(entry.blockNumber) >= BigInt(root.updatedBlock) &&
     entry.character.brain.version >= root.character.brain.version,
   ).sort((a, b) => b.character.brain.version - a.character.brain.version || Number(b.blockNumber) - Number(a.blockNumber));
-  return candidates[0]?.character || root.character;
+  return {
+    character: candidates[0]?.character || root.character,
+    checkpointKey: candidates[0]?.key,
+  };
 }
 export async function GET(request: Request) {
   try {
@@ -147,7 +166,15 @@ export async function GET(request: Request) {
           remote.character.owner.toLowerCase() !== String(remote.owner).toLowerCase()
         )
           throw new Error('This character is not published on Arkiv.');
-        const publicState = await latestPublicSnapshot({ ...remote, key: c.entityKey as `0x${string}` });
+        const latest = await latestPublicSnapshot(
+          { ...remote, key: c.entityKey as `0x${string}` },
+          c.checkpointKey,
+        );
+        const publicState = latest.character;
+        if (latest.checkpointKey && c.checkpointKey !== latest.checkpointKey) {
+          c.checkpointKey = latest.checkpointKey;
+          await saveCharacter(c);
+        }
         shown = {
           ...publicCharacter(publicState),
           ...(remote.birth ? { birth: remote.birth, activation: 'active' as const } : {}),
@@ -156,9 +183,13 @@ export async function GET(request: Request) {
           chainVersion: publicState.brain.version,
         };
       }
+      const ownerMessages = c.owner === owner ? await messages(id, owner, c.ownershipEpoch || 0) : [];
+      const lastCheckpointAt = c.history
+        .filter((entry) => entry.text.startsWith('Checkpoint'))
+        .at(-1)?.at || 0;
       return NextResponse.json({
         character: c.owner === owner ? c : publicCharacter(shown),
-        messages: c.owner === owner ? await messages(id, owner, c.ownershipEpoch || 0) : [],
+        messages: ownerMessages,
         offers:
           c.owner === owner
             ? (await adoptionRequests(id)).filter(
@@ -167,6 +198,11 @@ export async function GET(request: Request) {
             : [],
         owner,
         provider: configuredProvider(),
+        backgroundCheckpointing: Boolean(process.env.ARKIV_WRITER_PRIVATE_KEY),
+        checkpointProgress:
+          c.owner === owner
+            ? Math.min(5, ownerMessages.filter((message) => message.role === 'user' && message.at > lastCheckpointAt).length)
+            : 0,
       });
     }
     const rows: Character[] = [];
@@ -193,12 +229,14 @@ export async function GET(request: Request) {
             existing.lifespan !== row.character.lifespan)
         )
           continue;
-        const publicState = await latestPublicSnapshot(row);
+        const latest = await latestPublicSnapshot(row, existing?.checkpointKey);
+        const publicState = latest.character;
         const c = {
           ...publicCharacter(publicState),
           ...(row.birth ? { birth: row.birth, activation: 'active' as const } : {}),
           owner: String(row.owner).toLowerCase(),
           entityKey: row.key,
+          checkpointKey: latest.checkpointKey,
           chainVersion: publicState.brain.version,
           demo: false,
         };
@@ -620,6 +658,11 @@ export async function POST(request: Request) {
       if (!samePublicState(c, remote.character))
         throw new Error('The character changed while signing. Please sync the current state.');
       c.entityKey = key;
+      if (data.checkpointKey)
+        c.checkpointKey = z
+          .string()
+          .regex(/^0x[0-9a-f]{64}$/i)
+          .parse(data.checkpointKey);
       await confirmModel(c, key);
       if (c.activation) {
         c.birth = remote.birth;

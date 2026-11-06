@@ -121,7 +121,7 @@ export async function writeArkiv(
     snapshot,
   };
   if (c.entityKey) {
-    const { txHash } = await wallet.executeBatch({
+    const { txHash, createdEntities } = await wallet.executeBatch({
       patches: [{ schema: Characters, entityKey: c.entityKey as Hex, set: values }],
       creates: [
         {
@@ -139,7 +139,7 @@ export async function writeArkiv(
         },
       ],
     });
-    return { entityKey: c.entityKey, txHash };
+    return { entityKey: c.entityKey, checkpointKey: createdEntities[0], txHash };
   }
   const [root, checkpoint] = await arkivPublic().predictEntityKeys({ owner, count: 2 });
   const result = await wallet.executeBatch({
@@ -167,7 +167,11 @@ export async function writeArkiv(
       },
     ],
   });
-  return { entityKey: result.createdEntities[0], txHash: result.txHash };
+  return {
+    entityKey: result.createdEntities[0],
+    checkpointKey: result.createdEntities[1],
+    txHash: result.txHash,
+  };
 }
 
 export async function ensureRabdi(provider: EIP1193Provider) {
@@ -204,6 +208,17 @@ export async function readArkivCheckpoints(key: Hex) {
     character: JSON.parse(hexToString(row.snapshot.value)) as Character,
     blockNumber: String(row.$createdAt),
   }));
+}
+export async function readArkivCheckpoint(key: Hex) {
+  const row = await arkivPublic().getEntity(key, Checkpoints);
+  return {
+    key: row.$key,
+    owner: row.$owner,
+    proof: row.proof.value,
+    verifier: row.verifier.value,
+    character: JSON.parse(hexToString(row.snapshot.value)) as Character,
+    blockNumber: String(row.$createdAt),
+  };
 }
 /** An app-funded writer can append a signed public snapshot without patch rights on the owner's root. */
 export async function writeAppCheckpoint(c: Character, proof: string, verifier: string) {

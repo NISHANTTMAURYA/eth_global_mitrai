@@ -100,6 +100,8 @@ export default function CharacterView({
   const [bidTglm, setBidTglm] = useState('');
   const [incoming, setIncoming] = useState<AdoptionRequest[]>([]);
   const [provider, setProvider] = useState('Scripted demo');
+  const [backgroundCheckpointing, setBackgroundCheckpointing] = useState(false);
+  const [checkpointProgress, setCheckpointProgress] = useState(0);
   const [actionBusy, setActionBusy] = useState(false);
   const [portrait, setPortrait] = useState(true);
   const [greeting, setGreeting] = useState(false);
@@ -166,6 +168,8 @@ export default function CharacterView({
         setChat(d.messages || []);
         setIncoming(d.offers || []);
         setProvider(d.provider || 'Scripted demo');
+        setBackgroundCheckpointing(Boolean(d.backgroundCheckpointing));
+        setCheckpointProgress(Number(d.checkpointProgress || 0));
       })
       .catch(() => {});
   }, [c.id, owner]);
@@ -185,6 +189,8 @@ export default function CharacterView({
         if (!r.ok) return;
         const data = await r.json();
         setIncoming(data.offers || []);
+        setBackgroundCheckpointing(Boolean(data.backgroundCheckpointing));
+        setCheckpointProgress(Number(data.checkpointProgress || 0));
         setChat((items) => {
           const fresh = (data.messages || []).filter(
             (m: Message) => m.proactive && !items.some((item) => item.id === m.id),
@@ -371,6 +377,8 @@ export default function CharacterView({
     setPending(true);
     try {
       const result = await api('chat', { id: c.id, text: message.text, audition: !own });
+      if (own && backgroundCheckpointing)
+        setCheckpointProgress((value) => Math.min(5, value + 1));
       const replies: Message[] = result.messages || [result.message];
       setPending(false);
       for (const reply of replies) {
@@ -429,7 +437,7 @@ export default function CharacterView({
         prepared.proof,
         prepared.verifier,
       );
-      await api('sync', { id: c.id, entityKey: result.entityKey, txHash: result.txHash });
+      await api('sync', { id: c.id, ...result });
       notify(`Arkiv checkpoint confirmed: ${result.txHash.slice(0, 12)}…`);
     });
   return (
@@ -954,12 +962,20 @@ export default function CharacterView({
                         ? `Linked to ${c.entityKey.slice(0, 16)}… · chain version ${c.chainVersion}`
                         : 'Private chats stay here. Only approved public character state goes to Arkiv.'}
                     </p>
-                    <p>With background publishing enabled, five new messages trigger a checkpoint automatically. You can refresh the public snapshot now if needed.</p>
+                    <p>
+                      {backgroundCheckpointing
+                        ? checkpointProgress >= 5
+                          ? 'Your next public checkpoint is being confirmed automatically.'
+                          : `${checkpointProgress} of 5 new conversation turns gathered for the next automatic checkpoint.`
+                        : 'Automatic publishing is unavailable in this deployment. You can sign a public snapshot manually.'}
+                    </p>
                   </div>
-                  <button className="button secondary" onClick={sync} disabled={actionBusy}>
-                    {actionBusy ? <Loader2 className="spin" size={15} /> : <Globe2 size={15} />}Sync
-                    now
-                  </button>
+                  {!backgroundCheckpointing && (
+                    <button className="button secondary" onClick={sync} disabled={actionBusy}>
+                      {actionBusy ? <Loader2 className="spin" size={15} /> : <Globe2 size={15} />}
+                      Publish snapshot
+                    </button>
+                  )}
                 </div>
               )}
             </div>

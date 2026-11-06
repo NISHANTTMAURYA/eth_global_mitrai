@@ -2,9 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { arkivPublic } from '../src/lib/arkiv';
 test('Arkiv uses the keyed SDK URL unless an explicit custom RPC is configured', () => {
+  const previousServerKey = process.env.ARKIV_ACCESS_KEY;
   const previousKey = process.env.NEXT_PUBLIC_ARKIV_ACCESS_KEY;
   const previousRpc = process.env.NEXT_PUBLIC_ARKIV_RPC;
   try {
+    process.env.ARKIV_ACCESS_KEY = 'configuration-test-key';
     process.env.NEXT_PUBLIC_ARKIV_ACCESS_KEY = 'configuration-test-key';
     delete process.env.NEXT_PUBLIC_ARKIV_RPC;
     assert.equal(
@@ -14,6 +16,8 @@ test('Arkiv uses the keyed SDK URL unless an explicit custom RPC is configured',
     process.env.NEXT_PUBLIC_ARKIV_RPC = 'https://example.test/custom';
     assert.equal(arkivPublic().transport.url, 'https://example.test/custom');
   } finally {
+    if (previousServerKey === undefined) delete process.env.ARKIV_ACCESS_KEY;
+    else process.env.ARKIV_ACCESS_KEY = previousServerKey;
     if (previousKey === undefined) delete process.env.NEXT_PUBLIC_ARKIV_ACCESS_KEY;
     else process.env.NEXT_PUBLIC_ARKIV_ACCESS_KEY = previousKey;
     if (previousRpc === undefined) delete process.env.NEXT_PUBLIC_ARKIV_RPC;
