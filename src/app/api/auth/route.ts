@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     if (action === 'logout') {
       const jar = await cookies();
       const token = jar.get('mitrai-session')?.value;
-      if (token) deleteSession(token);
+      if (token) await deleteSession(token);
       jar.delete('mitrai-session');
       return NextResponse.json({ ok: true });
     }
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
       const address = z.string().refine(isAddress).parse(data.address);
       const nonce = crypto.randomUUID();
       const message = `MitrAI login\nOrigin: ${request.headers.get('origin') || new URL(request.url).origin}\nWallet: ${address}\nNonce: ${nonce}\nExpires in 5 minutes. This does not authorize transactions.`;
-      putNonce(nonce, message);
+      await putNonce(nonce, message);
       return NextResponse.json({ nonce, message });
     }
     const { nonce, signature, address } = z
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
         address: z.string().refine(isAddress),
       })
       .parse(data);
-    const message = consumeNonce(nonce);
+    const message = await consumeNonce(nonce);
     if (
       !message ||
       !message.includes(`Wallet: ${address}\n`) ||

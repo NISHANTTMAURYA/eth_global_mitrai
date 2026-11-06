@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   try {
     const id = new URL(request.url).searchParams.get('id');
     if (!id) throw new Error('Choose a character.');
-    const c = getCharacter(id),
+    const c = await getCharacter(id),
       viewer = await identity();
     if (!c.published && c.owner !== viewer) throw new Error('This character is private.');
     let own = c.owner === viewer,
@@ -82,10 +82,10 @@ export async function GET(request: Request) {
     startChainLedger();
     return NextResponse.json(
       {
-        events: brainEvents(c.id, own ? viewer : null, c.ownershipEpoch || 0),
-        mind: own ? loadMind(c, viewer!) : null,
-        profiles: own ? ownerProfiles(c, viewer) : [],
-        jobs: own ? jobsFor(conversationScope(c.id, viewer!, c.ownershipEpoch || 0)) : [],
+        events: await brainEvents(c.id, own ? viewer : null, c.ownershipEpoch || 0),
+        mind: own ? await loadMind(c, viewer!) : null,
+        profiles: own ? await ownerProfiles(c, viewer) : [],
+        jobs: own ? await jobsFor(conversationScope(c.id, viewer!, c.ownershipEpoch || 0)) : [],
         chain,
         chainError,
         checkpoints,

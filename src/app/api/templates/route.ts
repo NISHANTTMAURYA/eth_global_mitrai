@@ -7,13 +7,16 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export async function GET() {
   const owner = await identity(),
-    claims = modelClaims();
+    claims = await modelClaims();
+  const characters = await Promise.all(
+    claims.map((claim) => getCharacter(claim.character_id).catch(() => null)),
+  );
   return NextResponse.json(
     {
       templates: templates.map((t) => {
         const claim = claims.find((c) => c.model === t.model);
-        const mine = !!claim && getCharacter(claim.character_id).owner === owner;
-        const c = claim ? getCharacter(claim.character_id) : null;
+        const c = claim ? characters[claims.indexOf(claim)] : null;
+        const mine = !!c && c.owner === owner;
         return {
           ...t,
           status: !claim ? 'available' : claim.state === 'confirmed' ? 'created' : 'reserved',

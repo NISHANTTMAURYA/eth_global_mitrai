@@ -47,7 +47,7 @@ export default function ExploreView({
   const [syncing, setSyncing] = useState(false);
   const [heroGesture, setHeroGesture] = useState(0);
   const featured = characters.find((c) => c.id === 'milo');
-  const filters = ['All characters', 'Open to adoption', 'Curious', 'Imaginative', 'Creative'];
+  const filters = ['All characters', ...(owner ? ['Owned by me'] : []), 'Open to offers', 'Curious', 'Imaginative', 'Creative'];
   const visible = characters
     .filter((c) => c.published && (legacyOnly ? !lifecycle(c).alive : lifecycle(c).alive))
     .filter((c) =>
@@ -56,7 +56,8 @@ export default function ExploreView({
     .filter(
       (c) =>
         filter === 'All characters' ||
-        (filter === 'Open to adoption' && c.availability === 'transfer') ||
+        (filter === 'Owned by me' && c.owner.toLowerCase() === owner?.toLowerCase()) ||
+        (filter === 'Open to offers' && ['offers', 'transfer'].includes(c.availability)) ||
         c.tags.some((t) => t.toLowerCase() === filter.toLowerCase()),
     )
     .sort((a, b) => lipSyncRank(a.model) - lipSyncRank(b.model));
@@ -150,8 +151,9 @@ export default function ExploreView({
             <p>
               {legacyOnly
                 ? 'Their time together ended. What they became is still here.'
-                : 'Distinct personalities, shared experiences, and a little room for what comes next.'}
+                : 'Choose a one-of-a-kind character. Conversation shapes its mind. Others can join its community or ask to carry its story forward.'}
             </p>
+            {!legacyOnly && <p className="muted">Age counts up from its first Arkiv birth. Time left counts down through one 30-day life. At Sunset, its public story remains as a read-only legacy.</p>}
           </div>
         )}
         {home && (
@@ -195,7 +197,7 @@ export default function ExploreView({
           </div>
           <div className="discover-controls">
             <div className="filter-tabs">
-              {(templatesOnly ? ['Available templates'] : filters.slice(0, legacyOnly ? 1 : 5)).map(
+              {(templatesOnly ? ['Available templates'] : legacyOnly ? filters.slice(0, owner ? 2 : 1) : filters).map(
                 (f) => (
                   <button
                     key={f}
@@ -229,6 +231,7 @@ export default function ExploreView({
                 <CharacterCard
                   key={c.id}
                   c={c}
+                  mine={!!owner && c.owner.toLowerCase() === owner.toLowerCase()}
                   index={i}
                   onOpenEns={(char) => setEnsCharacter(char)}
                 />
@@ -307,10 +310,12 @@ export default function ExploreView({
 }
 function CharacterCard({
   c,
+  mine,
   index,
   onOpenEns,
 }: {
   c: Character;
+  mine: boolean;
   index: number;
   onOpenEns?: (char: Character) => void;
 }) {
@@ -324,7 +329,7 @@ function CharacterCard({
         <div className="card-top">
           <LifecyclePill c={c} />
           <span className="sample-label">
-            {c.demo ? 'STUDIO DEMO' : c.entityKey ? 'ARKIV' : 'LOCAL'}
+            {mine ? 'YOUR MITRAI' : c.demo ? 'STUDIO DEMO' : c.entityKey ? 'ARKIV' : 'LOCAL'}
           </span>
         </div>
         <Stage model={c.model} interactive={false} compact legacy={!lifecycle(c).alive} />
@@ -353,6 +358,9 @@ function CharacterCard({
           </span>
         </div>
         <p>{c.tagline}</p>
+        {c.askingPriceTglm && lifecycle(c).alive && c.availability !== 'showcase' && (
+          <p className="muted">Owner asks {c.askingPriceTglm} test tGLM · bids are unpaid</p>
+        )}
         <div className="tags">
           <EnsBadge character={c} compact onClick={() => onOpenEns?.(c)} />
           {c.tags.slice(0, 2).map((t) => (
@@ -361,7 +369,7 @@ function CharacterCard({
         </div>
         <div className="card-bottom">
           <span>
-            By {c.creator === 'MitrAI studio' ? 'MitrAI studio' : shortAddress(c.creator)}
+            {mine ? 'Owned by you' : `Current owner ${shortAddress(c.owner)}`}
           </span>
           <span>
             <Sparkles size={12} />

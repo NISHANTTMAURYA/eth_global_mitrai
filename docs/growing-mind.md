@@ -45,7 +45,7 @@ The worker runs each minute while a persistent Node server is alive, or through 
 
 ## Storage: the exact answer
 
-The active local database is `.data/mitrai.sqlite` under the application repository, or the same filename in `MITRAI_DATA_DIR`. It uses Node's `node:sqlite` with WAL mode. The `messages` table retains the latest 100 messages for display. New `conversation_events` and scoped `conversation_search` tables preserve and retrieve future accepted history beyond that window. `private_minds` stores observations, evidence and style development. Other new tables hold preferences, leased jobs, notifications, delivery outboxes and push subscriptions.
+Application records are stored in Supabase Postgres through the server-only `DATABASE_URL`. The `messages` table retains the latest 100 messages for display. `conversation_events` stores the dated archive and a Postgres full-text index retrieves evidence beyond that window. `private_minds` stores observations, evidence and style development. Other tables hold owner profiles, preferences, leased jobs, notifications, delivery outboxes and push subscriptions. Data is scoped by character, wallet and ownership epoch. Local SQLite data can be copied with `npm run db:copy-sqlite`; this is a repeatable copy and does not erase the source database.
 
 The database is not encrypted at rest. Application owner/session checks isolate users, but the server administrator can read the file. Backups must remain private. Older messages discarded before the archive was introduced cannot be recovered. Private state is not stored on Arkiv; changing wallets does not grant the new owner access to the previous ownership epoch.
 

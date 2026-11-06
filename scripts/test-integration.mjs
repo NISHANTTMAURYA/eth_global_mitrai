@@ -3,6 +3,9 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 const directory = mkdtempSync(path.join(tmpdir(), 'mitrai-test-'));
+const testDatabaseUrl = process.env.TEST_DATABASE_URL;
+if (!testDatabaseUrl) throw new Error('Set TEST_DATABASE_URL to a dedicated, disposable Supabase test database. Tests never use DATABASE_URL.');
+if (testDatabaseUrl === process.env.DATABASE_URL) throw new Error('TEST_DATABASE_URL must be separate from DATABASE_URL to protect application data.');
 const port = process.env.MITRAI_TEST_PORT || '3107';
 const base = `http://localhost:${port}`;
 // A deliberately expired fixture tests Sunset. Product templates have fresh clocks.
@@ -13,11 +16,12 @@ execFileSync(
     'tsx',
     '--input-type=module',
     '-e',
-    `const s=await import('./src/lib/store.ts');const c=s.getCharacter('juniper');c.createdAt=Date.now()-c.lifespan-1000;s.saveCharacter(c);`,
+    `const s=await import('./src/lib/store.ts');const c=await s.getCharacter('juniper');c.createdAt=Date.now()-c.lifespan-1000;await s.saveCharacter(c);`,
   ],
   {
     env: {
       ...process.env,
+      DATABASE_URL: testDatabaseUrl,
       MITRAI_DATA_DIR: directory,
       MITRAI_DEMO_MODE: '1',
       PROACTIVE_DISABLED: '1',
@@ -28,6 +32,7 @@ execFileSync(
 const server = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'start', '-p', port], {
   env: {
     ...process.env,
+    DATABASE_URL: testDatabaseUrl,
     MITRAI_DATA_DIR: directory,
     MITRAI_DEMO_MODE: '1',
     PROACTIVE_DISABLED: '1',

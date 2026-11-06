@@ -26,7 +26,7 @@ test('0G defaults to testnet, not the paid mainnet router', () => {
   assert.equal(DEFAULT_OG_API_URL, 'https://router-api-testnet.integratenetwork.work/v1');
 });
 
-test('Google Vertex AI is selected before optional 0G when configured', () => {
+test('0G is selected first when configured, with Vertex AI as fallback', () => {
   const old = {
     enabled: process.env.GEMINI_USE_VERTEX,
     project: process.env.GOOGLE_CLOUD_PROJECT,
@@ -38,7 +38,7 @@ test('Google Vertex AI is selected before optional 0G when configured', () => {
     process.env.GOOGLE_CLOUD_PROJECT = 'project-aa91aa00-7576-4735-b60';
     process.env.OG_API_KEY = 'optional';
     process.env.OG_MODEL = 'optional';
-    assert.equal(configuredProvider(), 'Google Vertex AI');
+    assert.equal(configuredProvider(), '0G');
   } finally {
     if (old.enabled === undefined) delete process.env.GEMINI_USE_VERTEX;
     else process.env.GEMINI_USE_VERTEX = old.enabled;

@@ -9,4 +9,4 @@
 
 Storage expiry is set to 90 days on entity creation; automatic renewal and expiry alerts are outstanding. Sunset instead uses the character's registered fixed duration and is checked by the API. Public queries alone do not certify claims of ability.
 
-Before judging: run a real write, read it in the visible UI, preserve wallet/entity/transaction evidence and demonstrate a second-wallet transfer. No live-chain success is claimed yet.
+Live evidence: Carrot Kid root `0x4b1913c84716c7da12a0ab09cdbe1bdbabe822928fe1f9399dca0b9f0b6358e9` is owned by `0x979e3eCb04De84980418D5146E557997150AFC51`, with birth block 299338 and two readable checkpoints. Before judging, preserve a visible read, configure a funded app writer for automatic chat checkpoints, and demonstrate a second-wallet transfer.

@@ -440,6 +440,12 @@ export default function CreateView({
                   <p className="template-preview-tagline">{selectedTemplate.tagline}</p>
                   <p>{selectedTemplate.description}</p>
                   <p className="template-learns"><Sparkles size={15} /> They learn from your conversations over time. You can edit their name, introduction, story, behavior, and starting traits.</p>
+                  <dl className="template-inner-life" aria-label={`${selectedTemplate.name} starting inner life`}>
+                    <div><dt>Values</dt><dd>{selectedTemplate.innerLife.value}</dd></div>
+                    <div><dt>Soft spot</dt><dd>{selectedTemplate.innerLife.softSpot}</dd></div>
+                    <div><dt>Still learning</dt><dd>{selectedTemplate.innerLife.growingEdge}</dd></div>
+                    <div><dt>Wonders about</dt><dd>{selectedTemplate.innerLife.wonder}</dd></div>
+                  </dl>
                 </div>
                 <div className="starter-brain" aria-label={`Starting mind: curiosity ${selectedTemplate.traits.curiosity} percent, warmth ${selectedTemplate.traits.warmth} percent, playfulness ${selectedTemplate.traits.playfulness} percent`}>
                   <div className="starter-brain-orbit orbit-one" />
@@ -462,7 +468,7 @@ export default function CreateView({
                 />
                 <span className="ens-creation-preview">
                   <Globe size={11} />
-                  <span>ENS Subname: <strong>{characterSubname({ name })}</strong></span>
+                  <span>ENS name preview (not registered): <strong>{characterSubname({ name })}</strong></span>
                 </span>
               </label>
               <label>

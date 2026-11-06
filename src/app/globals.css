@@ -1499,6 +1499,7 @@ p {
 }
 .workspace-tabs {
   display: flex;
+  overflow-x: auto;
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--line);
@@ -1520,6 +1521,9 @@ p {
 .workspace-tabs button.active {
   color: #e07048;
 }
+.community-compose { display: grid; gap: 10px; margin: 22px 0; }
+.community-compose textarea { width: 100%; resize: vertical; border: 1px solid var(--line); border-radius: 12px; padding: 12px; font: inherit; }
+.community-posts { display: grid; gap: 12px; margin-top: 24px; }
 .workspace-tabs button.active:after {
   content: '';
   position: absolute;
@@ -3294,6 +3298,10 @@ p {
 .template-preview-copy .template-preview-tagline {color:#353b31;font-size:12px;font-weight:500;}
 .template-preview-copy .template-learns {display:flex;align-items:flex-start;gap:7px;margin-top:13px;color:#567047;}
 .template-preview-copy .template-learns svg {flex-shrink:0;margin-top:1px;}
+.template-inner-life {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:14px 0 0;}
+.template-inner-life div {padding:9px 10px;border:1px solid #e5e9dc;border-radius:11px;background:rgba(255,255,255,.68);}
+.template-inner-life dt {margin:0 0 3px;font-size:8px;line-height:1.2;letter-spacing:.75px;text-transform:uppercase;color:#8b917f;}
+.template-inner-life dd {margin:0;font-size:10px;line-height:1.35;color:#444b3e;}
 .starter-brain {position:relative;min-height:176px;display:grid;place-items:center;overflow:hidden;border-radius:16px;background:linear-gradient(145deg,#eaf3df,#f5f2e5 56%,#e9f1f3);}
 .starter-brain-orbit {position:absolute;width:132px;height:75px;border:1px solid rgba(116,148,101,.38);border-radius:50%;transform:rotate(-32deg);}
 .starter-brain-orbit.orbit-two {width:135px;height:77px;transform:rotate(42deg);border-color:rgba(223,145,103,.35);}
@@ -3307,7 +3315,7 @@ p {
 .preview-motion-toolbar button span {font-size:9px;white-space:nowrap;}
 .preview-motion-toolbar button:hover,.preview-motion-toolbar button.active {background:#fff1e8;color:#d76d45;}
 .preview-motion-toolbar button:focus-visible {outline:2px solid #df8b63;outline-offset:1px;}
-@media(max-width:700px){.template-preview-card {grid-template-columns:1fr;}.starter-brain {min-height:160px;}.template-preview-motions>div:first-child {align-items:flex-start;flex-direction:column;gap:4px;}}
+@media(max-width:700px){.template-preview-card {grid-template-columns:1fr;}.starter-brain {min-height:160px;}.template-preview-motions>div:first-child {align-items:flex-start;flex-direction:column;gap:4px;}.template-inner-life {grid-template-columns:1fr;}}
 
 /* ENS Agent Subname & Passport styles */
 .ens-subname-pill {

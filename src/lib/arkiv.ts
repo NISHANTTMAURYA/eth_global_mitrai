@@ -11,6 +11,7 @@ import {
   type EIP1193Provider,
   type Hex,
 } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
 import { publicCharacter, type Character } from './domain';
 export const Characters = defineSchema('mitrai.characters.v1', {
   characterId: str().indexed(),
@@ -30,7 +31,7 @@ export const Checkpoints = defineSchema('mitrai.checkpoints.v1', {
 });
 export function arkivPublic() {
   return createPublicClient({
-    chain: rabdi({ accessKey: process.env.NEXT_PUBLIC_ARKIV_ACCESS_KEY || '' }),
+    chain: rabdi({ accessKey: process.env.ARKIV_ACCESS_KEY || process.env.NEXT_PUBLIC_ARKIV_ACCESS_KEY || '' }),
     transport: http(process.env.NEXT_PUBLIC_ARKIV_RPC || undefined),
   });
 }
@@ -52,6 +53,7 @@ export async function readArkivCharacter(key: Hex) {
   const character = JSON.parse(hexToString(entity.snapshot.value)) as Character;
   return {
     owner: entity.$owner,
+    updatedBlock: String(entity.$updatedAt),
     proof: entity.proof.value,
     verifier: entity.verifier.value,
     character,
@@ -68,6 +70,7 @@ export async function findArkivCharacter(id: string, owner: Address) {
   return result.entities.map((e) => ({
     key: e.$key,
     owner: e.$owner,
+    updatedBlock: String(e.$updatedAt),
     proof: e.proof.value,
     verifier: e.verifier.value,
     character: JSON.parse(hexToString(e.snapshot.value)) as Character,
@@ -83,6 +86,7 @@ export async function discoverArkiv() {
     entities.map(async (e) => ({
       key: e.$key,
       owner: e.$owner,
+      updatedBlock: String(e.$updatedAt),
       proof: e.proof.value,
       verifier: e.verifier.value,
       character: JSON.parse(hexToString(e.snapshot.value)) as Character,
@@ -194,6 +198,34 @@ export async function readArkivCheckpoints(key: Hex) {
     character: JSON.parse(hexToString(row.snapshot.value)) as Character,
     blockNumber: String(row.$createdAt),
   }));
+}
+/** An app-funded writer can append a signed public snapshot without patch rights on the owner's root. */
+export async function writeAppCheckpoint(c: Character, proof: string, verifier: string) {
+  const raw = process.env.ARKIV_WRITER_PRIVATE_KEY;
+  if (!raw || !/^0x[0-9a-fA-F]{64}$/.test(raw))
+    throw new Error('ARKIV_WRITER_PRIVATE_KEY is not configured.');
+  if (!c.entityKey) throw new Error('The owner must create the Arkiv root first.');
+  const account = privateKeyToAccount(raw as Hex);
+  const wallet = createWalletClient({
+    chain: rabdi({ accessKey: process.env.ARKIV_ACCESS_KEY || process.env.NEXT_PUBLIC_ARKIV_ACCESS_KEY || '' }),
+    account,
+    transport: http(process.env.NEXT_PUBLIC_ARKIV_RPC || undefined),
+  });
+  return wallet.executeBatch({
+    creates: [{
+      schema: Checkpoints,
+      values: {
+        characterId: c.id,
+        parentKey: c.entityKey,
+        version: String(c.brain.version),
+        proof,
+        verifier,
+        snapshot: stringToBytes(JSON.stringify(publicCharacter(c))),
+      },
+      expiration: ExpirationTime.fromDays(90),
+      flags: { readonly: true, permissionlessExtension: true },
+    }],
+  });
 }
 export async function transferArkiv(
   provider: EIP1193Provider,

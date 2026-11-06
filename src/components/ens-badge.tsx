@@ -25,10 +25,10 @@ export function EnsBadge({
           onClick();
         }
       }}
-      title={`ENS Agent Identity: ${subname}`}
+      title={`Proposed ENS name (not registered): ${subname}`}
     >
       <Globe size={compact ? 10 : 12} className="ens-subname-icon" />
-      <span className="ens-subname-label">{subname}</span>
+      <span className="ens-subname-label">ENS preview · {subname}</span>
     </button>
   );
 }

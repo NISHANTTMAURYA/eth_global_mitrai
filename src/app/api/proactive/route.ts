@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { checkOrigin, requireIdentity } from '@/lib/session';
-import { database as db, getCharacter } from '@/lib/store';
+import { getCharacter } from '@/lib/store';
+import { query, json } from '@/lib/database';
 import { assertOwner } from '@/lib/domain';
 import {
   reachPreferences,
@@ -17,7 +18,7 @@ import { startProactiveWorker } from '@/lib/proactive-engine';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 async function ownCharacter(id: string, owner: string) {
-  const c = getCharacter(id);
+  const c = await getCharacter(id);
   assertOwner(c, owner);
   if (c.entityKey) {
     const remote = await readArkivCharacter(c.entityKey as `0x${string}`);
@@ -57,10 +58,10 @@ export async function GET(request: Request) {
     const c = id ? await ownCharacter(id, owner) : null;
     // Old-owner inbox records remain private to that owner; their old character view is no longer accessible.
     return response({
-      preferences: reachPreferences(owner),
-      notifications: inbox(owner),
-      mind: c ? loadMind(c, owner) : null,
-      jobs: c ? jobsFor(conversationScope(c.id, owner, c.ownershipEpoch || 0)) : [],
+      preferences: await reachPreferences(owner),
+      notifications: await inbox(owner),
+      mind: c ? await loadMind(c, owner) : null,
+      jobs: c ? await jobsFor(conversationScope(c.id, owner, c.ownershipEpoch || 0)) : [],
       emailConfigured: !!(process.env.RESEND_API_KEY && process.env.RESEND_FROM),
       pushPublicKey: pushKeys().publicKey,
     });
@@ -83,28 +84,22 @@ export async function POST(request: Request) {
       if (prefs.emailEnabled && !prefs.email) throw new Error('Enter your email address.');
       if (prefs.emailEnabled && (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM))
         throw new Error('Email needs RESEND_API_KEY and a verified RESEND_FROM on the server.');
-      saveReachPreferences(owner, prefs);
+      await saveReachPreferences(owner, prefs);
       if (!prefs.enabled)
-        db.prepare(
-          "UPDATE proactive_jobs SET status='cancelled' WHERE owner=? AND status IN ('pending','processing')",
-        ).run(owner);
+        await query(
+          "UPDATE proactive_jobs SET status='cancelled' WHERE owner=$1 AND status IN ('pending','processing')",
+          [owner],
+        );
       return response({ preferences: prefs });
     }
     if (body.action === 'read') {
       const id = z.string().max(100).parse(body.id);
-      db.prepare('UPDATE notifications SET read_at=? WHERE id=? AND owner=?').run(
-        Date.now(),
-        id,
-        owner,
-      );
+      await query('UPDATE notifications SET read_at=$1 WHERE id=$2 AND owner=$3', [Date.now(), id, owner]);
       return response({ ok: true });
     }
     if (body.action === 'cancel') {
       const id = z.string().max(1000).parse(body.id);
-      db.prepare("UPDATE proactive_jobs SET status='cancelled' WHERE id=? AND owner=?").run(
-        id,
-        owner,
-      );
+      await query("UPDATE proactive_jobs SET status='cancelled' WHERE id=$1 AND owner=$2", [id, owner]);
       return response({ ok: true });
     }
     if (body.action === 'subscribe') {
@@ -118,28 +113,28 @@ export async function POST(request: Request) {
           }),
         })
         .parse(body.subscription);
-      const existing = db
-        .prepare('SELECT owner FROM push_subscriptions WHERE endpoint=?')
-        .get(subscription.endpoint) as { owner: string } | undefined;
+      const existingResult = await query<{ owner: string }>(
+        'SELECT owner FROM push_subscriptions WHERE endpoint=$1',
+        [subscription.endpoint],
+      );
+      const existing = existingResult.rows[0];
       if (existing && existing.owner !== owner)
         throw new Error(
           'This push subscription belongs to a different session. Disable it before switching accounts.',
         );
-      const count = db
-        .prepare('SELECT count(*) AS n FROM push_subscriptions WHERE owner=?')
-        .get(owner) as { n: number };
-      if (count.n >= 5 && !existing) throw new Error('You already have five notification devices.');
-      db.prepare('INSERT OR REPLACE INTO push_subscriptions VALUES(?,?,?)').run(
-        subscription.endpoint,
-        owner,
-        JSON.stringify(subscription),
+      const count = await query<{ n: string }>('SELECT count(*) AS n FROM push_subscriptions WHERE owner=$1', [owner]);
+      if (Number(count.rows[0].n) >= 5 && !existing) throw new Error('You already have five notification devices.');
+      await query(
+        `INSERT INTO push_subscriptions(endpoint,owner,body) VALUES($1,$2,$3::jsonb)
+         ON CONFLICT(endpoint) DO UPDATE SET owner=excluded.owner,body=excluded.body`,
+        [subscription.endpoint, owner, JSON.stringify(subscription)],
       );
-      saveReachPreferences(owner, { ...reachPreferences(owner), pushEnabled: true });
+      await saveReachPreferences(owner, { ...(await reachPreferences(owner)), pushEnabled: true });
       return response({ ok: true });
     }
     if (body.action === 'unsubscribe') {
-      db.prepare('DELETE FROM push_subscriptions WHERE owner=?').run(owner);
-      saveReachPreferences(owner, { ...reachPreferences(owner), pushEnabled: false });
+      await query('DELETE FROM push_subscriptions WHERE owner=$1', [owner]);
+      await saveReachPreferences(owner, { ...(await reachPreferences(owner)), pushEnabled: false });
       return response({ ok: true });
     }
     throw new Error('Unknown check-in action.');

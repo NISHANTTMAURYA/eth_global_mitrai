@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { createSession, readSession } from './store';
 export async function identity() {
   const token = (await cookies()).get('mitrai-session')?.value;
-  return token ? readSession(token) : null;
+  return token ? await readSession(token) : null;
 }
 export async function requireIdentity() {
   const owner = await identity();
@@ -11,7 +11,7 @@ export async function requireIdentity() {
 }
 export async function setIdentity(owner: string) {
   const token = crypto.randomUUID() + crypto.randomUUID();
-  createSession(token, owner);
+  await createSession(token, owner);
   (await cookies()).set('mitrai-session', token, {
     httpOnly: true,
     sameSite: 'strict',

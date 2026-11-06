@@ -59,8 +59,8 @@ function vertexEnabled() {
 }
 
 export function configuredProvider() {
-  if (vertexEnabled() && process.env.GOOGLE_CLOUD_PROJECT) return 'Google Vertex AI';
   if (process.env.OG_API_KEY && process.env.OG_MODEL) return '0G';
+  if (vertexEnabled() && process.env.GOOGLE_CLOUD_PROJECT) return 'Google Vertex AI';
   return 'Scripted demo';
 }
 
@@ -208,17 +208,35 @@ async function replyWith0G(
   const result = await response.json();
   const answer = result.choices?.[0]?.message?.content;
   if (typeof answer !== 'string' || !answer.trim()) throw new Error('0G returned no reply.');
+  let parsedMessages: ReplyBubble[];
+  try {
+    parsedMessages = parseReply(answer.trim().replace(/^```json\s*|```\s*$/g, ''), c.model);
+  } catch {
+    // Some 0G models return prose despite the JSON instruction. Preserve their
+    // real answer instead of silently rerouting the conversation to another AI.
+    if (/^\s*[\[{]/.test(answer)) throw new Error('0G returned malformed structured output.');
+    const sentences = answer.trim().slice(0, 2400).split(/(?<=[.!?])\s+/u).filter(Boolean);
+    parsedMessages = sentences.slice(0, 3).map((part) => ({ text: part.slice(0, 900) }));
+    if (!parsedMessages.length) throw new Error('0G returned no usable reply.');
+  }
+  let mindProp = emptyProposal;
+  if (!audition && !options.followUp) {
+    try {
+      const parsed = JSON.parse(answer.trim().replace(/^```json\s*|```\s*$/g, ''));
+      if (parsed.mind) mindProp = groundedProposal(parsed.mind, text);
+    } catch {}
+  }
   return {
-    mind:
-      audition || options.followUp
-        ? emptyProposal
-        : groundedProposal(JSON.parse(answer).mind, text),
-    messages: parseReply(answer, c.model),
-    text: parseReply(answer, c.model)
+    mind: mindProp,
+    messages: parsedMessages,
+    text: parsedMessages
       .map((m) => m.text)
       .join('\n\n'),
     provider: '0G',
-    requestId: response.headers.get('x-request-id') || result.id,
+    requestId:
+      response.headers.get('x-request-id') ||
+      result.x_0g_trace?.request_id ||
+      result.id,
   };
 }
 
@@ -231,9 +249,30 @@ export async function reply(
 ) {
   const context = audition ? publicCharacter(c) : c;
   const memories = retrieve(context.brain, text).map((m) => m.text);
-  if (vertexEnabled()) return replyWithVertex(context, text, history, memories, audition, options);
-  if (process.env.OG_API_KEY && process.env.OG_MODEL)
-    return replyWith0G(context, text, history, memories, audition, options);
+
+  // 1. First try 0G if configured
+  if (process.env.OG_API_KEY && process.env.OG_MODEL) {
+    try {
+      return await replyWith0G(context, text, history, memories, audition, options);
+    } catch (e) {
+      console.warn(
+        '0G inference failed, falling back to Vertex AI:',
+        e instanceof Error ? e.message : e,
+      );
+    }
+  }
+
+  // 2. Fallback to Google Vertex AI if configured
+  if (vertexEnabled()) {
+    try {
+      return await replyWithVertex(context, text, history, memories, audition, options);
+    } catch (e) {
+      console.warn(
+        'Vertex AI inference failed, falling back to scripted demo:',
+        e instanceof Error ? e.message : e,
+      );
+    }
+  }
 
   // Explicitly deterministic rehearsal, not AI or a provider fallback.
   const lower = text.toLowerCase();

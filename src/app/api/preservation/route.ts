@@ -8,7 +8,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   try {
-    const c = getCharacter(new URL(request.url).searchParams.get('id') || ''),
+    const c = await getCharacter(new URL(request.url).searchParams.get('id') || ''),
       owner = await identity();
     if (!c.entityKey || !owner) throw new Error('Connect the owner wallet.');
     const client = arkivPublic(),

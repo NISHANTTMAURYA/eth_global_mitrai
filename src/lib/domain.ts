@@ -25,6 +25,7 @@ export type Character = {
   lifespan: number;
   published: boolean;
   availability: 'showcase' | 'offers' | 'transfer';
+  askingPriceTglm?: string;
   brain: Brain;
   highlights: string[];
   history: { at: number; text: string; by?: string }[];
@@ -165,6 +166,7 @@ export function handover(c: Character, recipient: string, now = Date.now()): Cha
     ownershipEpoch: (c.ownershipEpoch || 0) + 1,
     published: false,
     availability: 'showcase',
+    askingPriceTglm: undefined,
     brain: {
       ...c.brain,
       memories: c.brain.memories.filter((m) => m.scope === 'public'),

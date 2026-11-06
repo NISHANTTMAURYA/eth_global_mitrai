@@ -32,7 +32,7 @@ Do not claim to reproduce full Soar, ACT-R, BDI or human development. Case-based
 }
 ```
 
-Integers represent bounded scores on a documented scale, generally 0–10,000; signed mood values can use −10,000 to +10,000. Store current owner through Arkiv's actual system ownership field. Birth block/time and the canonical birth commitment must be checked independently of user-editable state. Store only public-approved transferable records here. Private facts use the same logical types in the current SQLite implementation with owner and ownership-epoch access control.
+Integers represent bounded scores on a documented scale, generally 0–10,000; signed mood values can use −10,000 to +10,000. Store current owner through Arkiv's actual system ownership field. Birth block/time and the canonical birth commitment must be checked independently of user-editable state. Store only public-approved transferable records here. Private facts use the same logical types in Supabase Postgres with owner and ownership-epoch access control.
 
 ## Mapping to Arkiv
 

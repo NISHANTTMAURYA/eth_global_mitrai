@@ -1,6 +1,6 @@
 # Running character check-ins
 
-The engine runs once per minute in a persistent Next.js Node server, started through `src/instrumentation.ts` or the authenticated inbox route. Jobs, leases, messages and channel outboxes live in SQLite, so they survive restarts. Keep `.data`/`MITRAI_DATA_DIR` on durable storage. A browser tab does not need to stay open for the server to generate a check-in.
+The engine runs once per minute in a persistent Next.js Node server, started through `src/instrumentation.ts` or the authenticated inbox route. Jobs, leases, messages and channel outboxes live in Supabase Postgres, so they survive restarts and work across app instances. A browser tab does not need to stay open for the server to generate a check-in.
 
 Run a separate worker if preferred:
 
@@ -10,7 +10,7 @@ npm run proactive:worker
 npm run proactive:once
 ```
 
-Multiple worker instances lease jobs through SQLite; a notification ID deduplicates the resulting message. For serverless hosting, use a host scheduler to POST to `/api/proactive/run` every minute with `Authorization: Bearer <PROACTIVE_CRON_SECRET>`. Request-only runtimes do not keep JavaScript intervals alive. Set `PROACTIVE_DISABLED=1` for tests or to disable embedded intervals. Preference controls independently prevent delivery.
+Multiple worker instances lease jobs with atomic Postgres updates; a notification ID deduplicates the resulting message. For serverless hosting, use a host scheduler to POST to `/api/proactive/run` every minute with `Authorization: Bearer <PROACTIVE_CRON_SECRET>`. Request-only runtimes do not keep JavaScript intervals alive. Set `PROACTIVE_DISABLED=1` for tests or to disable embedded intervals. Preference controls independently prevent delivery.
 
 ## Controls in the app
 
@@ -30,4 +30,4 @@ Click **Enable browser notifications**. Permission is requested only on that cli
 
 `conversation_events` archives future accepted private messages, while `messages` retains the latest 100 for quick display. Existing latest-window messages are migrated into the archive when that owner conversation next runs; messages already discarded before this change cannot be recovered. `conversation_search` provides scoped full-text retrieval. `private_minds` stores grounded observations and adaptation evidence. Private records never enter `publicCharacter()` or signed Arkiv snapshots. Saving a local checkpoint can adopt the bounded general trait values; publication still needs the owner's Arkiv signature.
 
-This is a single-host SQLite design, without application-level database encryption at rest. Server administrators can read the file. Sender addresses, push subscriptions and private plans also stay off chain. Multi-host deployment needs a shared durable database/queue and operational monitoring rather than separate ephemeral SQLite copies.
+The server connects with `DATABASE_URL`; keep it private and use a dedicated test database for integration tests. Sender addresses, push subscriptions and private plans stay off chain. Row-level policies are not a substitute for the application’s server-side ownership and epoch checks because the server connection has privileged database access.

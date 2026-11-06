@@ -1,64 +1,54 @@
-import { database as db, appendBrainEvent } from './store';
+import { appendBrainEvent } from './store';
 import type { Character, Message } from './domain';
 import { conversationScope, initialPrivateMind, type PrivateMind } from './private-mind';
+import { json, query, type DbClient } from './database';
 
-db.exec(`
-CREATE TABLE IF NOT EXISTS conversation_events(id TEXT PRIMARY KEY,scope TEXT NOT NULL,at INTEGER NOT NULL,body TEXT NOT NULL);
-CREATE INDEX IF NOT EXISTS conversation_scope_at ON conversation_events(scope,at);
-CREATE VIRTUAL TABLE IF NOT EXISTS conversation_search USING fts5(scope UNINDEXED,text,message_id UNINDEXED,at UNINDEXED);
-CREATE TABLE IF NOT EXISTS private_minds(scope TEXT PRIMARY KEY,body TEXT NOT NULL);
-CREATE TABLE IF NOT EXISTS reach_preferences(owner TEXT PRIMARY KEY,body TEXT NOT NULL);
-CREATE TABLE IF NOT EXISTS proactive_jobs(id TEXT PRIMARY KEY,scope TEXT NOT NULL,character_id TEXT NOT NULL,owner TEXT NOT NULL,epoch INTEGER NOT NULL,due_at INTEGER NOT NULL,status TEXT NOT NULL,lease_until INTEGER NOT NULL DEFAULT 0,attempts INTEGER NOT NULL DEFAULT 0,body TEXT NOT NULL);
-CREATE INDEX IF NOT EXISTS due_proactive_jobs ON proactive_jobs(status,due_at);
-CREATE TABLE IF NOT EXISTS notifications(id TEXT PRIMARY KEY,owner TEXT NOT NULL,character_id TEXT NOT NULL,epoch INTEGER NOT NULL,created_at INTEGER NOT NULL,read_at INTEGER,body TEXT NOT NULL);
-CREATE INDEX IF NOT EXISTS notification_owner ON notifications(owner,created_at);
-CREATE TABLE IF NOT EXISTS delivery_outbox(id TEXT PRIMARY KEY,notification_id TEXT NOT NULL,channel TEXT NOT NULL,status TEXT NOT NULL,lease_until INTEGER NOT NULL DEFAULT 0,attempts INTEGER NOT NULL DEFAULT 0,next_at INTEGER NOT NULL,body TEXT NOT NULL);
-CREATE TABLE IF NOT EXISTS push_subscriptions(endpoint TEXT PRIMARY KEY,owner TEXT NOT NULL,body TEXT NOT NULL);
-`);
-export function archiveConversation(id: string, owner: string, epoch: number, rows: Message[]) {
+export async function archiveConversation(
+  id: string,
+  owner: string,
+  epoch: number,
+  rows: Message[],
+  client?: DbClient,
+) {
   const scope = conversationScope(id, owner, epoch);
-  for (const row of rows) {
-    const inserted = db
-      .prepare('INSERT OR IGNORE INTO conversation_events VALUES(?,?,?,?)')
-      .run(`${scope}:${row.id}`, scope, row.at, JSON.stringify(row));
-    if (inserted.changes)
-      db.prepare('INSERT INTO conversation_search(scope,text,message_id,at) VALUES(?,?,?,?)').run(
-        scope,
-        row.text,
-        row.id,
-        row.at,
-      );
-  }
+  for (const row of rows)
+    await query(
+      'INSERT INTO conversation_events(id,scope,at,body) VALUES($1,$2,$3,$4::jsonb) ON CONFLICT(id) DO NOTHING',
+      [`${scope}:${row.id}`, scope, row.at, JSON.stringify(row)],
+      client,
+    );
 }
-export function recallArchive(scope: string, query: string): Message[] {
-  const words = [...new Set(query.match(/[\p{L}\p{N}]{3,}/gu) || [])].slice(0, 12);
+
+export async function recallArchive(scope: string, queryText: string): Promise<Message[]> {
+  const words = [...new Set(queryText.match(/[\p{L}\p{N}]{3,}/gu) || [])].slice(0, 12);
   if (!words.length) return [];
-  const match = words.map((w) => `"${w.replaceAll('"', '')}"`).join(' OR ');
-  const hits = db
-    .prepare(
-      'SELECT message_id FROM conversation_search WHERE conversation_search MATCH ? AND scope=? ORDER BY rank LIMIT 4',
-    )
-    .all(match, scope) as { message_id: string }[];
-  return hits.flatMap((hit) => {
-    const row = db
-      .prepare('SELECT body FROM conversation_events WHERE id=?')
-      .get(`${scope}:${hit.message_id}`) as { body: string } | undefined;
-    return row ? [JSON.parse(row.body)] : [];
-  });
+  const result = await query<{ body: unknown }>(
+    `SELECT body FROM conversation_events
+     WHERE scope=$1 AND search_vector @@ plainto_tsquery('simple',$2)
+     ORDER BY ts_rank(search_vector,plainto_tsquery('simple',$2)) DESC, at DESC LIMIT 4`,
+    [scope, words.join(' ')],
+  );
+  return result.rows.map((row) => json<Message>(row.body));
 }
-export function loadMind(c: Character, owner: string) {
-  const row = db
-    .prepare('SELECT body FROM private_minds WHERE scope=?')
-    .get(conversationScope(c.id, owner, c.ownershipEpoch || 0)) as { body: string } | undefined;
-  return row ? (JSON.parse(row.body) as PrivateMind) : initialPrivateMind(c);
+
+export async function loadMind(c: Character, owner: string, client?: DbClient): Promise<PrivateMind> {
+  const result = await query<{ body: unknown }>(
+    'SELECT body FROM private_minds WHERE scope=$1',
+    [conversationScope(c.id, owner, c.ownershipEpoch || 0)],
+    client,
+  );
+  return result.rowCount
+    ? json<PrivateMind>(result.rows[0].body)
+    : initialPrivateMind(c);
 }
-export function saveMind(c: Character, owner: string, mind: PrivateMind) {
-  const before = loadMind(c, owner),
-    epoch = c.ownershipEpoch || 0;
+
+export async function saveMind(c: Character, owner: string, mind: PrivateMind, client?: DbClient) {
+  const before = await loadMind(c, owner, client);
+  const epoch = c.ownershipEpoch || 0;
   for (const observation of mind.observations) {
     const old = before.observations.find((o) => o.key === observation.key);
     if (old?.sourceId === observation.sourceId) continue;
-    appendBrainEvent(
+    await appendBrainEvent(
       {
         id: `learning:${c.id}:${owner}:${epoch}:${observation.sourceId}:${observation.key}`,
         characterId: c.id,
@@ -75,10 +65,11 @@ export function saveMind(c: Character, owner: string, mind: PrivateMind) {
         ],
       },
       'private',
+      client,
     );
   }
   for (const change of mind.changes.slice(before.changes.length))
-    appendBrainEvent(
+    await appendBrainEvent(
       {
         id: `style:${c.id}:${owner}:${epoch}:${change.at}:${change.axis}`,
         characterId: c.id,
@@ -94,13 +85,14 @@ export function saveMind(c: Character, owner: string, mind: PrivateMind) {
         ],
       },
       'private',
+      client,
     );
-  db.prepare('INSERT OR REPLACE INTO private_minds VALUES(?,?)').run(
-    conversationScope(c.id, owner, c.ownershipEpoch || 0),
-    JSON.stringify(mind),
+  await query(
+    `INSERT INTO private_minds(scope,body) VALUES($1,$2::jsonb)
+     ON CONFLICT(scope) DO UPDATE SET body=excluded.body`,
+    [conversationScope(c.id, owner, epoch), JSON.stringify(mind)],
+    client,
   );
-  // One retained, evidence-backed profile per wallet and ownership epoch. No profile
-  // content is added to public snapshots or exposed to the next owner.
   const scope = conversationScope(c.id, owner, epoch);
   const profile = {
     updatedAt: mind.lastUserAt,
@@ -109,30 +101,38 @@ export function saveMind(c: Character, owner: string, mind: PrivateMind) {
     communication: mind.preferences || [],
     style: mind.style,
   };
-  db.prepare(
-    `INSERT INTO owner_profiles(scope,character_id,owner,epoch,started_at,body) VALUES(?,?,?,?,?,?)
-    ON CONFLICT(scope) DO UPDATE SET body=excluded.body`,
-  ).run(scope, c.id, owner, epoch, mind.lastUserAt || Date.now(), JSON.stringify(profile));
+  await query(
+    `INSERT INTO owner_profiles(scope,character_id,owner,epoch,started_at,body)
+     VALUES($1,$2,$3,$4,$5,$6::jsonb)
+     ON CONFLICT(scope) DO UPDATE SET body=excluded.body`,
+    [scope, c.id, owner, epoch, mind.lastUserAt || Date.now(), JSON.stringify(profile)],
+    client,
+  );
 }
-export function ownerProfiles(c: Character, viewer: string | null) {
-  return (
-    db
-      .prepare(
-        'SELECT owner,epoch,started_at,ended_at,body FROM owner_profiles WHERE character_id=? ORDER BY started_at',
-      )
-      .all(c.id) as {
-      owner: string;
-      epoch: number;
-      started_at: number;
-      ended_at: number | null;
-      body: string;
-    }[]
-  ).map(({ body, ...row }) => ({
-    ...row,
+
+export async function ownerProfiles(c: Character, viewer: string | null) {
+  const result = await query<{
+    owner: string;
+    epoch: number;
+    started_at: string | number;
+    ended_at: string | number | null;
+    body: unknown;
+  }>(
+    'SELECT owner,epoch,started_at,ended_at,body FROM owner_profiles WHERE character_id=$1 ORDER BY started_at',
+    [c.id],
+  );
+  return result.rows.map((row) => ({
+    owner: row.owner,
+    epoch: row.epoch,
+    started_at: Number(row.started_at),
+    ended_at: row.ended_at === null ? null : Number(row.ended_at),
     profile:
-      row.owner === viewer && row.epoch === (c.ownershipEpoch || 0) ? JSON.parse(body) : null,
+      row.owner === viewer && row.epoch === (c.ownershipEpoch || 0)
+        ? json(row.body)
+        : null,
   }));
 }
+
 export type ReachPreferences = {
   enabled: boolean;
   inactivityMinutes: number;
@@ -155,17 +155,24 @@ export const defaultReachPreferences: ReachPreferences = {
   email: '',
   pushEnabled: false,
 };
-export function reachPreferences(owner: string): ReachPreferences {
-  const row = db.prepare('SELECT body FROM reach_preferences WHERE owner=?').get(owner) as
-    { body: string } | undefined;
-  return { ...defaultReachPreferences, ...(row ? JSON.parse(row.body) : {}) };
+export async function reachPreferences(owner: string, client?: DbClient): Promise<ReachPreferences> {
+  const result = await query<{ body: unknown }>(
+    'SELECT body FROM reach_preferences WHERE owner=$1',
+    [owner],
+    client,
+  );
+  return { ...defaultReachPreferences, ...(result.rowCount ? json(result.rows[0].body) : {}) };
 }
-export function saveReachPreferences(owner: string, prefs: ReachPreferences) {
-  db.prepare('INSERT OR REPLACE INTO reach_preferences VALUES(?,?)').run(
-    owner,
-    JSON.stringify(prefs),
+
+export async function saveReachPreferences(owner: string, prefs: ReachPreferences, client?: DbClient) {
+  await query(
+    `INSERT INTO reach_preferences(owner,body) VALUES($1,$2::jsonb)
+     ON CONFLICT(owner) DO UPDATE SET body=excluded.body`,
+    [owner, JSON.stringify(prefs)],
+    client,
   );
 }
+
 export type FollowUpJob = {
   id: string;
   scope: string;
@@ -185,45 +192,71 @@ export type FollowUpBody = {
   sourceId: string;
   sourceQuote: string;
 };
-export function putFollowUp(c: Character, owner: string, body: FollowUpBody, dueAt: number) {
+
+export async function putFollowUp(c: Character, owner: string, body: FollowUpBody, dueAt: number, client?: DbClient) {
   const scope = conversationScope(c.id, owner, c.ownershipEpoch || 0);
   const id = `${scope}:${body.kind}:${body.subject}:${body.sourceId}`;
-  db.prepare(
-    "UPDATE proactive_jobs SET status='cancelled' WHERE scope=? AND json_extract(body,'$.kind')=? AND json_extract(body,'$.subject')=? AND status IN ('pending','processing') AND id<>?",
-  ).run(scope, body.kind, body.subject, id);
-  db.prepare(
-    "INSERT INTO proactive_jobs(id,scope,character_id,owner,epoch,due_at,status,body) VALUES(?,?,?,?,?,?,'pending',?) ON CONFLICT(id) DO UPDATE SET due_at=excluded.due_at,status='pending',attempts=0,lease_until=0,body=excluded.body",
-  ).run(id, scope, c.id, owner, c.ownershipEpoch || 0, dueAt, JSON.stringify(body));
-}
-export function cancelFollowUp(scope: string, subject: string) {
-  db.prepare(
-    "UPDATE proactive_jobs SET status='cancelled' WHERE scope=? AND (id=? OR json_extract(body,'$.subject')=?)",
-  ).run(scope, `${scope}:event:${subject}`, subject);
-}
-export function jobsFor(scope: string) {
-  return db
-    .prepare(
-      "SELECT * FROM proactive_jobs WHERE scope=? AND status IN ('pending','processing') ORDER BY due_at",
-    )
-    .all(scope) as FollowUpJob[];
-}
-export function inbox(owner: string) {
-  return (
-    db
-      .prepare('SELECT * FROM notifications WHERE owner=? ORDER BY created_at DESC LIMIT 50')
-      .all(owner) as {
-      id: string;
-      body: string;
-      created_at: number;
-      read_at: number | null;
-      character_id: string;
-      epoch: number;
-    }[]
-  ).map((row) => ({ ...row, ...JSON.parse(row.body) }));
+  await query(
+    `UPDATE proactive_jobs SET status='cancelled' WHERE scope=$1
+     AND body->>'kind'=$2 AND body->>'subject'=$3 AND status IN ('pending','processing') AND id<>$4`,
+    [scope, body.kind, body.subject, id],
+    client,
+  );
+  await query(
+    `INSERT INTO proactive_jobs(id,scope,character_id,owner,epoch,due_at,status,body)
+     VALUES($1,$2,$3,$4,$5,$6,'pending',$7::jsonb)
+     ON CONFLICT(id) DO UPDATE SET due_at=excluded.due_at,status='pending',attempts=0,lease_until=0,body=excluded.body`,
+    [id, scope, c.id, owner, c.ownershipEpoch || 0, dueAt, JSON.stringify(body)],
+    client,
+  );
 }
 
-export function cancelAllFollowUps(scope: string) {
-  db.prepare(
-    "UPDATE proactive_jobs SET status='cancelled' WHERE scope=? AND status IN ('pending','processing')",
-  ).run(scope);
+export async function cancelFollowUp(scope: string, subject: string, client?: DbClient) {
+  await query(
+    "UPDATE proactive_jobs SET status='cancelled' WHERE scope=$1 AND (id=$2 OR body->>'subject'=$3)",
+    [scope, `${scope}:event:${subject}`, subject],
+    client,
+  );
+}
+
+export async function jobsFor(scope: string): Promise<FollowUpJob[]> {
+  const result = await query<FollowUpJob & { body: unknown; due_at: string; lease_until: string }>(
+    "SELECT id,scope,character_id,owner,epoch,due_at,status,lease_until,attempts,body::text AS body FROM proactive_jobs WHERE scope=$1 AND status IN ('pending','processing') ORDER BY due_at",
+    [scope],
+  );
+  return result.rows.map((row) => ({
+    ...row,
+    due_at: Number(row.due_at),
+    lease_until: Number(row.lease_until),
+  }));
+}
+
+export async function inbox(owner: string) {
+  const result = await query<{
+    id: string;
+    body: unknown;
+    created_at: string | number;
+    read_at: string | number | null;
+    character_id: string;
+    epoch: number;
+  }>(
+    'SELECT id,body,created_at,read_at,character_id,epoch FROM notifications WHERE owner=$1 ORDER BY created_at DESC LIMIT 50',
+    [owner],
+  );
+  return result.rows.map((row) => ({
+    ...json<Record<string, unknown>>(row.body),
+    id: row.id,
+    created_at: Number(row.created_at),
+    read_at: row.read_at === null ? null : Number(row.read_at),
+    character_id: row.character_id,
+    epoch: row.epoch,
+  }));
+}
+
+export async function cancelAllFollowUps(scope: string, client?: DbClient) {
+  await query(
+    "UPDATE proactive_jobs SET status='cancelled' WHERE scope=$1 AND status IN ('pending','processing')",
+    [scope],
+    client,
+  );
 }

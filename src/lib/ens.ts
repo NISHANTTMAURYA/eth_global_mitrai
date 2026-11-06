@@ -48,9 +48,9 @@ export function getCharacterEnsPassport(c: Character): EnsPassport {
       'agent.epoch': String(c.ownershipEpoch ?? 0),
       'agent.lifespan': `${Math.max(0, Math.round(l.remaining / 86400000))}d remaining`,
       'agent.availability': c.availability,
-      'url': `https://mitrai.app/characters/${c.id}`,
+      'url': `${typeof window !== 'undefined' ? window.location.origin : process.env.APP_ORIGIN || 'http://localhost:3000'}/companion/${c.id}`,
     },
-    createdAt: c.createdAt,
+    createdAt: c.birth?.at ?? c.createdAt,
   };
 }
 
@@ -60,7 +60,7 @@ export function getEnsPublicClient() {
   if (!publicClientMainnet) {
     publicClientMainnet = createPublicClient({
       chain: mainnet,
-      transport: http('https://cloudflare-eth.com'),
+      transport: http(process.env.ENS_ETHEREUM_RPC || 'https://ethereum-rpc.publicnode.com'),
     });
   }
   return publicClientMainnet;

@@ -1,5 +1,6 @@
 'use client';
 import BrainObservatory from './brain-observatory';
+import CommunityPanel from './community-panel';
 import PreservationPanel from './preservation-panel';
 import type { AdoptionRequest } from '@/lib/adoption';
 import { getWalletProvider } from '@/lib/browser-wallet';
@@ -92,9 +93,11 @@ export default function CharacterView({
   const [scope, setScope] = useState<'private' | 'public'>('private');
   const [highlights, setHighlights] = useState(c.highlights.join('\n'));
   const [availability, setAvailability] = useState(c.availability);
+  const [askingPriceTglm, setAskingPriceTglm] = useState(c.askingPriceTglm || '');
   const [recipient, setRecipient] = useState('');
   const [requestId, setRequestId] = useState<string | undefined>();
   const [offerNote, setOfferNote] = useState('');
+  const [bidTglm, setBidTglm] = useState('');
   const [incoming, setIncoming] = useState<AdoptionRequest[]>([]);
   const [provider, setProvider] = useState('Scripted demo');
   const [actionBusy, setActionBusy] = useState(false);
@@ -550,6 +553,7 @@ export default function CharacterView({
                 <span className="showcase-status">Showcase only</span>
               )}
             </div>
+            {!own && <p className="muted small-text">Current owner: {shortAddress(c.owner)}</p>}
             <h1>
               {c.name}
               <span>✳</span>
@@ -601,6 +605,7 @@ export default function CharacterView({
             <p className="bio-description">{c.description}</p>
             {!own && l.alive && c.availability !== 'showcase' && (
               <>
+                {c.askingPriceTglm && <p className="muted">Owner’s asking price: {c.askingPriceTglm} tGLM · {Math.ceil(l.remaining / 86400000)} days left</p>}
                 <button
                   className="button primary full"
                   disabled={actionBusy}
@@ -627,7 +632,7 @@ export default function CharacterView({
                 <small className="form-caption">
                   {c.availability === 'transfer' && c.owner === 'studio'
                     ? 'Free local demo adoption. No payment or blockchain sale.'
-                    : 'No payments are collected in this build.'}
+                    : 'Offers are price discovery only. Payment is not collected in this build.'}
                 </small>
               </>
             )}
@@ -654,7 +659,7 @@ export default function CharacterView({
               {
                 '--selected-tab': Math.max(
                   0,
-                  ['conversation', 'mind', 'story', 'history'].indexOf(tab),
+                  ['conversation', 'mind', 'story', 'community', 'history'].indexOf(tab),
                 ),
               } as CSSProperties
             }
@@ -670,6 +675,7 @@ export default function CharacterView({
                     : 'Their story',
                 icon: BookOpen,
               },
+              { id: 'community', label: 'Community', icon: Globe2 },
               { id: 'history', label: 'Provenance', icon: History },
             ].map((t) => (
               <button
@@ -937,21 +943,23 @@ export default function CharacterView({
               {own && l.alive && (
                 <div className="chain-box">
                   <div>
-                    <strong>Give this mind a public checkpoint.</strong>
+                    <strong>Public brain checkpoint</strong>
                     <p>
                       {c.entityKey
                         ? `Linked to ${c.entityKey.slice(0, 16)}… · chain version ${c.chainVersion}`
                         : 'Private chats stay here. Only approved public character state goes to Arkiv.'}
                     </p>
+                    <p>With background publishing enabled, five new messages trigger a checkpoint automatically. You can refresh the public snapshot now if needed.</p>
                   </div>
                   <button className="button secondary" onClick={sync} disabled={actionBusy}>
                     {actionBusy ? <Loader2 className="spin" size={15} /> : <Globe2 size={15} />}Sync
-                    to Arkiv
+                    now
                   </button>
                 </div>
               )}
             </div>
           )}
+          {tab === 'community' && <CommunityPanel character={c} owner={owner} />}
           {tab === 'story' && (
             <div className="tab-content">
               <p className="eyebrow">A STORY WORTH CONTINUING</p>
@@ -1004,6 +1012,7 @@ export default function CharacterView({
                     <div key={i} className="memory-card">
                       <strong>{shortAddress(o.from)}</strong>
                       <p>{o.note}</p>
+                      {o.bidTglm && <p>Proposed bid: {o.bidTglm} tGLM (unpaid)</p>}
                       <small>
                         {new Date(o.at).toLocaleString()} · {o.status || 'pending'}
                       </small>
@@ -1076,6 +1085,11 @@ export default function CharacterView({
               <option value="transfer">Available for handover</option>
             </select>
           </label>
+          {availability !== 'showcase' && <label className="form-label">
+            Asking price in test tGLM (optional)
+            <input inputMode="decimal" value={askingPriceTglm} onChange={(e) => setAskingPriceTglm(e.target.value)} placeholder="Example: 2.5" />
+            <small>Set your own price. A bid is only an offer until payment and transfer are verified.</small>
+          </label>}
           <div className="note">
             <Globe2 size={16} />
             Publishing makes your selected character state public. No payment is collected.
@@ -1088,6 +1102,7 @@ export default function CharacterView({
                 await api('publish', {
                   id: c.id,
                   availability,
+                  askingPriceTglm: askingPriceTglm.trim() || undefined,
                   highlights: highlights
                     .split('\n')
                     .map((s) => s.trim())
@@ -1227,8 +1242,7 @@ export default function CharacterView({
       {offer && (
         <Modal title={`Continue ${c.name}’s story`} close={() => setOffer(false)}>
           <p className="muted">
-            Tell the owner what you’d like to explore together. This is a free adoption request. The
-            owner decides whether to pass on their story.
+            Tell the owner why you want to continue this story. You can suggest a testnet price. This form does not transfer tokens or ownership.
           </p>
           <label className="form-label">
             Your note
@@ -1239,18 +1253,22 @@ export default function CharacterView({
               maxLength={500}
             />
           </label>
+          <label className="form-label">
+            Your bid in test tGLM (optional)
+            <input inputMode="decimal" value={bidTglm} onChange={(e) => setBidTglm(e.target.value)} placeholder={c.askingPriceTglm || 'Example: 2.5'} />
+          </label>
           <button
             className="button primary full"
             disabled={actionBusy || offerNote.trim().length < 5}
             onClick={() =>
               action(async () => {
-                await api('offer', { id: c.id, note: offerNote });
+                await api('offer', { id: c.id, note: offerNote, bidTglm: bidTglm.trim() || undefined });
                 setOffer(false);
-                notify('Your adoption request is with the owner. No payment is required.');
+                notify('Your offer is with the owner. No payment has been made.');
               })
             }
           >
-            Request adoption
+            Send offer
             <ArrowRight size={16} />
           </button>
         </Modal>

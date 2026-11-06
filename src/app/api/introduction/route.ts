@@ -26,7 +26,7 @@ export async function POST(request: Request) {
       .min(1)
       .max(100)
       .parse((await request.json()).id);
-    let c = getCharacter(id);
+    let c = await getCharacter(id);
     if (!c.published) throw new Error('This persona has not shared a public story.');
     let proof = 'demo';
     if (!c.demo) {

@@ -42,7 +42,7 @@ export async function recordArkivReceipt(characterId: string, entityKey: Hex, tx
       const changes: BrainEvent['changes'] = ownership
         ? [{ field: 'owner', before: a.previousOwner, after: a.newOwner }]
         : [{ field: 'entity', after: entityKey }];
-      appendBrainEvent(
+      await appendBrainEvent(
         {
           id: `chain:${txHash}:${log.logIndex}`,
           characterId,
@@ -82,7 +82,7 @@ export function startChainLedger() {
   const stop = arkivPublic().watchEntityEvents({
     pollingInterval: 10000,
     onEvent: async (e) => {
-      const c = allCharacters().find(
+      const c = (await allCharacters()).find(
         (c) => c.entityKey?.toLowerCase() === e.entityKey.toLowerCase(),
       );
       const pendingKey = `${e.transactionHash}:${e.entityKey}`;

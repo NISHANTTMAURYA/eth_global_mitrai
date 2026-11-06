@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     const body = z
       .object({ id: z.string().min(1).max(100), text: z.string().trim().min(1).max(2500) })
       .parse(JSON.parse(raw));
-    let c = getCharacter(body.id);
+    let c = await getCharacter(body.id);
     assertAlive(c);
     const remote = c.entityKey ? await readArkivCharacter(c.entityKey as `0x${string}`) : null;
     const chainOwner = remote ? String(remote.owner).toLowerCase() : c.owner;
