@@ -153,13 +153,22 @@ export default function CharacterView({
     };
   }, [c.id, owner]);
   useEffect(() => {
-    if (!(pending || queuedCount > 0) || !availableGestures(c.model).includes('Think')) return;
-    setGesture('Think');
+    if (!(pending || queuedCount > 0)) return;
+    const avail = availableGestures(c.model);
+    const hasThink = avail.includes('Think');
+    const funGestures = ['HipDance', 'Charleston', 'Dance', 'Wave'].filter((g) => avail.includes(g));
+    const thinkingCycle = hasThink ? ['Think', ...(funGestures.length ? [funGestures[0]] : [])] : (avail.length ? [avail[0]] : ['Idle']);
+
+    let step = 0;
+    setGesture(thinkingCycle[0]);
     setGestureKey((n) => n + 1);
+
     const timer = setInterval(() => {
-      setGesture('Think');
+      step = (step + 1) % thinkingCycle.length;
+      setGesture(thinkingCycle[step]);
       setGestureKey((n) => n + 1);
-    }, 7000);
+    }, 3500);
+
     return () => {
       clearInterval(timer);
       setGesture('Idle');
@@ -506,7 +515,7 @@ export default function CharacterView({
               model={c.model}
               modelZoom={1.1}
               portrait={portrait}
-              directed
+              directed={directedCue}
               onGestureComplete={completeGesture}
               directedCue={directedCue}
               speaking={speaking || directedCue}
