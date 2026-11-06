@@ -67,7 +67,6 @@ function Character({
   const vrm = model === 'human' ? (gltf.userData.vrm as VRM) : undefined;
   const object = useMemo(() => (model === 'human' ? gltf.scene : clone(gltf.scene)), [gltf, model]);
   const group = useRef<Group>(null);
-  const [activeMotion, setActiveMotion] = useState<string | undefined>();
   const [cycleStep, setCycleStep] = useState(0);
   const clips = useMemo(() => {
     if (library) return [...createCompanionClips(object).filter((clip) => clip.name === 'CompanionIdle'), ...library.flatMap((motion, i) => {
@@ -87,7 +86,9 @@ function Character({
   const transform = useMemo(() => {
     const available = clips.map((c) => c.name);
     const idle = companionAction(available, 'idle');
-    const box = characterBounds(object, clips.filter((clip) => [idle, activeMotion].includes(clip.name)));
+    // Frame once from the standing idle. Gestures must never move the camera
+    // or renormalize/recenter the model as their silhouettes change.
+    const box = characterBounds(object, clips.filter((clip) => clip.name === idle));
     const size = box.getSize(new Vector3());
     const center = box.getCenter(new Vector3());
     const scale = 3 / (Math.max(size.x, size.y, size.z) || 1);
@@ -100,7 +101,7 @@ function Character({
         number,
       ],
     };
-  }, [object, clips, activeMotion]);
+  }, [object, clips]);
   useEffect(() => {
     if (!(camera instanceof PerspectiveCamera)) return;
     const distance = boxFitDistance(transform.size, viewportSize.width / Math.max(1, viewportSize.height), camera.fov);
@@ -132,7 +133,6 @@ function Character({
     const greetingName = chosen === 'Wave' ? companionAction(clips.map((c) => c.name), 'greeting') : undefined;
     const clip = chosen ? actions[chosen] || (greetingName ? actions[greetingName] : undefined) : undefined;
     if (clip) {
-      setActiveMotion(clip.getClip().name);
       Object.values(actions).forEach((action) => { if (action && action !== clip && action !== actions[idleName || '']) action.fadeOut(.25); });
       const idle = idleName ? actions[idleName] : undefined;
       idle?.fadeOut(0.25);
@@ -143,7 +143,6 @@ function Character({
         () => {
           clip.fadeOut(0.25);
           idle?.reset().fadeIn(0.25).play();
-          setActiveMotion(undefined);
         },
         Math.max(1000, clip.getClip().duration * 1000),
       );

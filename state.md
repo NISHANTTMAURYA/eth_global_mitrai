@@ -96,3 +96,6 @@ Replaced the simple straight-arm greeting on the ten imported humanoids with sev
 ### Standing pose, larger framing, automatic showcase motion
 
 Imported humanoids now use the stable generated standing idle rather than the retargeted source idle; source/target handedness is corrected and pelvis root rotation is preserved. Camera fitting uses a tight box for idle/current gesture instead of a sphere enclosing all dances. Model-space bounds ignore the existing display parent, preventing repeated scaling errors. Visible living characters cycle through supported nonterminal clips at intervals of at least nine seconds (longest clip plus four seconds), returning to idle; VRM cycles wave/dance/bow. Manual gestures override the current playback. Seven focused checks, typecheck and isolated build pass. Browser visual posture verification remains pending.
+### Stable framing during animation
+
+Removed active-motion-driven recentering, rescaling and camera fitting. The standing idle establishes the frame once per model load; animation changes only bone poses. Canvas resize can still refit the camera. This preserves character size and stage placement while gestures cycle.
