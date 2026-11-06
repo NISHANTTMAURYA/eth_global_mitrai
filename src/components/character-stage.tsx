@@ -375,13 +375,13 @@ function Character({
   ]);
   useEffect(() => {
     if (legacy || speaking || directed || !active) return;
-    const longest = Math.max(0, ...clips.map((clip) => clip.duration));
-    const timer = setInterval(
-      () => setCycleStep((step) => step + 1),
-      Math.max(6500, longest * 1000 + 1500),
-    );
+    // Long source clips (especially dance loops) can run for tens of seconds. Using
+    // the longest clip here made the automatic showcase look like it had stopped.
+    // Advance at a predictable pace; each selected gesture is already clamped to
+    // one play and fades back to idle before the next cycle starts.
+    const timer = setInterval(() => setCycleStep((step) => step + 1), 3000);
     return () => clearInterval(timer);
-  }, [clips, legacy, speaking, directed, active]);
+  }, [legacy, speaking, directed, active]);
   useFrame((state, delta) => {
     if (legacy || !active) return;
     time.current += delta;
