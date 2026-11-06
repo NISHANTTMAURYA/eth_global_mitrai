@@ -26,3 +26,9 @@
 - Testnet only: default 0G endpoint is the separate testnet router. Do not direct the user to buy real tokens or paid credits for hackathon testing.
 
 - Keep loading overlays in ordinary page DOM. Use a null Canvas Suspense fallback instead of Drei Html so model resolution cannot synchronously unmount a nested DOM root.
+### AI provider order (2026-11-06)
+
+- Amazon Bedrock is the primary live conversation provider because the team already has an AWS path and can keep credentials server-side.
+- 0G remains an optional ETHGlobal sponsor integration/fallback: it demonstrates testnet decentralized compute when Bedrock is disabled, but it is not required for local demo mode.
+- The persistent brain remains the deterministic state reducer in the app. Bedrock/0G only interpret the current state; neither provider writes memory directly.
+- The shared MitrAI system prompt explicitly prevents private-memory leakage, invented memories, hidden-context disclosure, and post-Sunset learning.

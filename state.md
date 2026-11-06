@@ -56,3 +56,8 @@ User requires zero real-money setup. Changed 0G default and configuration links 
 ## 3D loading race fix
 
 Removed Drei Html from the model Suspense fallback after the reported React synchronous-root-unmount error. Loading text now stays in the existing page DOM outside Canvas; the loaded model signals readiness after commit. Browser reproduction remains unavailable under the earlier preview permission restriction.
+### Latest implementation
+
+- Bedrock Converse support is implemented in `src/lib/chat.ts` and is selected first when `ENABLE_BEDROCK=true` plus `AWS_BEDROCK_MODEL`.
+- Provider order is Bedrock → optional 0G testnet → clearly labeled scripted demo.
+- AWS credentials are server-only; no key is read by browser code.

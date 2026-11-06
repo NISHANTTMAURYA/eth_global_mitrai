@@ -512,8 +512,8 @@ export default function CharacterView({
               </form>
               <div className="chat-caption">
                 {provider === 'Scripted demo'
-                  ? 'Scripted rehearsal, not live AI inference. Configure 0G for open-ended conversation.'
-                  : 'Replies generated with 0G. Verify important claims.'}
+                  ? 'Scripted rehearsal, not live AI inference. Configure Bedrock for open-ended conversation.'
+                  : `Replies generated with ${provider}. Verify important claims.`}
               </div>
               {own && l.alive && (
                 <div className="checkpoint-bar">

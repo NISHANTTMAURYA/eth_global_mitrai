@@ -26,7 +26,7 @@ The integration command starts a production server with a disposable isolated SQ
 
 Follow [the configuration checklist](docs/configuration.md) for account links, keys, test gas and the first live run.
 
-Copy `.env.example` to `.env.local`. Set `OG_API_KEY` and `OG_MODEL` for 0G inference; the documented router endpoint is the default. Without them the UI explicitly says **Scripted demo**. Provider failures are surfaced, not replaced with invented replies. Set the public Rabdi access key/RPC for reliable chain access. Browser-exposed keys are public configuration, never wallet private keys.
+Copy `.env.example` to `.env.local`. For live AI, set `ENABLE_BEDROCK=true`, an AWS region, and a Bedrock Converse-compatible `AWS_BEDROCK_MODEL` ID. Bedrock is the primary model path and its credentials stay server-side. 0G is retained as an optional testnet fallback/integration (`OG_API_KEY` + `OG_MODEL`) when Bedrock is disabled. Without either provider the UI explicitly says **Scripted demo**. Provider failures are surfaced, not replaced with invented replies. Set the public Rabdi access key/RPC for reliable chain access. Browser-exposed keys are public configuration, never wallet private keys.
 
 Sign in with a browser wallet, create a character, then choose **The mind → Sync to Arkiv**. Wallet approval signs the public snapshot write. The server verifies the result before recording the entity key. **Discover on Arkiv** queries public records and accepts only this app verifier’s signed snapshots. The script `npm run query:arkiv` reproduces the schema query, optionally filtered with `ARKIV_OWNER`. No live transaction was executed during implementation, so writer addresses and live entity evidence remain pending.
 
@@ -227,7 +227,7 @@ Four judging categories have equal weight. SDK installation alone and unread log
 
 ### Extra 1: 0G
 
-Use inference in the real conversation/update path and show actual request IDs. Demonstrate why the companion merits a return visit and state what fails without 0G. Submit a working demo, public setup instructions, a video under three minutes, team/contact information and deployment addresses if applicable. A generic chat wrapper is explicitly discouraged. Our distinction must be visible evolving state and a finite lifecycle. The official iAI login/credit feature is optional scope. [0G requirements](https://ethglobal.com/events/mumbai/prizes/0g)
+Use inference in the real conversation/update path and show actual request IDs. Demonstrate why the companion merits a return visit and state what fails without the configured model provider. Bedrock is the primary AI provider; 0G remains an optional sponsor integration/fallback for a testnet demo. Submit a working demo, public setup instructions, a video under three minutes, team/contact information and deployment addresses if applicable. A generic chat wrapper is explicitly discouraged. Our distinction must be visible evolving state and a finite lifecycle. The official iAI login/credit feature is optional scope. [0G requirements](https://ethglobal.com/events/mumbai/prizes/0g)
 
 ### Extra 2: World
 
@@ -242,7 +242,7 @@ Put a public GLB and legacy artwork on Swarm, reference them in Arkiv, and load 
 ## Build order
 
 1. Foundation: wallet session, character creation, live Arkiv dashboard, one GLB.
-2. Brain: private chats, 0G response, validated events, reducer, signed checkpoint and reload.
+2. Brain: private chats, Bedrock response (or optional 0G testnet response), validated events, reducer, signed checkpoint and reload.
 3. Lifecycle: correct countdown, server gating, closing moment and legacy page. Include a real short-lived demo character.
 4. Publishing and discovery: live Arkiv gallery, approved demonstrations, isolated audition, offers, second-wallet adoption, provenance and private-data isolation.
 5. Submission evidence and documentation; record the full demo.

@@ -23,7 +23,7 @@ import {
   type Character,
   type Memory,
 } from '@/lib/domain';
-import { reply } from '@/lib/chat';
+import { configuredProvider, reply } from '@/lib/chat';
 import { readArkivCharacter, discoverArkiv } from '@/lib/arkiv';
 import { signSnapshot, verifySnapshot } from '@/lib/proof';
 export const runtime = 'nodejs';
@@ -93,7 +93,7 @@ export async function GET(request: Request) {
         messages: c.owner === owner ? messages(id, owner, c.ownershipEpoch || 0) : [],
         offers: c.owner === owner ? offersFor(id) : [],
         owner,
-        provider: process.env.OG_API_KEY && process.env.OG_MODEL ? '0G' : 'Scripted demo',
+        provider: configuredProvider(),
       });
     }
     const rows: Character[] = [];
@@ -109,7 +109,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       characters: rows,
       owner,
-      provider: process.env.OG_API_KEY && process.env.OG_MODEL ? '0G' : 'Scripted demo',
+      provider: configuredProvider(),
     });
   } catch (e) {
     return error(e);

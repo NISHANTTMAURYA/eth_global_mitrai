@@ -338,9 +338,11 @@ export default function MitraiApp() {
             <div>
               <strong>Conversation engine</strong>
               <p>
-                {provider === '0G'
-                  ? '0G inference configured. Requests run server-side.'
-                  : 'Scripted rehearsal responses. Configure 0G to enable model inference.'}
+                {provider === 'Amazon Bedrock'
+                  ? 'Bedrock is the primary model. Requests run server-side in your AWS region.'
+                  : provider === '0G'
+                    ? '0G testnet inference is configured as the optional fallback.'
+                    : 'Scripted rehearsal responses. Configure Bedrock to enable model inference.'}
               </p>
             </div>
             <span className="pill">{provider}</span>
