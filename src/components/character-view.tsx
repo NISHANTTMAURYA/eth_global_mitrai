@@ -242,6 +242,10 @@ export default function CharacterView({
       <div className="detail-layout">
         <aside className="character-aside">
           <div className={`detail-stage ${c.model === 'fox' ? 'palette-1' : 'palette-0'}`}>
+            <div className="stage-title">
+              <h1>{c.name}</h1>
+              <p>{c.tagline}</p>
+            </div>
             <div className="stage-top">
               <LifecyclePill c={c} />
               <span className="eyebrow">ONE LITTLE LIFE</span>
@@ -370,7 +374,7 @@ export default function CharacterView({
         <section className="character-workspace">
           <div className="workspace-tabs">
             {[
-              { id: 'conversation', label: own ? 'Together' : 'Meet & audition', icon: Heart },
+              { id: 'conversation', label: 'Chat', icon: Heart },
               { id: 'mind', label: 'The mind', icon: Brain },
               { id: 'story', label: 'Their story', icon: BookOpen },
               { id: 'history', label: 'Provenance', icon: History },

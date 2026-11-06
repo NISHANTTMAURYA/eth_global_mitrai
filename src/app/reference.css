@@ -1,0 +1,586 @@
+/* Visual system taken from ui/image.png and ui/image copy.png. */
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700;800;900&display=swap');
+:root {
+  --ink: #101e55;
+  --muted: #5d7299;
+  --line: #dbe4f5;
+  --orange: #ff773b;
+  --cream: #f5f7ff;
+  --sans: 'Nunito Sans', sans-serif;
+  --serif: 'Nunito Sans', sans-serif;
+}
+body {
+  background: radial-gradient(ellipse at top right, #dcecff, transparent 65%), #f6f7ff;
+  color: var(--ink);
+}
+.site-header {
+  background: rgba(255, 255, 255, 0.67);
+  border: 0;
+  border-radius: 0 0 45px 45px;
+  box-shadow: none;
+}
+.nav-wrap {
+  max-width: 1280px;
+  min-height: 88px;
+}
+.brand {
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: -1.5px;
+  color: #101e55;
+}
+.brand svg,
+.brand-period {
+  color: #ff773b;
+}
+.nav {
+  gap: 16px;
+}
+.nav a {
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 40px;
+  padding: 13px 24px;
+}
+.nav a.active {
+  background: #dce9ff;
+  color: #11245b;
+}
+.nav a.active:after {
+  display: none;
+}
+.wallet-button {
+  border-radius: 40px !important;
+  background: #fff !important;
+  border: 1px solid #e8eef8 !important;
+  box-shadow: 0 4px 10px #93b9ed20;
+}
+.page-shell {
+  max-width: 1280px;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+.eyebrow {
+  color: #4b68a1;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 3px;
+}
+.hero {
+  margin-top: 0;
+  min-height: 350px;
+  grid-template-columns: 1fr 1fr;
+  position: relative;
+  isolation: isolate;
+  padding: 30px 38px 0;
+  gap: 10px;
+}
+.hero:before {
+  content: '';
+  position: absolute;
+  inset: 0 calc((1280px - 100vw) / 2);
+  z-index: -1;
+  background: url('/scenes/meadow.svg') center 58% / cover;
+}
+.hero-copy {
+  padding: 0 0 35px;
+}
+.hero h1 {
+  font-size: 58px;
+  font-weight: 900;
+  line-height: 1.02;
+  letter-spacing: -2px;
+}
+.hero h1 em {
+  color: #5c86bf;
+  font-weight: 800;
+}
+.hero-copy > p {
+  font-size: 17px;
+  max-width: 450px;
+  line-height: 1.35;
+  color: #526b96;
+}
+.hero-copy > .eyebrow {
+  margin-bottom: 20px;
+}
+.hero-copy > .button-row {
+  margin-top: 22px;
+}
+.hero .button.primary {
+  background: #365fa4;
+  border-radius: 40px;
+  padding: 15px 24px;
+}
+.hero-footnote,
+.hero-stamp,
+.orbital-ring,
+.floating-note,
+.hero-name,
+.world-coordinate,
+.hero-wave {
+  display: none;
+}
+.hero-world {
+  height: 315px;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+.hero-character {
+  inset: -35px 0 -5px;
+}
+.hero-character .character-stage {
+  height: 350px;
+}
+.hero .text-link {
+  display: none;
+}
+.discovery-section {
+  padding-top: 40px;
+}
+.section-heading h2 {
+  font-size: 42px;
+  font-weight: 900;
+  letter-spacing: -1.5px;
+  line-height: 1.1;
+}
+.section-heading {
+  margin-bottom: 20px;
+}
+.section-heading .eyebrow {
+  margin-bottom: 8px;
+}
+.discovery-toolbar {
+  margin-bottom: 24px;
+}
+.filters {
+  gap: 10px;
+}
+.filters button {
+  border: 1px solid #d5def0;
+  border-radius: 30px;
+  background: transparent;
+  font-size: 13px;
+  color: #14265f;
+  padding: 11px 21px;
+}
+.filters button.selected {
+  color: white;
+  background: #1d3475;
+  border-color: #1d3475;
+  box-shadow: 0 4px 12px #2b4b8d15;
+}
+.search-field {
+  border-radius: 30px;
+  background: #ffffffa8;
+  border: 1px solid #d4e1f4;
+  min-width: 310px;
+  box-shadow: 0 4px 10px #8baed519;
+}
+.search-field input {
+  font-size: 13px;
+}
+.search-field > span {
+  display: none;
+}
+.character-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+.character-card {
+  background: #ffffffa8;
+  border: 1px solid #dce7fb;
+  border-radius: 25px;
+  overflow: hidden;
+  box-shadow: 0 5px 12px #8bb4e323;
+  padding: 0;
+}
+.card-visual {
+  height: 170px;
+  border-radius: 24px 24px 20px 20px;
+  background-image: url('/scenes/meadow.svg') !important;
+  background-size: cover !important;
+  background-position: center !important;
+  overflow: hidden;
+}
+.card-visual.palette-1 {
+  filter: none;
+  background-color: #d5eee5 !important;
+  background-blend-mode: multiply;
+}
+.card-visual.palette-2 {
+  background-color: #ffe9c2 !important;
+  background-blend-mode: multiply;
+}
+.card-visual.palette-3 {
+  background-color: #dbe3ff !important;
+  background-blend-mode: multiply;
+}
+.card-top {
+  top: 12px;
+  left: 18px;
+  right: 18px;
+}
+.lifecycle-pill {
+  border-radius: 30px;
+  background: #fffffff0;
+  box-shadow: 0 2px 7px #233b5510;
+  padding: 6px 13px;
+  font-size: 11px;
+}
+.sample-label,
+.card-life,
+.card-bottom {
+  display: none;
+}
+.card-copy {
+  padding: 8px 20px 18px;
+}
+.card-name-row h3 {
+  font-family: var(--sans);
+  font-size: 23px;
+  font-weight: 900;
+  letter-spacing: -0.7px;
+}
+.availability {
+  font-size: 10px;
+  white-space: nowrap;
+}
+.card-copy > p {
+  font-size: 13px;
+  margin: 3px 0 12px;
+  color: #253d6d;
+  line-height: 1.4;
+}
+.tags {
+  gap: 7px;
+}
+.tags span {
+  border-radius: 20px;
+  border: 1px solid #dbe4f5;
+  background: #f1f5ff7a;
+  color: #324c7a;
+  padding: 6px 12px;
+  font-size: 10px;
+}
+.card-open {
+  width: 32px;
+  height: 32px;
+  bottom: 10px;
+  right: 14px;
+  border: 0;
+  background: #deecff;
+  color: #1b3c7c;
+}
+.character-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px #8bb4e333;
+}
+.discovery-caption {
+  margin-top: 25px;
+}
+.site-footer {
+  border-color: #dbe4f5;
+}
+/* Character and conversation reference uses a warm botanical palette. */
+.detail-page {
+  max-width: 1360px;
+  padding-top: 26px;
+  color: #292a22;
+}
+.detail-page:before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(ellipse at bottom left, #dbe2c9, transparent 70%), #f2f2e9;
+}
+.detail-topbar {
+  margin-bottom: 24px;
+}
+.detail-layout {
+  grid-template-columns: minmax(0, 0.86fr) minmax(0, 1fr);
+  gap: 12px;
+}
+.character-aside {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+.detail-stage {
+  height: 610px;
+  border: 6px solid white;
+  border-radius: 48px;
+  overflow: hidden;
+  background: url('/scenes/meadow.svg') center/cover !important;
+}
+.stage-title {
+  position: absolute;
+  top: 42px;
+  left: 45px;
+  z-index: 2;
+  max-width: 240px;
+  pointer-events: none;
+}
+.stage-title h1 {
+  font-size: 48px;
+  font-weight: 800;
+  letter-spacing: -1.5px;
+}
+.stage-title p {
+  font-size: 18px;
+  line-height: 1.5;
+  color: #676b61;
+  margin-top: 4px;
+}
+.stage-top {
+  top: 165px;
+  left: 43px;
+}
+.stage-top > .eyebrow {
+  display: none;
+}
+.detail-stage > .character-stage {
+  padding-top: 130px;
+}
+.character-bio {
+  background: #ffffffdf;
+  border-radius: 40px;
+  padding: 22px 40px;
+  margin-top: 10px;
+}
+.character-bio > h1,
+.character-bio > p:not(.bio-description),
+.character-bio > .tags {
+  display: none;
+}
+.character-bio > .bio-description {
+  font-size: 12px;
+}
+.character-bio > .eyebrow {
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: #777;
+}
+.lifetime-meter {
+  margin-top: 20px;
+}
+.character-workspace {
+  border-radius: 48px;
+  background: #ffffffed;
+  border: 0;
+  overflow: hidden;
+  min-height: 740px;
+  box-shadow: none;
+}
+.workspace-tabs {
+  margin: 16px 28px 0;
+  padding: 0 0 14px;
+  gap: 7px;
+  border-bottom: 1px solid #f5e7dc;
+}
+.workspace-tabs button {
+  font-size: 14px;
+  padding: 14px 17px;
+  color: #343630;
+  border-radius: 30px;
+  white-space: nowrap;
+}
+.workspace-tabs button.active {
+  color: #ed651d;
+  background: #fff0e4;
+  border-color: transparent;
+}
+.workspace-tabs button.active:after {
+  background: #ff884a;
+}
+.chat-top {
+  background: transparent;
+}
+.chat-panel {
+  padding: 0 28px;
+}
+.message {
+  padding: 17px 24px;
+  max-width: 80%;
+  border-radius: 32px !important;
+  margin-bottom: 20px;
+}
+.message p {
+  font-size: 17px;
+  line-height: 1.5;
+}
+.message.user {
+  background: #fff0e1;
+}
+.message.assistant {
+  background: #f3f2ef;
+}
+.message-label {
+  font-size: 9px;
+}
+.chat-composer {
+  background: white;
+  border: 1px solid #e4e1da;
+  border-radius: 40px;
+  padding: 8px 10px 8px 24px;
+}
+.chat-composer textarea {
+  font-size: 16px;
+}
+.send-button {
+  background: #ff853f !important;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+}
+.back-link {
+  font-size: 15px;
+}
+.chat-caption {
+  font-size: 10px;
+}
+.checkpoint-bar {
+  background: transparent;
+}
+@media (max-width: 1000px) {
+  .nav-wrap {
+    padding: 0 22px;
+  }
+  .hero h1 {
+    font-size: 45px;
+  }
+  .character-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .detail-layout {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr);
+  }
+  .workspace-tabs {
+    margin: 12px 10px;
+  }
+  .workspace-tabs button {
+    font-size: 11px;
+    padding: 12px 9px;
+  }
+  .detail-stage {
+    height: 520px;
+  }
+  .stage-title {
+    left: 25px;
+  }
+  .chat-panel {
+    padding: 0 15px;
+  }
+  .message p {
+    font-size: 14px;
+  }
+  .discovery-toolbar {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 700px) {
+  .page-shell {
+    padding: 0 18px;
+  }
+  .nav-wrap {
+    min-height: 76px;
+  }
+  .brand {
+    font-size: 29px;
+  }
+  .hero {
+    padding: 30px 4px 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .hero:before {
+    inset: 0 -18px;
+  }
+  .hero h1 {
+    font-size: 42px;
+  }
+  .hero-copy {
+    padding-bottom: 0;
+  }
+  .hero-world {
+    height: 235px;
+    width: 100%;
+  }
+  .hero-character {
+    inset: -20px 0;
+  }
+  .hero-character .character-stage {
+    height: 260px;
+  }
+  .discovery-section {
+    padding-top: 30px;
+  }
+  .section-heading h2 {
+    font-size: 31px;
+  }
+  .character-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .card-visual {
+    height: 230px;
+  }
+  .search-field {
+    min-width: 0;
+    width: 100%;
+  }
+  .filters {
+    flex-wrap: wrap;
+  }
+  .filters button {
+    padding: 9px 15px;
+    font-size: 11px;
+  }
+  .detail-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .character-aside,
+  .character-workspace {
+    width: 100%;
+  }
+  .detail-stage {
+    height: 460px;
+    border-radius: 32px;
+  }
+  .stage-title {
+    top: 25px;
+    left: 25px;
+  }
+  .stage-title h1 {
+    font-size: 38px;
+  }
+  .stage-top {
+    top: 130px;
+    left: 25px;
+  }
+  .character-workspace {
+    border-radius: 30px;
+    min-height: 550px;
+  }
+  .character-bio {
+    padding: 22px 25px;
+  }
+  .workspace-tabs {
+    overflow-x: auto;
+  }
+  .detail-topbar {
+    padding-top: 20px;
+  }
+  .message p {
+    font-size: 15px;
+  }
+  .chat-composer textarea {
+    font-size: 14px;
+  }
+}

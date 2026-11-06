@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice">
+<defs><linearGradient id="sky" x2="0" y2="1"><stop stop-color="#d4e7ff"/><stop offset="1" stop-color="#f5fbff"/></linearGradient><linearGradient id="hill" x2="0" y2="1"><stop stop-color="#dbedb3"/><stop offset="1" stop-color="#8db99b"/></linearGradient></defs>
+<path fill="url(#sky)" d="M0 0h1200v600H0z"/><circle cx="930" cy="105" r="60" fill="#fff0d2"/>
+<g fill="#fff" opacity=".75"><path d="M45 170q25-42 54-9 20-65 58-23 30-8 43 32z"/><path d="M570 210q25-34 44-13 20-47 45-15 26-8 40 28z"/><path d="M1010 210q28-40 54-12 27-45 59-12 27-8 40 24z"/></g>
+<path fill="#bdd8e7" d="M0 380Q90 160 200 330T400 360T620 325T850 360T1050 230T1200 320V600H0z"/>
+<path fill="#93c1cd" d="M0 480Q100 280 250 440T500 450T760 390T1000 320T1200 360V600H0z"/>
+<path fill="url(#hill)" d="M0 530Q140 450 300 520T600 470T900 430T1200 370V600H0z"/>
+<path fill="#a3c691" d="M0 560Q220 450 470 565T850 510T1200 460V600H0z"/>
+<g fill="#6b9f87"><ellipse cx="50" cy="475" rx="22" ry="65" transform="rotate(-30 50 475)"/><ellipse cx="83" cy="492" rx="22" ry="70" transform="rotate(33 83 492)"/><ellipse cx="1140" cy="420" rx="23" ry="80" transform="rotate(25 1140 420)"/><ellipse cx="1190" cy="450" rx="28" ry="85" transform="rotate(-26 1190 450)"/></g>
+<path fill="#b9ab9f" d="m500 580 70-45 86 3 82-40 83 37 61 45z"/><path fill="#e0d3b8" d="m570 535 86 3 82-40 83 37-130 22z"/>
+</svg>

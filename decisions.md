@@ -37,3 +37,6 @@
 Use the 16 skeletal models supplied in Downloads through a shared catalog. Preserve source files by copying. Exclude the three object-animated animals without skeletal skins. Enable existing clips and named speech morphs without guessing numeric morph meanings. User-supplied licences need verification before public redistribution.
 
 Each model is a unique persona form. Enforce availability in both the creator UI and server create action; keep forms reserved after Sunset because each body's Legacy remains discoverable.
+## Reference visual direction
+
+Use ui/image.png and ui/image copy.png as visual targets. Keep interactive 3D and real conversation state; do not render a full-page screenshot as the website or fabricate the reference's example messages. Discovery uses blue landscape cards; character detail uses a warm scene and large chat workspace.

@@ -58,17 +58,15 @@ export default function ExploreView({
         <section className="hero">
           <div className="hero-copy">
             <div className="eyebrow">
-              <span className="tiny-sun">✳</span> NOT JUST CREATED. CULTIVATED.
+              A COLLECTION OF POSSIBILITIES
             </div>
             <h1>
-              A little life.
-              <br />A world of
+              Find a story
               <br />
-              <em>possibility.</em>
+              <em>worth continuing.</em>
             </h1>
             <p>
-              Create a character. Shape it through shared experience. Or discover a story worth
-              continuing.
+              Distinct personalities, shared experiences, and a little room for what comes next.
             </p>
             <div className="button-row">
               <Link href="/create" className="button primary">

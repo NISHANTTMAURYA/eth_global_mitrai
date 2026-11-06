@@ -69,3 +69,6 @@ Removed Drei Html from the model Suspense fallback after the reported React sync
 - File structure, typecheck, tests and production build pass. Visual deformation and redistribution licences for the user-supplied models remain unverified.
 - The create picker disables forms already used by current or legacy personas, and the server rejects duplicate model assignments. Studio characters already occupy robot, fox and human forms.
 - README records 0G Compute and World ID as future integrations; neither is used by the current application.
+## UI reference implementation
+
+Used the two images in ui/ for the blue discovery cards, rounded navigation, landscape backgrounds and warm character/chat panels. Added responsive reference.css and an SVG meadow scene. Existing user changes to globals.css were preserved. Typecheck and production build pass; rendered visual matching remains unverified, and the SVG artwork is an approximation of the reference scenery.
