@@ -35,7 +35,7 @@ export function retargetLibraryMotion(target: Object3D, source: Object3D, clip: 
   });
   working.traverse((node) => {
     const key = [...boneMap].find(([, bone]) => bone === node)?.[0];
-    if (!key) return;
+    if (!key || key === 'Hips') return; // Keep the character's stable, forward-facing root.
     const s = sourceCopy.getObjectByName(mapping[key]);
     const child = node.children.find((child) => [...boneMap.values()].includes(child as Bone));
     const childKey = [...boneMap].find(([, bone]) => bone === child)?.[0];
@@ -51,6 +51,10 @@ export function retargetLibraryMotion(target: Object3D, source: Object3D, clip: 
   const times: number[] = [];
   const from = new Vector3(), to = new Vector3(), origin = new Vector3();
   const delta = new Quaternion(), parent = new Quaternion();
+  working.updateMatrixWorld(true); sourceCopy.updateMatrixWorld(true);
+  const targetLeft = boneMap.get('LeftArm')?.getWorldPosition(new Vector3()).x || -1;
+  const sourceLeft = sourceCopy.getObjectByName('upperarm_l')?.getWorldPosition(new Vector3()).x || 1;
+  const facing = new Quaternion().setFromAxisAngle(new Vector3(0,1,0), targetLeft * sourceLeft < 0 ? Math.PI : 0);
   for (let frame = 0; frame <= samples; frame++) {
     const time = Math.min(clip.duration - .00001, frame * clip.duration / samples);
     times.push(Math.max(0, time)); mixer.setTime(Math.max(0, time)); sourceCopy.updateMatrixWorld(true);
@@ -60,7 +64,7 @@ export function retargetLibraryMotion(target: Object3D, source: Object3D, clip: 
       pair.target.getWorldPosition(origin);
       from.copy(pair.child.getWorldPosition(from)).sub(origin).normalize();
       pair.source.getWorldPosition(origin);
-      to.copy(pair.sourceChild.getWorldPosition(to)).sub(origin).normalize();
+      to.copy(pair.sourceChild.getWorldPosition(to)).sub(origin).normalize().applyQuaternion(facing);
       if (from.lengthSq() && to.lengthSq()) {
         delta.setFromUnitVectors(from, to);
         pair.target.parent!.getWorldQuaternion(parent).normalize();

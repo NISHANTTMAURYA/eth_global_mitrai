@@ -2,6 +2,8 @@
 
 ## Current library integration
 
+Refinement: the default idle is the upright local CompanionIdle rather than the transferred source idle. Pelvis rotation is excluded from motion transfer, and source/target left-right facing is aligned. All visible living models periodically showcase their supported nonterminal animations, then return to idle; the interval is at least nine seconds and includes at least four seconds beyond the longest clip. Manual controls interrupt. Legacy playback remains stopped. VRM characters cycle procedural wave, dance sway and bow. Framing uses an aspect-aware box for idle/current gesture, measured in model space, to avoid shrinking characters to accommodate every animation at once.
+
 The ten Mixamo-style imported humanoids now use authored Mesh2Motion CC0 clips: idle-subtle, greeting, dance-simple, dance-charleston, clapping, bow and confused. Local GLBs and the upstream licence live in public/animations/mesh2motion. This replaces the earlier simple generated greeting for those rigs. Quaternius Universal Animation Library was also researched; Mesh2Motion provides direct GLBs and explicit CC0 licensing for this integration.
 
 Bone mappings connect Mixamo suffixes to Mesh2Motion's skeleton. The retargeter samples the source animation, transfers bone directions in world space and reconstructs target-local quaternions, preserving target limb lengths and omitting root translation. It covers arms, elbows, hands, fingers, spine, head and legs. This direction-based transfer does not reproduce every axial twist of full motion capture; different proportions can still need visual tuning.

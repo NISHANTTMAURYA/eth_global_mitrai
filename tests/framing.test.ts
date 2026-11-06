@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { AnimationClip, Bone, BoxGeometry, Float32BufferAttribute, Group, MeshBasicMaterial, PerspectiveCamera, Skeleton, SkinnedMesh, Uint16BufferAttribute, Vector3, VectorKeyframeTrack } from 'three';
-import { cameraFitDistance, characterBounds } from '../src/lib/character-framing';
+import { boxFitDistance, cameraFitDistance, characterBounds } from '../src/lib/character-framing';
 
 test('framing includes animated skinned vertices and restores the original pose', () => {
   const root = new Group(), bone = new Bone(); bone.name = 'rootBone'; root.add(bone);
@@ -18,6 +18,28 @@ test('framing includes animated skinned vertices and restores the original pose'
   const bounds = characterBounds(root,[clip]);
   assert.ok(bounds.max.y > 3.49); assert.ok(bounds.min.y <= -.5);
   assert.equal(bone.position.y,0); assert.equal(mesh.frustumCulled,false);
+});
+
+test('measuring an already-framed character ignores its outer display transform', () => {
+  const display = new Group(); display.scale.setScalar(.01); display.position.set(0,-100,0);
+  const model = new Group(); const mesh = new SkinnedMesh(new BoxGeometry(2,4,2),new MeshBasicMaterial());
+  const bone = new Bone(); model.add(bone,mesh);
+  const count = mesh.geometry.attributes.position.count;
+  mesh.geometry.setAttribute('skinIndex',new Uint16BufferAttribute(new Uint16Array(count*4),4));
+  const w = new Float32Array(count*4);for(let i=0;i<count;i++)w[i*4]=1;
+  mesh.geometry.setAttribute('skinWeight',new Float32BufferAttribute(w,4));
+  model.updateMatrixWorld(true);mesh.bind(new Skeleton([bone]));display.add(model);
+  const box = characterBounds(model,[]);
+  assert.ok(box.getSize(new Vector3()).distanceTo(new Vector3(2,4,2)) < .0001);
+  assert.equal(model.parent,display);
+});
+
+test('tight box camera fills most of the view while keeping front-facing bounds visible', () => {
+  const size = new Vector3(1.4,3,.7);
+  const camera = new PerspectiveCamera(35,1,.01,100);
+  camera.position.z = boxFitDistance(size,1,35); camera.lookAt(0,0,0);camera.updateMatrixWorld(true);
+  const top = new Vector3(0,1.5,.35).project(camera);
+  assert.ok(top.y>.8 && top.y<1);
 });
 
 test('portrait, landscape, and short gallery canvases fit full model bounds', () => {

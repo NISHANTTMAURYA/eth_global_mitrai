@@ -20,7 +20,7 @@ import type { ModelId } from '@/lib/domain';
 import { modelPath } from '@/lib/models';
 import { createCompanionClips, companionAction } from '@/lib/character-motion';
 import { libraryMotions, retargetLibraryMotion } from '@/lib/motion-library';
-import { characterBounds, cameraFitDistance } from '@/lib/character-framing';
+import { characterBounds, boxFitDistance } from '@/lib/character-framing';
 const motionLoader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 const motionPaths = libraryMotions.map(([file]) => `/animations/mesh2motion/${file}.glb`);
 type Props = {
@@ -67,11 +67,14 @@ function Character({
   const vrm = model === 'human' ? (gltf.userData.vrm as VRM) : undefined;
   const object = useMemo(() => (model === 'human' ? gltf.scene : clone(gltf.scene)), [gltf, model]);
   const group = useRef<Group>(null);
+  const [activeMotion, setActiveMotion] = useState<string | undefined>();
+  const [cycleStep, setCycleStep] = useState(0);
   const clips = useMemo(() => {
-    if (library) return library.flatMap((motion, i) => {
+    if (library) return [...createCompanionClips(object).filter((clip) => clip.name === 'CompanionIdle'), ...library.flatMap((motion, i) => {
+      if (libraryMotions[i][1] === 'LibraryIdle') return [];
       const clip = retargetLibraryMotion(object, motion.scene, motion.animations[0], libraryMotions[i][1]);
       return clip ? [clip] : [];
-    });
+    })];
     return gltf.animations.length || model === 'human' ? gltf.animations : createCompanionClips(object);
   }, [gltf, object, model, library]);
   const { actions } = useAnimations(clips, object);
@@ -79,33 +82,34 @@ function Character({
   const idleName = companionAction(clips.map((c) => c.name), 'idle');
   const time = useRef(0);
   const wavingUntil = useRef(0);
+  const previousGesture = useRef(0);
+  const proceduralMotion = useRef('Wave');
   const transform = useMemo(() => {
     const available = clips.map((c) => c.name);
-    const greeting = companionAction(available, 'greeting');
     const idle = companionAction(available, 'idle');
-    const box = characterBounds(object, clips.filter((clip) => [idle, greeting, 'Dance', 'Charleston', 'Clap', 'Bow', 'Think'].includes(clip.name)));
+    const box = characterBounds(object, clips.filter((clip) => [idle, activeMotion].includes(clip.name)));
     const size = box.getSize(new Vector3());
     const center = box.getCenter(new Vector3());
     const scale = 3 / (Math.max(size.x, size.y, size.z) || 1);
     return {
       scale,
-      radius: size.length() * scale / 2,
+      size: size.multiplyScalar(scale),
       position: [-center.x * scale, -center.y * scale, -center.z * scale] as [
         number,
         number,
         number,
       ],
     };
-  }, [object, clips]);
+  }, [object, clips, activeMotion]);
   useEffect(() => {
     if (!(camera instanceof PerspectiveCamera)) return;
-    const distance = cameraFitDistance(transform.radius, viewportSize.width / Math.max(1, viewportSize.height), camera.fov);
+    const distance = boxFitDistance(transform.size, viewportSize.width / Math.max(1, viewportSize.height), camera.fov);
     camera.position.set(0, 0, distance);
     camera.near = Math.max(.01, distance / 100);
     camera.far = distance + 100;
     camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
-  }, [camera, transform.radius, viewportSize.width, viewportSize.height]);
+  }, [camera, transform, viewportSize.width, viewportSize.height]);
   useEffect(() => {
     if (legacy) {
       Object.values(actions).forEach((a) => a?.stop());
@@ -118,11 +122,18 @@ function Character({
     };
   }, [actions, idleName, legacy]);
   useEffect(() => {
-    if (!gestureKey || legacy) return;
+    if (legacy || (!gestureKey && !cycleStep)) return;
     wavingUntil.current = time.current + 2.5;
-    const greetingName = gesture === 'Wave' ? companionAction(clips.map((c) => c.name), 'greeting') : undefined;
-    const clip = actions[gesture] || (greetingName ? actions[greetingName] : undefined);
+    const playlist = clips.filter((c) => c.name !== idleName && !/death|dead|dying|defeat|hit|attack|bite|punch|shoot|slash|kick/i.test(c.name));
+    const manual = gestureKey !== previousGesture.current;
+    previousGesture.current = gestureKey;
+    const chosen = manual || !cycleStep ? gesture : playlist[(cycleStep - 1) % Math.max(1, playlist.length)]?.name;
+    proceduralMotion.current = chosen || ['Wave', 'Dance', 'Bow'][cycleStep % 3];
+    const greetingName = chosen === 'Wave' ? companionAction(clips.map((c) => c.name), 'greeting') : undefined;
+    const clip = chosen ? actions[chosen] || (greetingName ? actions[greetingName] : undefined) : undefined;
     if (clip) {
+      setActiveMotion(clip.getClip().name);
+      Object.values(actions).forEach((action) => { if (action && action !== clip && action !== actions[idleName || '']) action.fadeOut(.25); });
       const idle = idleName ? actions[idleName] : undefined;
       idle?.fadeOut(0.25);
       clip.reset().setLoop(LoopOnce, 1);
@@ -132,18 +143,29 @@ function Character({
         () => {
           clip.fadeOut(0.25);
           idle?.reset().fadeIn(0.25).play();
+          setActiveMotion(undefined);
         },
-        Math.max(1000, (clip.getClip().duration - 0.15) * 1000),
+        Math.max(1000, clip.getClip().duration * 1000),
       );
       return () => clearTimeout(timeout);
     }
-  }, [actions, gesture, gestureKey, legacy, clips, idleName]);
+  }, [actions, gesture, gestureKey, legacy, clips, idleName, cycleStep]);
+  useEffect(() => {
+    if (legacy) return;
+    const longest = Math.max(0, ...clips.map((clip) => clip.duration));
+    const timer = setInterval(() => setCycleStep((step) => step + 1), Math.max(9000, longest * 1000 + 4000));
+    return () => clearInterval(timer);
+  }, [clips, legacy]);
   useFrame((state, delta) => {
     if (legacy) return;
     time.current += delta;
     const t = time.current;
-    if (group.current && !legacy)
-      group.current.rotation.y = Math.sin(t * 0.35) * 0.07 + state.pointer.x * 0.1;
+    const proceduralActive = vrm && t < wavingUntil.current;
+    if (group.current && !legacy) {
+      group.current.rotation.y = proceduralActive && proceduralMotion.current === 'Dance' ? Math.sin(t * 3) * .25 : Math.sin(t * 0.35) * 0.04;
+      group.current.rotation.z = proceduralActive && proceduralMotion.current === 'Dance' ? Math.sin(t * 6) * .06 : 0;
+      group.current.rotation.x = proceduralActive && proceduralMotion.current === 'Bow' ? Math.sin((wavingUntil.current - t) / 2.5 * Math.PI) * .25 : 0;
+    }
     if (vrm) {
       const arm = vrm.humanoid.getNormalizedBoneNode('leftUpperArm');
       const other = vrm.humanoid.getNormalizedBoneNode('rightUpperArm');
@@ -151,7 +173,7 @@ function Character({
       const head = vrm.humanoid.getNormalizedBoneNode('head');
       const hand = vrm.humanoid.getNormalizedBoneNode('leftHand');
       const chest = vrm.humanoid.getNormalizedBoneNode('chest');
-      const wave = t < wavingUntil.current;
+      const wave = t < wavingUntil.current && proceduralMotion.current === 'Wave';
       if (hand) hand.rotation.z = wave ? Math.sin(t * 9) * 0.3 : 0;
       if (chest) chest.rotation.x = Math.sin(t * 1.8) * 0.01;
       if (arm) {
