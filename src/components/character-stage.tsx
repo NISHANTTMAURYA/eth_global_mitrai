@@ -17,6 +17,7 @@ import { VRMLoaderPlugin, type VRM } from '@pixiv/three-vrm';
 import { Box3, Vector3, Group, Mesh, LoopOnce, MathUtils } from 'three';
 import type { ModelId } from '@/lib/domain';
 import { modelPath } from '@/lib/models';
+import { createCompanionClips, companionAction } from '@/lib/character-motion';
 type Props = {
   model: ModelId;
   speaking?: boolean;
@@ -60,7 +61,10 @@ function Character({
   const vrm = model === 'human' ? (gltf.userData.vrm as VRM) : undefined;
   const object = useMemo(() => (model === 'human' ? gltf.scene : clone(gltf.scene)), [gltf, model]);
   const group = useRef<Group>(null);
-  const { actions } = useAnimations(gltf.animations, object);
+  const clips = useMemo(() => gltf.animations.length || model === 'human'
+    ? gltf.animations : createCompanionClips(object), [gltf, object, model]);
+  const { actions } = useAnimations(clips, object);
+  const idleName = companionAction(clips.map((c) => c.name), 'idle');
   const time = useRef(0);
   const wavingUntil = useRef(0);
   const transform = useMemo(() => {
@@ -82,18 +86,19 @@ function Character({
       Object.values(actions).forEach((a) => a?.stop());
       return;
     }
-    const idle = actions[model === 'fox' ? 'Survey' : 'Idle'] || actions.idle;
+    const idle = idleName ? actions[idleName] : undefined;
     idle?.reset().fadeIn(0.3).play();
     return () => {
       Object.values(actions).forEach((a) => a?.stop());
     };
-  }, [actions, model, legacy]);
+  }, [actions, idleName, legacy]);
   useEffect(() => {
     if (!gestureKey || legacy) return;
     wavingUntil.current = time.current + 2.5;
-    const clip = actions[gesture] || (model.startsWith('gobkit:') ? actions.attack : undefined);
+    const greetingName = companionAction(clips.map((c) => c.name), 'greeting');
+    const clip = actions[gesture] || (greetingName ? actions[greetingName] : undefined);
     if (clip) {
-      const idle = actions[model === 'fox' ? 'Survey' : 'Idle'] || actions.idle;
+      const idle = idleName ? actions[idleName] : undefined;
       idle?.fadeOut(0.25);
       clip.reset().setLoop(LoopOnce, 1);
       clip.clampWhenFinished = true;
@@ -107,7 +112,7 @@ function Character({
       );
       return () => clearTimeout(timeout);
     }
-  }, [actions, gesture, gestureKey, legacy, model]);
+  }, [actions, gesture, gestureKey, legacy, clips, idleName]);
   useFrame((state, delta) => {
     if (legacy) return;
     time.current += delta;

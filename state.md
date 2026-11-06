@@ -87,3 +87,6 @@ Straightened the site navbar. Removed character-tab underlines and divider. A sh
 ### Showcase status correction
 
 Replaced the disabled Showcase only action with a small status badge beside attribution. Showcase personas no longer render an adoption button or payment caption in the lifetime card. Adoption and offers actions remain for available personas.
+### Rig animations
+
+Added rest-pose-aware idle/wave quaternion clips to all ten previously unanimated imported humanoids. Mapped existing friendly greeting clips for other models and removed Gobkit attack as greeting. Two targeted tests pass, including mixer playback across all ten real GLB skeletons. Typecheck and isolated build pass (initial build encountered a local SQLite lock). Browser visual playback remains unverified. See docs/character-motion.md.
