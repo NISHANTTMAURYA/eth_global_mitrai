@@ -374,7 +374,7 @@ export async function POST(request: Request) {
           v.shortLife && (owner.startsWith('demo:') || process.env.MITRAI_DEMO_MODE === '1')
             ? 600000
             : 30 * 86400000,
-        published: false,
+        published: true,
         availability: 'showcase',
         brain: initialBrain(v.traits),
         highlights: [],

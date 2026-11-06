@@ -43,23 +43,48 @@ export default function ExploreView({
   const [query, setQuery] = useState('');
   const [ensCharacter, setEnsCharacter] = useState<Character | null>(null);
   const templatesOnly = !legacyOnly && !characters.some((c) => c.published && lifecycle(c).alive);
-  const [filter, setFilter] = useState('All characters');
+  const [filter, setFilter] = useState('Available to Adopt');
   const [syncing, setSyncing] = useState(false);
   const [heroGesture, setHeroGesture] = useState(0);
   const featured = characters.find((c) => c.id === 'milo');
-  const filters = ['All characters', ...(owner ? ['Owned by me'] : []), 'Open to offers', 'Curious', 'Imaginative', 'Creative'];
+  const filters = [
+    'Available to Adopt',
+    'Owned by Others',
+    ...(owner ? ['Owned by me'] : []),
+    'All characters',
+    'Curious',
+    'Imaginative',
+    'Creative',
+  ];
   const visible = characters
     .filter((c) => c.published && (legacyOnly ? !lifecycle(c).alive : lifecycle(c).alive))
     .filter((c) =>
       `${c.name} ${c.tagline} ${c.tags.join(' ')}`.toLowerCase().includes(query.toLowerCase()),
     )
-    .filter(
-      (c) =>
-        filter === 'All characters' ||
-        (filter === 'Owned by me' && c.owner.toLowerCase() === owner?.toLowerCase()) ||
-        (filter === 'Open to offers' && ['offers', 'transfer'].includes(c.availability)) ||
-        c.tags.some((t) => t.toLowerCase() === filter.toLowerCase()),
-    )
+    .filter((c) => {
+      const isMine = !!owner && c.owner.toLowerCase() === owner.toLowerCase();
+      const isOwnedByOther =
+        c.owner !== 'studio' && (!owner || c.owner.toLowerCase() !== owner.toLowerCase());
+      const isAvailableToAdopt =
+        ['transfer', 'offers'].includes(c.availability) || (!c.entityKey && c.owner === 'studio');
+
+      if (filter === 'Available to Adopt') {
+        return isAvailableToAdopt;
+      }
+      if (filter === 'Owned by Others') {
+        return isOwnedByOther;
+      }
+      if (filter === 'Owned by me') {
+        return isMine;
+      }
+      if (filter === 'Open to offers') {
+        return ['offers', 'transfer'].includes(c.availability);
+      }
+      if (filter === 'All characters') {
+        return true;
+      }
+      return c.tags.some((t) => t.toLowerCase() === filter.toLowerCase());
+    })
     .sort((a, b) => lipSyncRank(a.model) - lipSyncRank(b.model));
   return (
     <GalleryRenderer>
@@ -329,7 +354,15 @@ function CharacterCard({
         <div className="card-top">
           <LifecyclePill c={c} />
           <span className="sample-label">
-            {mine ? 'YOUR MITRAI' : c.demo ? 'STUDIO DEMO' : c.entityKey ? 'ARKIV' : 'LOCAL'}
+            {mine
+              ? 'YOUR MITRAI'
+              : c.owner !== 'studio'
+                ? `OWNED · ${shortAddress(c.owner)}`
+                : c.demo
+                  ? 'STUDIO ADOPTION'
+                  : c.entityKey
+                    ? 'ARKIV'
+                    : 'AVAILABLE'}
           </span>
         </div>
         <Stage model={c.model} interactive={false} compact legacy={!lifecycle(c).alive} />
@@ -354,7 +387,9 @@ function CharacterCard({
                 ? 'Open to adoption'
                 : c.availability === 'offers'
                   ? 'Open to offers'
-                  : 'Growing'}
+                  : c.owner !== 'studio'
+                    ? 'Showcase only'
+                    : 'Available'}
           </span>
         </div>
         <p>{c.tagline}</p>
@@ -369,7 +404,11 @@ function CharacterCard({
         </div>
         <div className="card-bottom">
           <span>
-            {mine ? 'Owned by you' : `Current owner ${shortAddress(c.owner)}`}
+            {mine
+              ? 'Owned by you'
+              : c.owner !== 'studio'
+                ? `Current owner: ${shortAddress(c.owner)}`
+                : 'MitrAI Studio (Unclaimed)'}
           </span>
           <span>
             <Sparkles size={12} />

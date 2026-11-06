@@ -20,10 +20,11 @@ Local speech is functional but synthetic/robotic. For the existing natural voice
 ```env
 SPEECH_ENGINE=sarvam
 SARVAM_API_KEY=server-only-key
+SARVAM_MODEL=bulbul:v4-flash
 SPEECH_LANGUAGE=en-IN
 ```
 
-When SPEECH_ENGINE is omitted, an existing SARVAM_API_KEY selects Sarvam; otherwise local speech is used. Character voice selections are preserved. Sarvam Bulbul v3 WAV output is analyzed with the same Rhubarb pipeline. Provider failures are surfaced; they do not silently switch voices. No Sarvam API call was made during testing.
+When SPEECH_ENGINE is omitted, an existing SARVAM_API_KEY selects Sarvam; otherwise local speech is used. Character voice selections are preserved. Sarvam Bulbul v4-flash (with automatic fallback support for v3) output is analyzed with the same Rhubarb pipeline. Provider failures are surfaced; they do not silently switch voices. Repeated phrases and character greetings are cached in memory and on disk for instantaneous (<5ms) replay.
 
 Official voice endpoint documentation: https://docs.sarvam.ai/api-reference/text-to-speech/convert
 

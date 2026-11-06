@@ -3,6 +3,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { VOICES, DEFAULT_VOICE_ID } from '@/lib/voices';
+import { resolveSarvamSpeaker } from '@/lib/speech-audio';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -79,6 +80,8 @@ export async function POST(request: Request) {
   }
 
   try {
+    const sarvamModel = process.env.SARVAM_MODEL || 'bulbul:v4-flash';
+    const resolvedSpeaker = resolveSarvamSpeaker(selectedVoice, sarvamModel);
     const response = await fetch('https://api.sarvam.ai/text-to-speech', {
       method: 'POST',
       headers: {
@@ -88,8 +91,8 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         text: cleanText,
         language_code: 'en-IN',
-        model: 'bulbul:v3',
-        speaker: selectedVoice,
+        model: sarvamModel,
+        speaker: resolvedSpeaker,
         output_audio_codec: 'mp3',
       }),
       signal: AbortSignal.timeout(15000),

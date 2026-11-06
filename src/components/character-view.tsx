@@ -31,6 +31,7 @@ import {
   History,
   Save,
   Info,
+  Sliders,
 } from 'lucide-react';
 import { lifecycle, shortAddress, type Character, type Message } from '@/lib/domain';
 import { api } from '@/lib/client';
@@ -83,7 +84,8 @@ export default function CharacterView({
   const [voice, setVoice] = useState(true);
   const [gesture, setGesture] = useState('Idle');
   const [gestureKey, setGestureKey] = useState(0);
-  const [publishing, setPublishing] = useState(autoPublish);
+  const [publishing, setPublishing] = useState(false);
+  const [manageModal, setManageModal] = useState(autoPublish ?? false);
   const [transfer, setTransfer] = useState(autoTransfer);
   const [offer, setOffer] = useState(false);
   const [auditionOpen, setAuditionOpen] = useState(false);
@@ -255,30 +257,38 @@ export default function CharacterView({
     };
     try {
       const segments = speechSegments({ text, gesture });
-      // Prepare segments before playback so gesture boundaries don't incur a network pause.
-      const prepared = [];
-      for (const segment of segments) {
-        const res = supplied
-          ? null
-          : await fetch('/api/speech', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ text: segment.text, id: c.id }),
-              signal: controller.signal,
-            });
-        const data = supplied || (await res!.json());
-        if (res && !res.ok) throw new Error(data.error || 'Could not prepare speech.');
-        const context = audioContext.current;
-        if (!context) throw new Error('Tap the speaker to enable audio.');
-        const bytes = Uint8Array.from(atob(data.audio.split(',')[1]), (ch) => ch.charCodeAt(0));
-        const buffer = await context.decodeAudioData(bytes.buffer);
-        prepared.push({ buffer, track: validateSpeechTrack(data), animation: segment.animation });
-      }
+      // Prepare segments in parallel so speech starts with minimal latency
+      const prepared = await Promise.all(
+        segments.map(async (segment) => {
+          const res = supplied
+            ? null
+            : await fetch('/api/speech', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: segment.text, id: c.id }),
+                signal: controller.signal,
+              });
+          const data = supplied || (await res!.json());
+          if (res && !res.ok) throw new Error(data.error || 'Could not prepare speech.');
+          let context = audioContext.current;
+          if (!context) {
+            context = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+            audioContext.current = context;
+          }
+          if (context.state === 'suspended') {
+            await context.resume().catch(() => {});
+          }
+          const bytes = Uint8Array.from(atob(data.audio.split(',')[1]), (ch) => ch.charCodeAt(0));
+          const buffer = await context.decodeAudioData(bytes.buffer);
+          return { buffer, track: validateSpeechTrack(data), animation: segment.animation };
+        }),
+      );
       for (const part of prepared) {
         if (sequence !== speechSequence.current) return;
         const context = audioContext.current!;
-        if (context.state !== 'running')
-          throw new Error('Your browser paused audio. Tap the speaker to enable it.');
+        if (context.state === 'suspended') {
+          await context.resume().catch(() => {});
+        }
         const player = context.createBufferSource();
         player.buffer = part.buffer;
         player.connect(context.destination);
@@ -359,8 +369,14 @@ export default function CharacterView({
     }
     queuedChars.current += value.length + (batchRef.current.size ? 2 : 0);
     stopSpeech();
-    if (availableGestures(c.model).includes('Think')) {
-      setGesture('Think');
+    const available = availableGestures(c.model);
+    const funThinkingGestures = ['Think', 'HipDance', 'Charleston', 'BodyRoll', 'ArmPump', 'Dance'].filter((g) =>
+      available.includes(g),
+    );
+    const chosenThinking =
+      funThinkingGestures[Math.floor(Math.random() * funThinkingGestures.length)] || 'Think';
+    if (available.includes(chosenThinking)) {
+      setGesture(chosenThinking);
       setGestureKey((n) => n + 1);
     }
     ++deliverySequence.current;
@@ -393,11 +409,11 @@ export default function CharacterView({
           setChat((items) =>
             items.some((item) => item.id === reply.id) ? items : [...items, reply],
           );
+        // Reveal text bubble immediately so the user can read right away
+        show();
         if (voiceEnabled.current) {
-          await speak(reply.text, reply.gesture, show);
-          if (delivery === deliverySequence.current) show();
+          await speak(reply.text, reply.gesture, () => {});
         } else {
-          show();
           if (reply.gesture) {
             const finished = new Promise<void>((resolve) => {
               finishGesture.current = resolve;
@@ -450,9 +466,9 @@ export default function CharacterView({
         <div className="button-row">
           <EnsBadge character={c} onClick={() => setEnsModal(true)} />
           {own && l.alive && (
-            <button className="button secondary small-button" onClick={() => setPublishing(true)}>
-              <Globe2 size={14} />
-              {c.published ? 'Edit public profile' : 'Introduce to the world'}
+            <button className="button primary small-button" onClick={() => setManageModal(true)}>
+              <Sliders size={14} />
+              Manage Companion
             </button>
           )}
           <span className="pill">
@@ -473,7 +489,14 @@ export default function CharacterView({
             </div>
             <div className="stage-top">
               <LifecyclePill c={c} />
-              <span className="eyebrow">ONE LITTLE LIFE</span>
+              {pending ? (
+                <span className="eyebrow" style={{ color: '#2563eb', display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 700 }}>
+                  <Sparkles className="spin" size={12} />
+                  PONDERING & GROOVING…
+                </span>
+              ) : (
+                <span className="eyebrow">ONE LITTLE LIFE</span>
+              )}
             </div>
             <Stage
               model={c.model}
@@ -651,14 +674,12 @@ export default function CharacterView({
             )}
             {own && l.alive && (
               <button
-                className="text-link"
-                onClick={() => {
-                  setRequestId(undefined);
-                  setRecipient('');
-                  setTransfer(true);
-                }}
+                className="button secondary full"
+                style={{ marginTop: 12 }}
+                onClick={() => setManageModal(true)}
               >
-                Pass on their story <ArrowUpRight size={15} />
+                <Sliders size={14} />
+                Manage Listing & Handover
               </button>
             )}
           </div>
@@ -748,7 +769,10 @@ export default function CharacterView({
               )}
               {!own && l.alive && (
                 <section className="public-introduction">
-                  <h3>Meet {c.name}, in their own voice.</h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <Sparkles size={16} color="#d97706" />
+                    <h3 style={{ margin: 0 }}>Inner Monologue · Spoken Soliloquy</h3>
+                  </div>
                   <p>{introduction || c.description}</p>
                   <button
                     className="button secondary"
@@ -773,12 +797,12 @@ export default function CharacterView({
                     }}
                   >
                     <Volume2 size={16} />
-                    {speechLoading ? 'Preparing introduction…' : 'Listen to their introduction'}
+                    {speechLoading ? 'Preparing monologue…' : 'Listen to Inner Monologue'}
                   </button>
                   <button className="text-link" onClick={() => setAuditionOpen((v) => !v)}>
-                    {auditionOpen ? 'Close preview chat' : 'Try a short preview chat'}
+                    {auditionOpen ? 'Close audition chat' : 'Try a short preview chat'}
                   </button>
-                  <small>A preview never changes their mind or reads private memories.</small>
+                  <small>Visitors experience the persona's reflection. Private memories stay locked with their owner.</small>
                 </section>
               )}
               <div role="status" aria-live="polite" className="speech-status">
@@ -1080,41 +1104,217 @@ export default function CharacterView({
           )}
         </section>
       </div>
-      {publishing && (
-        <Modal title="Introduce a little someone" close={() => setPublishing(false)}>
-          <p className="muted">
-            Choose what the world sees. Private memories and chats are excluded.
+      {manageModal && (
+        <Modal title={`Manage ${c.name}`} close={() => setManageModal(false)}>
+          <p className="muted" style={{ marginBottom: 14 }}>
+            Control visibility on Explore, adoption listing, and ownership handover.
           </p>
-          <label className="form-label">
-            Selected moments
-            <small>One demonstration or approved highlight per line, up to four.</small>
-            <textarea
-              rows={4}
-              value={highlights}
-              onChange={(e) => setHighlights(e.target.value)}
-              placeholder="What makes this character worth meeting?"
-            />
+
+          <label className="form-label" style={{ fontWeight: 600 }}>
+            Marketplace & Discovery Status
           </label>
-          <label className="form-label">
-            Availability
-            <select
-              value={availability}
-              onChange={(e) => setAvailability(e.target.value as Character['availability'])}
+          <div style={{ display: 'grid', gap: 8, marginBottom: 16 }}>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 10,
+                padding: '10px 14px',
+                borderRadius: 8,
+                border: availability === 'showcase' ? '1.5px solid #1e2d3d' : '1px solid #e5e7eb',
+                background: availability === 'showcase' ? '#f8fafc' : '#ffffff',
+                cursor: 'pointer',
+              }}
             >
-              <option value="showcase">Showcase only</option>
-              <option value="offers">Open to adoption requests</option>
-              <option value="transfer">Available for handover</option>
-            </select>
-          </label>
-          {availability !== 'showcase' && <label className="form-label">
-            Asking price in test tGLM (optional)
-            <input inputMode="decimal" value={askingPriceTglm} onChange={(e) => setAskingPriceTglm(e.target.value)} placeholder="Example: 2.5" />
-            <small>Set your own price. A bid is only an offer until payment and transfer are verified.</small>
-          </label>}
-          <div className="note">
-            <Globe2 size={16} />
-            Publishing makes your selected character state public. No payment is collected.
+              <input
+                type="radio"
+                name="availability"
+                checked={availability === 'showcase'}
+                onChange={() => setAvailability('showcase')}
+                style={{ marginTop: 3 }}
+              />
+              <div>
+                <strong style={{ display: 'block', fontSize: 13, color: '#0f172a' }}>🏛️ Showcase Only</strong>
+                <small style={{ color: '#64748b', fontSize: 11 }}>
+                  Your companion lives with you. Appears in showcase on Explore; visitors can listen to its Inner Monologue but cannot make adoption offers.
+                </small>
+              </div>
+            </label>
+
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 10,
+                padding: '10px 14px',
+                borderRadius: 8,
+                border: availability === 'offers' ? '1.5px solid #1e2d3d' : '1px solid #e5e7eb',
+                background: availability === 'offers' ? '#f8fafc' : '#ffffff',
+                cursor: 'pointer',
+              }}
+            >
+              <input
+                type="radio"
+                name="availability"
+                checked={availability === 'offers'}
+                onChange={() => setAvailability('offers')}
+                style={{ marginTop: 3 }}
+              />
+              <div>
+                <strong style={{ display: 'block', fontSize: 13, color: '#0f172a' }}>🤝 Open to Adoption & Offers</strong>
+                <small style={{ color: '#64748b', fontSize: 11 }}>
+                  Listed in "Available to Adopt" on Explore. Prospective adopters can send buy proposals with an offer amount.
+                </small>
+              </div>
+            </label>
+
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 10,
+                padding: '10px 14px',
+                borderRadius: 8,
+                border: availability === 'transfer' ? '1.5px solid #1e2d3d' : '1px solid #e5e7eb',
+                background: availability === 'transfer' ? '#f8fafc' : '#ffffff',
+                cursor: 'pointer',
+              }}
+            >
+              <input
+                type="radio"
+                name="availability"
+                checked={availability === 'transfer'}
+                onChange={() => setAvailability('transfer')}
+                style={{ marginTop: 3 }}
+              />
+              <div>
+                <strong style={{ display: 'block', fontSize: 13, color: '#0f172a' }}>📦 Available for Handover</strong>
+                <small style={{ color: '#64748b', fontSize: 11 }}>
+                  Ready for direct transfer to an adopter or specific recipient wallet.
+                </small>
+              </div>
+            </label>
           </div>
+
+          {availability !== 'showcase' && (
+            <label className="form-label" style={{ marginBottom: 16 }}>
+              Asking Price (Optional)
+              <input
+                inputMode="decimal"
+                value={askingPriceTglm}
+                onChange={(e) => setAskingPriceTglm(e.target.value)}
+                placeholder="e.g. 2.5 tGLM or 0.05 ETH"
+              />
+              <small>Suggested adoption fee on testnet. Offers remain proposals until you accept handover.</small>
+            </label>
+          )}
+
+          {/* Pending Requests */}
+          {incoming.filter((r) => r.status === 'pending').length > 0 && (
+            <div style={{ marginTop: 14, marginBottom: 16, padding: 12, borderRadius: 8, background: '#f8fafc', border: '1px solid #cbd5e1' }}>
+              <strong style={{ display: 'block', fontSize: 12, marginBottom: 8, color: '#0f172a' }}>
+                📬 Pending Adoption Requests ({incoming.filter((r) => r.status === 'pending').length})
+              </strong>
+              {incoming.filter((r) => r.status === 'pending').map((req) => (
+                <div key={req.id} style={{ padding: 10, borderRadius: 6, background: '#fff', marginBottom: 8, border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <strong>{shortAddress(req.from)}</strong>
+                    <span style={{ fontWeight: 600, color: '#2563eb' }}>{req.bidTglm ? `${req.bidTglm} tGLM` : 'Free Adoption'}</span>
+                  </div>
+                  {req.note && <p style={{ fontSize: 12, color: '#475569', margin: '4px 0' }}>"{req.note}"</p>}
+                  <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                    <button
+                      className="button primary small-button"
+                      disabled={actionBusy}
+                      onClick={() =>
+                        action(async () => {
+                          const prepared = await api('prepareTransfer', { id: c.id, recipient: req.from, requestId: req.id });
+                          let txHash: string | undefined;
+                          if (c.entityKey) {
+                            const walletProvider = getWalletProvider();
+                            if (!walletProvider || !owner?.startsWith('0x'))
+                              throw new Error('Connect your owner wallet to sign the Arkiv transfer.');
+                            const receipt = await transferArkiv(
+                              walletProvider,
+                              owner as Address,
+                              c.entityKey as Hex,
+                              req.from as Address,
+                            );
+                            txHash = receipt.txHash;
+                          }
+                          await api('transfer', { id: c.id, recipient: req.from, txHash, requestId: req.id });
+                          setManageModal(false);
+                          router.push('/explore');
+                          notify('Ownership handed over on Arkiv! Your companion has found a new guardian.');
+                        })
+                      }
+                    >
+                      Accept & Handover
+                    </button>
+                    <button
+                      className="button secondary small-button"
+                      disabled={actionBusy}
+                      onClick={() =>
+                        action(async () => {
+                          await api('declineRequest', { id: c.id, requestId: req.id });
+                          setIncoming((list) => list.map((item) => (item.id === req.id ? { ...item, status: 'declined' } : item)));
+                          notify('Request declined.');
+                        })
+                      }
+                    >
+                      Decline
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Direct Handover */}
+          <details style={{ marginTop: 10, marginBottom: 16 }}>
+            <summary style={{ cursor: 'pointer', fontSize: 12, color: '#64748b', fontWeight: 500 }}>
+              Direct Transfer to another Wallet Address
+            </summary>
+            <div style={{ marginTop: 8 }}>
+              <label className="form-label">
+                Recipient Wallet Address
+                <input
+                  value={recipient}
+                  onChange={(e) => setRecipient(e.target.value)}
+                  placeholder="0x…"
+                />
+              </label>
+              <button
+                className="button secondary full"
+                disabled={actionBusy || !recipient.startsWith('0x')}
+                onClick={() =>
+                  action(async () => {
+                    const prepared = await api('prepareTransfer', { id: c.id, recipient });
+                    let txHash: string | undefined;
+                    if (c.entityKey) {
+                      const walletProvider = getWalletProvider();
+                      if (!walletProvider || !owner?.startsWith('0x'))
+                        throw new Error('Connect owner wallet first.');
+                      const receipt = await transferArkiv(
+                        walletProvider,
+                        owner as Address,
+                        c.entityKey as Hex,
+                        recipient as Address,
+                      );
+                      txHash = receipt.txHash;
+                    }
+                    await api('transfer', { id: c.id, recipient, txHash });
+                    setManageModal(false);
+                    router.push('/explore');
+                    notify('Ownership handed over to recipient.');
+                  })
+                }
+              >
+                Confirm Direct Handover
+              </button>
+            </div>
+          </details>
+
           <button
             className="button primary full"
             disabled={actionBusy}
@@ -1124,37 +1324,14 @@ export default function CharacterView({
                   id: c.id,
                   availability,
                   askingPriceTglm: askingPriceTglm.trim() || undefined,
-                  highlights: highlights
-                    .split('\n')
-                    .map((s) => s.trim())
-                    .filter(Boolean)
-                    .slice(0, 4),
+                  highlights: c.highlights || [],
                 });
-                if (!c.demo) {
-                  const walletProvider = getWalletProvider();
-                  if (!walletProvider || !owner?.startsWith('0x'))
-                    throw new Error('Reconnect the owner wallet to publish.');
-                  const prepared = await api('prepareSnapshot', { id: c.id });
-                  const result = await writeArkiv(
-                    walletProvider,
-                    owner as Address,
-                    prepared.character,
-                    prepared.proof,
-                    prepared.verifier,
-                  );
-                  await api('sync', { id: c.id, ...result });
-                }
-                setPublishing(false);
-                notify(
-                  c.demo
-                    ? 'Published to the local demo gallery.'
-                    : 'Your character is published on Arkiv.',
-                );
+                setManageModal(false);
+                notify('Companion status updated.');
               })
             }
           >
-            Publish profile
-            <ArrowUpRight size={16} />
+            Save Changes
           </button>
         </Modal>
       )}
