@@ -3941,6 +3941,18 @@ p {
   margin-bottom: 72px;
   scroll-margin-top: 100px;
 }
+.arch-grid-two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  max-width: 880px;
+  margin: 0 auto;
+}
+@media (max-width: 768px) {
+  .arch-grid-two {
+    grid-template-columns: 1fr;
+  }
+}
 .arch-grid,
 .arch-grid-three {
   display: grid;

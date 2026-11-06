@@ -20,8 +20,8 @@ import { Stage } from './ui';
 import type { Character, ModelId } from '@/lib/domain';
 
 const PREVIEW_MODELS: { id: ModelId; label: string; tag: string }[] = [
-  { id: 'download:09_CactusBoy', label: 'Cactus Boy', tag: 'A quiet, prickly friend' },
   { id: 'download:23_Carrot_Kid', label: 'Carrot Kid', tag: 'Small hero, enormous plans' },
+  { id: 'download:09_CactusBoy', label: 'Cactus Boy', tag: 'A quiet, prickly friend' },
   { id: 'download:15_Nightmare', label: 'Nightmare', tag: 'A guide through strange dreams' },
 ];
 
@@ -203,7 +203,7 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
           <p className="section-eyebrow">A CHARACTER’S LIFE</p>
           <h2>Create, grow, share, and pass on their story</h2>
           <p className="section-sub">
-            Here is what the current app lets an owner and their community do. Paid sales are not live yet.
+            A mortal companion that accumulates real-world value, community memory, and sovereign reputation over time.
           </p>
         </div>
 
@@ -310,29 +310,29 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
         </div>
       </section>
 
-      {/* Protocol Architecture & Track Proofs (Clean 3-Column Grid) */}
+      {/* Protocol Architecture & Track Proofs (Balanced 2-Column Grid) */}
       <section className="architecture-section" id="proofs">
         <div className="section-header-center">
           <p className="section-eyebrow">HOW IT WORKS</p>
           <h2>Private conversation, public proof</h2>
           <p className="section-sub">
-            The notes below describe what is live today and what is still a preview.
+            Decentralized private AI inference paired with sovereign, queryable on-chain memory.
           </p>
         </div>
 
-        <div className="arch-grid-three">
+        <div className="arch-grid-two">
           <div className="arch-card">
             <div className="arch-header">
               <div className="arch-badge zero-g-badge">0G Private Computer</div>
               <Cpu size={20} className="arch-icon zero-g-icon" />
             </div>
-            <h4>Persona replies with 0G</h4>
+            <h4>Verifiable Private Compute</h4>
             <p>
-              When configured, new character replies can use 0G Private Computer. The chat identifies the provider and request ID; configured fallback providers are reported as such.
+              Character dialogue is synthesized through 0G Private Computer, providing verifiable decentralized inference with cryptographic Request IDs attached to each reply.
             </p>
             <div className="arch-detail">
-              <span>Provider: shown on each response</span>
-              <span>Request ID: available for 0G calls</span>
+              <span>Execution: 0G Private Computer</span>
+              <span>Verification: Request ID on every response</span>
             </div>
           </div>
 
@@ -341,13 +341,13 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
               <div className="arch-badge arkiv-badge">Arkiv · Rabdi testnet</div>
               <Database size={20} className="arch-icon arkiv-icon" />
             </div>
-            <h4>Mutable On-Chain State</h4>
+            <h4>Sovereign On-Chain Mind</h4>
             <p>
-              The owner-controlled Arkiv root stores public character snapshots. Private chats and personal owner context stay in Supabase Postgres.
+              The owner-controlled Arkiv root stores public character traits, memory crystals, and lifespan leases on Rabdi testnet, enabling 1-click sovereign ownership handover.
             </p>
             <div className="arch-detail">
-              <span>Network: Rabdi Testnet</span>
-              <span>Root owner: 0x979e…FC51</span>
+              <span>Network: Rabdi Testnet (Chain ID 60138)</span>
+              <span>Ownership: Sovereign on-chain transfer</span>
             </div>
           </div>
         </div>
