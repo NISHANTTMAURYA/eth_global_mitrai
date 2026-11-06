@@ -81,3 +81,6 @@ Replaced fixed 610/750px panel sizing on desktop with viewport-sized columns. Le
 ### Three-card viewport correction
 
 Restored the reference stylesheet import removed from layout. Desktop scene and lifetime cards now share the same available viewport height as the chat card, with compact rules for shorter screens. Chat history scrolls inside its card. Build and typecheck pass; browser geometry remains unverified.
+### Navigation polish
+
+Straightened the site navbar. Removed character-tab underlines and divider. A shared highlight slides between four equal tabs with press feedback and a brief icon settle; reduced-motion preferences disable movement. Typecheck and production build pass. Browser visual verification remains pending.

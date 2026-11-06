@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -372,7 +372,12 @@ export default function CharacterView({
           </div>
         </aside>
         <section className="character-workspace">
-          <div className="workspace-tabs">
+          <div
+            className="workspace-tabs"
+            role="group"
+            aria-label="Character sections"
+            style={{ '--selected-tab': Math.max(0, ['conversation', 'mind', 'story', 'history'].indexOf(tab)) } as CSSProperties}
+          >
             {[
               { id: 'conversation', label: 'Chat', icon: Heart },
               { id: 'mind', label: 'The mind', icon: Brain },
@@ -381,6 +386,8 @@ export default function CharacterView({
             ].map((t) => (
               <button
                 key={t.id}
+                type="button"
+                aria-pressed={tab === t.id}
                 onClick={() => setTab(t.id)}
                 className={tab === t.id ? 'active' : ''}
               >

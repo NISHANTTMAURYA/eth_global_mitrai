@@ -41,3 +41,4 @@ Each model is a unique persona form. Enforce availability in both the creator UI
 
 Use ui/image.png and ui/image copy.png as visual targets. Keep interactive 3D and real conversation state; do not render a full-page screenshot as the website or fabricate the reference's example messages. Discovery uses blue landscape cards; character detail uses a warm scene and large chat workspace.
 Character chat should follow the supplied clean reference: scene and lifetime on the left; tabs, conversation and composer on the right. Keep model-provider metadata out of the main conversational hierarchy.
+Use a single CSS-transformed tab highlight with a spring-like easing curve, following MDN transition guidance, rather than adding an animation dependency. Keep selected state available via aria-pressed and preserve keyboard focus visibility.
