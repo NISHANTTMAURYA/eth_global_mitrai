@@ -24,6 +24,8 @@ The integration command starts a production server with a disposable isolated SQ
 
 ### Live configuration
 
+Follow [the configuration checklist](docs/configuration.md) for account links, keys, test gas and the first live run.
+
 Copy `.env.example` to `.env.local`. Set `OG_API_KEY` and `OG_MODEL` for 0G inference; the documented router endpoint is the default. Without them the UI explicitly says **Scripted demo**. Provider failures are surfaced, not replaced with invented replies. Set the public Rabdi access key/RPC for reliable chain access. Browser-exposed keys are public configuration, never wallet private keys.
 
 Sign in with a browser wallet, create a character, then choose **The mind → Sync to Arkiv**. Wallet approval signs the public snapshot write. The server verifies the result before recording the entity key. **Discover on Arkiv** queries public records and accepts only this app verifier’s signed snapshots. The script `npm run query:arkiv` reproduces the schema query, optionally filtered with `ARKIV_OWNER`. No live transaction was executed during implementation, so writer addresses and live entity evidence remain pending.

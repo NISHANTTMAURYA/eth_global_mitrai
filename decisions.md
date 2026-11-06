@@ -20,3 +20,5 @@
 - Audio-derived Rhubarb cues drive the fixed greetings. Dynamic browser speech uses approximate word/vowel cues; robot has expression morphs rather than full visemes.
 - Isolate HTTP integration tests in a disposable temporary database and verifier directory.
 - Browser preview access was declined by the browser permission gate. No alternate browser surface or automation workaround was used; visual/rendered responsive QA remains unverified.
+
+- Default Arkiv transport must inherit the SDK-generated keyed URL. An explicit custom RPC is optional and overrides that authentication path.

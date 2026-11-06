@@ -20,7 +20,7 @@ Updated 6 November 2026. Project: `/Users/nishantmaurya/eth_global_mitrai`.
 ## Verification
 
 - `npm run typecheck`: passed.
-- `npm test`: 12 unit/domain/signature/asset tests passed; HTTP tests intentionally run separately.
+- `npm test`: 13 unit/domain/signature/configuration/asset tests passed; HTTP tests intentionally run separately.
 - `npm run build`: production build passed.
 - `npm run test:integration`: two API suites passed against an isolated production server, exercising creation, limits, private/public memory, checkpoint, publishing, audition isolation, enquiries, wallet login, nonce replay rejection, handover, old-owner denial and expired-character denial.
 - Model binaries parsed: both primary assets contain skeletons and facial targets; robot has Wave animation. Greeting cue intervals and audio existence validated.
@@ -44,3 +44,7 @@ Updated 6 November 2026. Project: `/Users/nishantmaurya/eth_global_mitrai`.
 ## Commit loop
 
 Review README/user flow/technical notes and current Arkiv rules → build → test → commit the passing local MVP. Commit identifier is recorded in Git history; no push or hosted deployment is claimed.
+
+## Configuration follow-up
+
+Corrected the default Arkiv transport to honor the access-key URL constructed by the SDK. Leave the custom RPC override blank unless needed. Added a regression test and `docs/configuration.md`; type checking and all 13 non-HTTP tests passed. No live calls executed.

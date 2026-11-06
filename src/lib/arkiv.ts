@@ -23,9 +23,7 @@ export const Characters = defineSchema('mitrai.characters.v1', {
 export function arkivPublic() {
   return createPublicClient({
     chain: rabdi({ accessKey: process.env.NEXT_PUBLIC_ARKIV_ACCESS_KEY || '' }),
-    transport: http(
-      process.env.NEXT_PUBLIC_ARKIV_RPC || 'https://rpc.rabdi.db-chain.testnet.arkiv.network',
-    ),
+    transport: http(process.env.NEXT_PUBLIC_ARKIV_RPC || undefined),
   });
 }
 export async function readArkivCharacter(key: Hex) {
@@ -73,10 +71,7 @@ export async function writeArkiv(
             chainId: `0x${chain.id.toString(16)}`,
             chainName: 'Arkiv Rabdi',
             nativeCurrency: { name: 'Test GLM', symbol: 'tGLM', decimals: 18 },
-            rpcUrls: [
-              process.env.NEXT_PUBLIC_ARKIV_RPC ||
-                'https://rpc.rabdi.db-chain.testnet.arkiv.network',
-            ],
+            rpcUrls: [process.env.NEXT_PUBLIC_ARKIV_RPC || chain.rpcUrls.default.http[0]],
             blockExplorerUrls: ['https://rabdi.explorer.arkiv.network'],
           },
         ],
