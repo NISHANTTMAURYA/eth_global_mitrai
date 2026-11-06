@@ -620,7 +620,7 @@ body:has(.detail-page) .brand { color: #1e211b; }
   .detail-page .detail-topbar { height: 48px; margin-bottom: 12px; }
   .detail-page .back-link { display: inline-flex; align-items: center; gap: 14px; }
   .detail-page .back-link > svg { box-sizing: content-box; background: #ffffffd9; border-radius: 50%; padding: 14px; }
-  .detail-page .detail-layout { height: calc(100dvh - 184px); min-height: 460px; grid-template-columns: minmax(0, .86fr) minmax(0, 1fr); gap: 10px; align-items: stretch; }
+  .detail-page .detail-layout { height: calc(100dvh - 184px); min-height: 0; grid-template-columns: minmax(0, .86fr) minmax(0, 1fr); gap: 10px; align-items: stretch; }
   .detail-page .character-aside { height: 100%; display: flex; flex-direction: column; min-height: 0; gap: 10px; }
   .detail-page .detail-stage { height: auto; flex: 1; min-height: 0; border-radius: 44px; border-width: 5px; }
   .detail-page .stage-title { top: 28px; left: 38px; max-width: 68%; }
@@ -635,6 +635,8 @@ body:has(.detail-page) .brand { color: #1e211b; }
   .detail-page .meter { height: 6px; background: #f2f0e8; }
   .detail-page .meter i { background: #7d9d63; }
   .detail-page .character-workspace { height: 100%; min-height: 0; border-radius: 44px; }
+  .detail-page .character-workspace { overflow: hidden; }
+  .detail-page .detail-topbar .button-row { flex-wrap: nowrap; }
   .detail-page .workspace-tabs { flex: 0 0 66px; margin: 10px 26px 0; padding: 0 0 8px; }
   .detail-page .workspace-tabs button { font-size: clamp(10px, .95vw, 14px); padding: 13px 16px; }
   .detail-page .chat-panel { overflow: hidden; padding: 0 26px 18px; }
@@ -643,4 +645,15 @@ body:has(.detail-page) .brand { color: #1e211b; }
   .detail-page .chat-caption { flex-shrink: 0; }
   .detail-page .tab-content { overflow-y: auto; min-height: 0; }
   body:has(.detail-page) .site-footer { display: none; }
+}
+@media (min-width: 701px) and (max-height: 760px) {
+  body:has(.detail-page) .site-header { height: 72px; }
+  .detail-page.page-shell { padding-top: 10px; }
+  .detail-page .detail-topbar { height: 40px; margin-bottom: 8px; }
+  .detail-page .detail-layout { height: calc(100dvh - 146px); }
+  .detail-page .character-bio { flex-basis: 100px; padding: 15px 28px; }
+  .detail-page .stage-title { top: 22px; left: 28px; }
+  .detail-page .stage-title h1 { font-size: 32px; }
+  .detail-page .stage-top { top: 115px; left: 28px; }
+  .detail-page .workspace-tabs { flex-basis: 55px; }
 }

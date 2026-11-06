@@ -78,3 +78,6 @@ Removed the oversized welcome content and starter chips. Reduced visible status/
 ### Desktop panel proportions
 
 Replaced fixed 610/750px panel sizing on desktop with viewport-sized columns. Left scene flexes above a 116px lifetime card; right conversation flexes above a fixed composer. Page uses 85% centered width and matching aligned column bottoms. Build/typecheck pass; rendered result still requires browser verification.
+### Three-card viewport correction
+
+Restored the reference stylesheet import removed from layout. Desktop scene and lifetime cards now share the same available viewport height as the chat card, with compact rules for shorter screens. Chat history scrolls inside its card. Build and typecheck pass; browser geometry remains unverified.
