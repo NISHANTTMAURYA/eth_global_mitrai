@@ -657,6 +657,20 @@ body:has(.detail-page) .brand { color: #1e211b; }
 }
 
 /* One moving highlight rather than separate tab backgrounds or underlines. */
+.card-visual > .character-stage.compact {
+  position: absolute;
+  inset: 26px 8px 6px;
+  height: auto;
+  min-height: 0;
+  padding: 0;
+}
+.detail-page .detail-stage > .character-stage {
+  position: absolute;
+  inset: 145px 14px 65px;
+  height: auto;
+  min-height: 0;
+  padding: 0;
+}
 .gesture-toolbar { max-width: calc(100% - 28px); overflow-x: auto; }
 .gesture-toolbar button { flex-shrink: 0; }
 .motion-label { font-size: 9px; margin-left: 3px; }

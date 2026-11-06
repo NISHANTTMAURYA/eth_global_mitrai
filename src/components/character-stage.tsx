@@ -9,17 +9,18 @@ import {
   Component,
   type ReactNode,
 } from 'react';
-import { Canvas, useFrame, useLoader } from '@react-three/fiber';
+import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { ContactShadows, OrbitControls, useAnimations } from '@react-three/drei';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { VRMLoaderPlugin, type VRM } from '@pixiv/three-vrm';
-import { Box3, Vector3, Group, Mesh, LoopOnce, MathUtils } from 'three';
+import { Vector3, Group, Mesh, LoopOnce, MathUtils, PerspectiveCamera } from 'three';
 import type { ModelId } from '@/lib/domain';
 import { modelPath } from '@/lib/models';
 import { createCompanionClips, companionAction } from '@/lib/character-motion';
 import { libraryMotions, retargetLibraryMotion } from '@/lib/motion-library';
+import { characterBounds, cameraFitDistance } from '@/lib/character-framing';
 const motionLoader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 const motionPaths = libraryMotions.map(([file]) => `/animations/mesh2motion/${file}.glb`);
 type Props = {
@@ -74,23 +75,37 @@ function Character({
     return gltf.animations.length || model === 'human' ? gltf.animations : createCompanionClips(object);
   }, [gltf, object, model, library]);
   const { actions } = useAnimations(clips, object);
+  const { camera, size: viewportSize } = useThree();
   const idleName = companionAction(clips.map((c) => c.name), 'idle');
   const time = useRef(0);
   const wavingUntil = useRef(0);
   const transform = useMemo(() => {
-    const box = new Box3().setFromObject(object);
+    const available = clips.map((c) => c.name);
+    const greeting = companionAction(available, 'greeting');
+    const idle = companionAction(available, 'idle');
+    const box = characterBounds(object, clips.filter((clip) => [idle, greeting, 'Dance', 'Charleston', 'Clap', 'Bow', 'Think'].includes(clip.name)));
     const size = box.getSize(new Vector3());
     const center = box.getCenter(new Vector3());
-    const scale = (library ? 2.65 : 3.1) / (size.y || 1);
+    const scale = 3 / (Math.max(size.x, size.y, size.z) || 1);
     return {
       scale,
-      position: [-center.x * scale, -box.min.y * scale, -center.z * scale] as [
+      radius: size.length() * scale / 2,
+      position: [-center.x * scale, -center.y * scale, -center.z * scale] as [
         number,
         number,
         number,
       ],
     };
-  }, [object, library]);
+  }, [object, clips]);
+  useEffect(() => {
+    if (!(camera instanceof PerspectiveCamera)) return;
+    const distance = cameraFitDistance(transform.radius, viewportSize.width / Math.max(1, viewportSize.height), camera.fov);
+    camera.position.set(0, 0, distance);
+    camera.near = Math.max(.01, distance / 100);
+    camera.far = distance + 100;
+    camera.lookAt(0, 0, 0);
+    camera.updateProjectionMatrix();
+  }, [camera, transform.radius, viewportSize.width, viewportSize.height]);
   useEffect(() => {
     if (legacy) {
       Object.values(actions).forEach((a) => a?.stop());
@@ -237,12 +252,12 @@ export default function CharacterStage(props: Props) {
             <directionalLight position={[-3, 2, -2]} intensity={1.3} />
             {/* DOM loading UI stays outside Canvas: Drei Html creates another React root. */}
             <Suspense fallback={null}>
-              <group position={[0, -1.55, 0]}>
+              <group>
                 {/^download:(?:\d+_)/.test(props.model)
                   ? <LibraryCharacter {...props} loader={loader} onReady={markReady} />
                   : <Character {...props} loader={loader} onReady={markReady} />}
                 <ContactShadows
-                  position={[0, 0.005, 0]}
+                  position={[0, -1.55, 0]}
                   opacity={0.22}
                   scale={10}
                   blur={3}

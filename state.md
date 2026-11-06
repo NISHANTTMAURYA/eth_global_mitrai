@@ -93,3 +93,6 @@ Added rest-pose-aware idle/wave quaternion clips to all ten previously unanimate
 ### Authored motion library
 
 Replaced the simple straight-arm greeting on the ten imported humanoids with seven CC0 Mesh2Motion clips. Added Dance, Charleston, Clap, Bow and Think buttons. Bone-direction retargeting preserves target proportions, and card framing leaves more gesture space. Actual source GLB decode/retarget checks pass across all ten skeletons, as do typecheck and isolated production build. Browser visual validation remains pending.
+### Consistent model framing
+
+Removed fixed height-only scaling and scene floor offset. Measure actual skinned vertices across idle and gesture samples, center the resulting bounds, normalize all dimensions, and fit the perspective camera to a padded sphere at the canvas aspect ratio. Disable stale skinned-mesh frustum culling. Gallery canvas now fits its visible image region; detail canvas reserves space for the title and controls. Two geometry/projection tests, typecheck and isolated build pass. Rendered visual verification remains pending.
