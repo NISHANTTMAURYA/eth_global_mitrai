@@ -1,5 +1,7 @@
 'use client';
 import BrainObservatory from './brain-observatory';
+import PreservationPanel from './preservation-panel';
+import type { AdoptionRequest } from '@/lib/adoption';
 import { getWalletProvider } from '@/lib/browser-wallet';
 import { useState, useEffect, useCallback, useRef, type CSSProperties } from 'react';
 import Link from 'next/link';
@@ -81,14 +83,17 @@ export default function CharacterView({
   const [publishing, setPublishing] = useState(autoPublish);
   const [transfer, setTransfer] = useState(autoTransfer);
   const [offer, setOffer] = useState(false);
+  const [auditionOpen, setAuditionOpen] = useState(false);
+  const [introduction, setIntroduction] = useState('');
   const [memory, setMemory] = useState(false);
   const [memoryText, setMemoryText] = useState('');
   const [scope, setScope] = useState<'private' | 'public'>('private');
   const [highlights, setHighlights] = useState(c.highlights.join('\n'));
   const [availability, setAvailability] = useState(c.availability);
   const [recipient, setRecipient] = useState('');
+  const [requestId, setRequestId] = useState<string | undefined>();
   const [offerNote, setOfferNote] = useState('');
-  const [incoming, setIncoming] = useState<{ from: string; note: string; at: number }[]>([]);
+  const [incoming, setIncoming] = useState<AdoptionRequest[]>([]);
   const [provider, setProvider] = useState('Scripted demo');
   const [actionBusy, setActionBusy] = useState(false);
   const [portrait, setPortrait] = useState(true);
@@ -171,6 +176,7 @@ export default function CharacterView({
       const r = await fetch(`/api/app?id=${encodeURIComponent(c.id)}`);
       if (!r.ok) return;
       const data = await r.json();
+      setIncoming(data.offers || []);
       setChat((items) => {
         const fresh = (data.messages || []).filter(
           (m: Message) => m.proactive && !items.some((item) => item.id === m.id),
@@ -212,7 +218,12 @@ export default function CharacterView({
   useEffect(() => {
     if (!l.alive) stopSpeech();
   }, [l.alive, stopSpeech]);
-  const speak = async (text: string, gesture?: Message['gesture'], onStarted?: () => void) => {
+  const speak = async (
+    text: string,
+    gesture?: Message['gesture'],
+    onStarted?: () => void,
+    supplied?: SpeechTrack & { audio: string },
+  ) => {
     stopSpeech();
     const sequence = speechSequence.current;
     const controller = new AbortController();
@@ -230,14 +241,16 @@ export default function CharacterView({
       // Prepare segments before playback so gesture boundaries don't incur a network pause.
       const prepared = [];
       for (const segment of segments) {
-        const res = await fetch('/api/speech', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: segment.text, id: c.id }),
-          signal: controller.signal,
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Could not prepare speech.');
+        const res = supplied
+          ? null
+          : await fetch('/api/speech', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text: segment.text, id: c.id }),
+              signal: controller.signal,
+            });
+        const data = supplied || (await res!.json());
+        if (res && !res.ok) throw new Error(data.error || 'Could not prepare speech.');
         const context = audioContext.current;
         if (!context) throw new Error('Tap the speaker to enable audio.');
         const bytes = Uint8Array.from(atob(data.audio.split(',')[1]), (ch) => ch.charCodeAt(0));
@@ -456,69 +469,72 @@ export default function CharacterView({
               legacy={!l.alive}
             />
             {l.alive && (
-              <div className="gesture-toolbar">
-                {isVrmModel(c.model) && (
-                  <button
-                    onClick={() => setPortrait((value) => !value)}
-                    aria-label={portrait ? 'Show full body' : 'Show face close up'}
-                    title={portrait ? 'Show full body' : 'Show face close up'}
-                  >
-                    <span>{portrait ? 'Full body' : 'Face view'}</span>
-                  </button>
-                )}
-                <button
-                  onClick={() => {
-                    setGesture('Wave');
-                    setGestureKey((n) => n + 1);
-                  }}
-                  aria-label="Wave"
-                >
-                  <Hand size={18} />
-                </button>
-                {availableGestures(c.model).includes('Dance') && (
+              <details className="expressions-control">
+                <summary>Expressions</summary>
+                <div className="gesture-toolbar">
+                  {isVrmModel(c.model) && (
+                    <button
+                      onClick={() => setPortrait((value) => !value)}
+                      aria-label={portrait ? 'Show full body' : 'Show face close up'}
+                      title={portrait ? 'Show full body' : 'Show face close up'}
+                    >
+                      <span>{portrait ? 'Full body' : 'Face view'}</span>
+                    </button>
+                  )}
                   <button
                     onClick={() => {
-                      setGesture('Dance');
+                      setGesture('Wave');
                       setGestureKey((n) => n + 1);
                     }}
-                    aria-label="Dance"
-                    title="Dance"
+                    aria-label="Wave"
                   >
-                    <Music2 size={18} />
+                    <Hand size={18} />
                   </button>
-                )}
-                {(/^download:\d+_/.test(c.model) || isVrmModel(c.model)) &&
-                  [
-                    { name: 'Charleston', label: 'Charleston dance', icon: Music2 },
-                    { name: 'Clap', label: 'Clap', icon: Hand },
-                    { name: 'Bow', label: 'Take a bow', icon: Heart },
-                    { name: 'Think', label: 'Thinking', icon: Brain },
-                    { name: 'Jump', label: 'Jump', icon: Sparkles },
-                    { name: 'Sit', label: 'Sit down and stand up', icon: Heart },
-                    { name: 'ArmPump', label: 'Arm pump dance', icon: Music2 },
-                    { name: 'BodyRoll', label: 'Body roll dance', icon: Music2 },
-                    { name: 'HipDance', label: 'Hip dance', icon: Music2 },
-                  ].map((motion) => (
+                  {availableGestures(c.model).includes('Dance') && (
                     <button
-                      key={motion.name}
-                      title={motion.label}
-                      aria-label={motion.label}
                       onClick={() => {
-                        setGesture(motion.name);
+                        setGesture('Dance');
                         setGestureKey((n) => n + 1);
                       }}
+                      aria-label="Dance"
+                      title="Dance"
                     >
-                      <motion.icon size={18} />
-                      <span className="motion-label">{motion.name}</span>
+                      <Music2 size={18} />
                     </button>
-                  ))}
-                <button
-                  onClick={greeting ? stopSpeech : playGreeting}
-                  aria-label={greeting ? 'Stop greeting' : 'Play timed voice greeting'}
-                >
-                  {greeting ? <VolumeX size={18} /> : <Volume2 size={18} />}
-                </button>
-              </div>
+                  )}
+                  {(/^download:\d+_/.test(c.model) || isVrmModel(c.model)) &&
+                    [
+                      { name: 'Charleston', label: 'Charleston dance', icon: Music2 },
+                      { name: 'Clap', label: 'Clap', icon: Hand },
+                      { name: 'Bow', label: 'Take a bow', icon: Heart },
+                      { name: 'Think', label: 'Thinking', icon: Brain },
+                      { name: 'Jump', label: 'Jump', icon: Sparkles },
+                      { name: 'Sit', label: 'Sit down and stand up', icon: Heart },
+                      { name: 'ArmPump', label: 'Arm pump dance', icon: Music2 },
+                      { name: 'BodyRoll', label: 'Body roll dance', icon: Music2 },
+                      { name: 'HipDance', label: 'Hip dance', icon: Music2 },
+                    ].map((motion) => (
+                      <button
+                        key={motion.name}
+                        title={motion.label}
+                        aria-label={motion.label}
+                        onClick={() => {
+                          setGesture(motion.name);
+                          setGestureKey((n) => n + 1);
+                        }}
+                      >
+                        <motion.icon size={18} />
+                        <span className="motion-label">{motion.name}</span>
+                      </button>
+                    ))}
+                  <button
+                    onClick={greeting ? stopSpeech : playGreeting}
+                    aria-label={greeting ? 'Stop greeting' : 'Play timed voice greeting'}
+                  >
+                    {greeting ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                  </button>
+                </div>
+              </details>
             )}
           </div>
           <div className="character-bio">
@@ -555,14 +571,18 @@ export default function CharacterView({
                   <Clock3 size={14} />
                   <TimeLeft character={c} />
                 </span>
-                <small>{Math.round(l.progress * 100)}% of a life</small>
+                <small>
+                  Age{' '}
+                  {Math.floor(Math.max(0, Date.now() - (c.birth?.at ?? c.createdAt)) / 86400000)}d ·{' '}
+                  {Math.round(l.progress * 100)}% of a life
+                </small>
               </div>
               <div className="meter">
                 <i style={{ width: `${l.progress * 100}%` }} />
               </div>
               <small>
                 Sunset ·{' '}
-                {new Date(c.createdAt + c.lifespan).toLocaleString([], {
+                {new Date((c.birth?.at ?? c.createdAt) + c.lifespan).toLocaleString([], {
                   month: 'short',
                   day: 'numeric',
                   hour: '2-digit',
@@ -596,8 +616,8 @@ export default function CharacterView({
                   {c.availability === 'transfer'
                     ? c.owner === 'studio' && c.demo
                       ? 'Adopt in demo'
-                      : 'Request handover'
-                    : 'Start a conversation about adoption'}
+                      : 'Request adoption'
+                    : 'Request adoption'}
                 </button>
                 <small className="form-caption">
                   {c.availability === 'transfer' && c.owner === 'studio'
@@ -607,7 +627,14 @@ export default function CharacterView({
               </>
             )}
             {own && l.alive && (
-              <button className="text-link" onClick={() => setTransfer(true)}>
+              <button
+                className="text-link"
+                onClick={() => {
+                  setRequestId(undefined);
+                  setRecipient('');
+                  setTransfer(true);
+                }}
+              >
                 Pass on their story <ArrowUpRight size={15} />
               </button>
             )}
@@ -630,7 +657,14 @@ export default function CharacterView({
             {[
               { id: 'conversation', label: 'Chat', icon: Heart },
               { id: 'mind', label: 'The mind', icon: Brain },
-              { id: 'story', label: 'Their story', icon: BookOpen },
+              {
+                id: 'story',
+                label:
+                  own && incoming.some((r) => ['pending', 'accepted'].includes(r.status))
+                    ? `Their story · ${incoming.filter((r) => ['pending', 'accepted'].includes(r.status)).length} requests`
+                    : 'Their story',
+                icon: BookOpen,
+              },
               { id: 'history', label: 'Provenance', icon: History },
             ].map((t) => (
               <button
@@ -685,8 +719,43 @@ export default function CharacterView({
               {!own && l.alive && (
                 <div className="audition-notice">
                   <LockKeyhole size={14} />
-                  This audition leaves no memories and never changes the character.
+                  Explore their public story. Private conversations stay with their owner.
                 </div>
+              )}
+              {!own && l.alive && (
+                <section className="public-introduction">
+                  <h3>Meet {c.name}, in their own voice.</h3>
+                  <p>{introduction || c.description}</p>
+                  <button
+                    className="button secondary"
+                    disabled={speechLoading || speaking}
+                    onClick={async () => {
+                      unlockAudio();
+                      setSpeechLoading(true);
+                      try {
+                        const r = await fetch('/api/introduction', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ id: c.id }),
+                        });
+                        const d = await r.json();
+                        if (!r.ok) throw new Error(d.error);
+                        setIntroduction(d.text);
+                        await speak(d.text, undefined, undefined, d.speech);
+                      } catch (e) {
+                        setSpeechLoading(false);
+                        notify((e as Error).message);
+                      }
+                    }}
+                  >
+                    <Volume2 size={16} />
+                    {speechLoading ? 'Preparing introduction…' : 'Listen to their introduction'}
+                  </button>
+                  <button className="text-link" onClick={() => setAuditionOpen((v) => !v)}>
+                    {auditionOpen ? 'Close preview chat' : 'Try a short preview chat'}
+                  </button>
+                  <small>A preview never changes their mind or reads private memories.</small>
+                </section>
               )}
               <div role="status" aria-live="polite" className="speech-status">
                 {queuedCount
@@ -744,39 +813,41 @@ export default function CharacterView({
                 )}
                 <div ref={end} />
               </div>
-              <form
-                className="chat-composer"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  send();
-                }}
-              >
-                <textarea
-                  aria-label="Message your character"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      send();
-                    }
+              {(own || auditionOpen) && (
+                <form
+                  className="chat-composer"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    send();
                   }}
-                  maxLength={1500}
-                  rows={1}
-                  placeholder={
-                    l.alive ? `Say something to ${c.name}…` : 'This character has reached Sunset'
-                  }
-                  disabled={!l.alive}
-                />
-                <button
-                  type="submit"
-                  className="send-button"
-                  disabled={!l.alive || !input.trim()}
-                  aria-label="Send message"
                 >
-                  {pending ? <Loader2 className="spin" size={18} /> : <ArrowRight size={20} />}
-                </button>
-              </form>
+                  <textarea
+                    aria-label="Message your character"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        send();
+                      }
+                    }}
+                    maxLength={1500}
+                    rows={1}
+                    placeholder={
+                      l.alive ? `Say something to ${c.name}…` : 'This character has reached Sunset'
+                    }
+                    disabled={!l.alive}
+                  />
+                  <button
+                    type="submit"
+                    className="send-button"
+                    disabled={!l.alive || !input.trim()}
+                    aria-label="Send message"
+                  >
+                    {pending ? <Loader2 className="spin" size={18} /> : <ArrowRight size={20} />}
+                  </button>
+                </form>
+              )}
               <div className="chat-caption">
                 {provider === 'Scripted demo'
                   ? 'Scripted rehearsal, not live AI inference. Configure live AI in settings for open-ended conversation.'
@@ -923,12 +994,43 @@ export default function CharacterView({
               </div>
               {own && incoming.length > 0 && (
                 <>
-                  <h3 className="spaced-heading">Adoption enquiries</h3>
+                  <h3 className="spaced-heading">Adoption requests</h3>
                   {incoming.map((o, i) => (
                     <div key={i} className="memory-card">
                       <strong>{shortAddress(o.from)}</strong>
                       <p>{o.note}</p>
-                      <small>{new Date(o.at).toLocaleString()}</small>
+                      <small>
+                        {new Date(o.at).toLocaleString()} · {o.status || 'pending'}
+                      </small>
+                      {l.alive && ['pending', 'accepted'].includes(o.status || 'pending') && (
+                        <div className="button-row">
+                          <button
+                            className="button secondary"
+                            onClick={() => {
+                              setRecipient(o.from);
+                              setRequestId(o.id);
+                              setTransfer(true);
+                            }}
+                          >
+                            Accept &amp; hand over
+                          </button>
+                          <button
+                            className="text-link"
+                            onClick={() =>
+                              action(async () => {
+                                await api('declineRequest', { id: c.id, requestId: o.id });
+                                setIncoming((rows) =>
+                                  rows.map((r) =>
+                                    r.id === o.id ? { ...r, status: 'declined' } : r,
+                                  ),
+                                );
+                              })
+                            }
+                          >
+                            Decline
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </>
@@ -938,6 +1040,7 @@ export default function CharacterView({
           {tab === 'history' && (
             <div className="tab-content">
               <BrainObservatory c={c} own={own} historyOnly />
+              {own && c.entityKey && <PreservationPanel c={c} notify={notify} />}
             </div>
           )}
         </section>
@@ -964,7 +1067,7 @@ export default function CharacterView({
               onChange={(e) => setAvailability(e.target.value as Character['availability'])}
             >
               <option value="showcase">Showcase only</option>
-              <option value="offers">Open to offers</option>
+              <option value="offers">Open to adoption requests</option>
               <option value="transfer">Available for handover</option>
             </select>
           </label>
@@ -1074,6 +1177,7 @@ export default function CharacterView({
             Recipient wallet
             <input
               value={recipient}
+              readOnly={!!requestId}
               onChange={(e) => setRecipient(e.target.value)}
               placeholder="0x…"
             />
@@ -1087,6 +1191,9 @@ export default function CharacterView({
             disabled={actionBusy || !recipient}
             onClick={() =>
               action(async () => {
+                const prepared = await api('prepareTransfer', { id: c.id, recipient, requestId });
+                if (prepared.recipient !== recipient.toLowerCase())
+                  throw new Error('The recipient changed. Review the adoption request again.');
                 let txHash: string | undefined;
                 if (c.entityKey) {
                   const walletProvider = getWalletProvider();
@@ -1100,7 +1207,7 @@ export default function CharacterView({
                   );
                   txHash = receipt.txHash;
                 }
-                await api('transfer', { id: c.id, recipient, txHash });
+                await api('transfer', { id: c.id, recipient, txHash, requestId });
                 setTransfer(false);
                 router.push('/explore');
                 notify('Ownership handed over. Old owner access has ended.');
@@ -1115,7 +1222,8 @@ export default function CharacterView({
       {offer && (
         <Modal title={`Continue ${c.name}’s story`} close={() => setOffer(false)}>
           <p className="muted">
-            Tell the owner what you’d like to explore together. This is an enquiry, not a purchase.
+            Tell the owner what you’d like to explore together. This is a free adoption request. The
+            owner decides whether to pass on their story.
           </p>
           <label className="form-label">
             Your note
@@ -1133,11 +1241,11 @@ export default function CharacterView({
               action(async () => {
                 await api('offer', { id: c.id, note: offerNote });
                 setOffer(false);
-                notify('Your enquiry is saved for the owner. No payment was made.');
+                notify('Your adoption request is with the owner. No payment is required.');
               })
             }
           >
-            Send enquiry
+            Request adoption
             <ArrowRight size={16} />
           </button>
         </Modal>

@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import GalleryRenderer from './gallery-renderer';
+import TemplateGallery from './template-gallery';
 
 import {
   ArrowUpRight,
@@ -38,6 +39,7 @@ export default function ExploreView({
   notify: (s: string) => void;
 }) {
   const [query, setQuery] = useState('');
+  const templatesOnly = !legacyOnly && !characters.some((c) => c.published && lifecycle(c).alive);
   const [filter, setFilter] = useState('All characters');
   const [syncing, setSyncing] = useState(false);
   const [heroGesture, setHeroGesture] = useState(0);
@@ -174,24 +176,33 @@ export default function ExploreView({
               <p className="eyebrow">
                 {legacyOnly ? 'THE LEGACY COLLECTION' : 'MEET YOUR NEXT CHAPTER'}
               </p>
-              <h2>{legacyOnly ? 'Lives that left a mark.' : 'A few little someones.'}</h2>
+              <h2>
+                {legacyOnly
+                  ? 'Lives that left a mark.'
+                  : templatesOnly
+                    ? 'Available beginnings.'
+                    : 'Meet the community.'}
+              </h2>
             </div>
             <span className="collection-count">
-              {visible.length.toString().padStart(2, '0')} {legacyOnly ? 'legacies' : 'characters'}{' '}
-              to discover
+              {templatesOnly
+                ? 'Each appearance can begin one story.'
+                : `${visible.length} ${legacyOnly ? 'legacies' : 'personas'} to discover`}
             </span>
           </div>
           <div className="discover-controls">
             <div className="filter-tabs">
-              {filters.slice(0, legacyOnly ? 1 : 5).map((f) => (
-                <button
-                  key={f}
-                  className={f === filter ? 'selected' : ''}
-                  onClick={() => setFilter(f)}
-                >
-                  {f}
-                </button>
-              ))}
+              {(templatesOnly ? ['Available templates'] : filters.slice(0, legacyOnly ? 1 : 5)).map(
+                (f) => (
+                  <button
+                    key={f}
+                    className={templatesOnly || f === filter ? 'selected' : ''}
+                    onClick={() => setFilter(templatesOnly ? 'All characters' : f)}
+                  >
+                    {f}
+                  </button>
+                ),
+              )}
             </div>
             <label className="search-field">
               <Search size={17} />
@@ -215,49 +226,8 @@ export default function ExploreView({
                 <CharacterCard key={c.id} c={c} index={i} />
               ))}
             </div>
-          ) : !legacyOnly && !characters.some((c) => !c.demo && c.entityKey) ? (
-            <>
-              <div className="template-intro">
-                <h3>Choose a form. Begin a new story.</h3>
-                <p className="muted">
-                  These are character forms. Your wallet creates their identity and first memory
-                  checkpoint on Arkiv.
-                </p>
-              </div>
-              <div className="character-grid">
-                {models
-                  .filter((m) => m.name.toLowerCase().includes(query.toLowerCase()))
-                  .map((m, i) => (
-                    <article className="character-card" key={m.id}>
-                      <Link
-                        className={`card-visual palette-${i % 4}`}
-                        href={`/create?form=${encodeURIComponent(m.id)}`}
-                        aria-label={`Create with ${m.name}`}
-                      >
-                        <div className="card-top">
-                          <span className="sample-label">CHARACTER FORM</span>
-                        </div>
-                        <Stage model={m.id} compact interactive={false} />
-                        <span className="card-open">
-                          <Plus size={18} />
-                        </span>
-                      </Link>
-                      <div className="card-copy">
-                        <div className="card-name-row">
-                          <h3>{m.name}</h3>
-                        </div>
-                        <p>A beginning shaped by you.</p>
-                        <Link
-                          className="text-link"
-                          href={`/create?form=${encodeURIComponent(m.id)}`}
-                        >
-                          Create your character <ArrowUpRight size={14} />
-                        </Link>
-                      </div>
-                    </article>
-                  ))}
-              </div>
-            </>
+          ) : !legacyOnly && !characters.some((c) => c.entityKey && !c.demo) ? (
+            <TemplateGallery query={query} />
           ) : (
             <div className="empty">
               <Search />

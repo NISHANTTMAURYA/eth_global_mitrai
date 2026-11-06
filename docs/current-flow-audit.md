@@ -1,4 +1,6 @@
-# Documented flow compared with implementation
+# Earlier flow baseline compared with implementation
+
+This audit records the gaps before the template-first revision. See [the delivered product flow](product-flow.md) for the current implementation and remaining limits.
 
 Reviewed 6 November 2026 against idea.md, README.md and the current source. This is an implementation audit, not evidence of completed live transactions.
 

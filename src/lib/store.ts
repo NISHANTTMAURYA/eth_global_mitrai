@@ -137,8 +137,8 @@ export function saveOffer(offer: unknown) {
   db.prepare('INSERT INTO offers VALUES (?,?)').run(crypto.randomUUID(), JSON.stringify(offer));
 }
 export function offersFor(id: string) {
-  return (db.prepare('SELECT body FROM offers').all() as { body: string }[])
-    .map((r) => JSON.parse(r.body))
+  return (db.prepare('SELECT id,body FROM offers').all() as { id: string; body: string }[])
+    .map((r) => ({ ...JSON.parse(r.body), id: r.id }))
     .filter((r) => r.characterId === id);
 }
 

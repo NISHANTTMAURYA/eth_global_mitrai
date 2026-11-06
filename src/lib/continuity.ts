@@ -53,7 +53,7 @@ export function acceptConversation(
       !Number.isFinite(due) ||
       due < now + 60000 ||
       due > now + 30 * 86400000 ||
-      due >= c.createdAt + c.lifespan
+      due >= (c.birth?.at ?? c.createdAt) + c.lifespan
     )
       continue;
     putFollowUp(
@@ -71,7 +71,7 @@ export function acceptConversation(
   }
   if (!reachPreferences(owner).enabled) return;
   const due = now + prefs.inactivityMinutes * 60000;
-  if (due < c.createdAt + c.lifespan)
+  if (due < (c.birth?.at ?? c.createdAt) + c.lifespan)
     putFollowUp(
       c,
       owner,

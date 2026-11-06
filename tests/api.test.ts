@@ -240,3 +240,164 @@ test(
     assert.equal(other.data.notifications.length, 0);
   },
 );
+
+test(
+  'wallet creation reserves a single-use template, preserves an unstarted clock, and releases a cancelled unsigned draft',
+  { skip: !base },
+  async () => {
+    const a = client(),
+      b = client();
+    async function login(c: ReturnType<typeof client>) {
+      const wallet = privateKeyToAccount(generatePrivateKey());
+      const challenge = await c('/api/auth', { action: 'challenge', address: wallet.address });
+      const signature = await wallet.signMessage({ message: challenge.data.message });
+      assert.equal(
+        (
+          await c('/api/auth', {
+            action: 'verify',
+            address: wallet.address,
+            nonce: challenge.data.nonce,
+            signature,
+          })
+        ).status,
+        200,
+      );
+    }
+    await login(a);
+    await login(b);
+    const catalog = await a('/api/templates');
+    assert.equal(catalog.status, 200);
+    const starter = catalog.data.templates.find((t: any) => t.model === 'download:23_Carrot_Kid');
+    assert.equal(starter.name, 'Carrot Kid');
+    assert.equal(starter.status, 'available');
+    const input = { action: 'create', ...starter, shortLife: false };
+    const created = await a('/api/app', input);
+    assert.equal(created.status, 200);
+    const id = created.data.character.id;
+    assert.equal(created.data.character.createdAt, 0);
+    assert.equal(created.data.character.activation, 'draft');
+    assert.equal(
+      (await b('/api/app', input)).status,
+      400,
+      'another wallet cannot reserve the same model',
+    );
+    const held = (await a('/api/templates')).data.templates.find(
+      (t: any) => t.model === starter.model,
+    );
+    assert.equal(held.status, 'reserved');
+    assert.equal(held.mine, true);
+    assert.equal(
+      (await a('/api/app', { action: 'chat', id, text: 'hello', audition: false })).status,
+      400,
+      'drafts cannot chat',
+    );
+    assert.equal((await a('/api/app', { action: 'activationStarted', id })).status, 200);
+    assert.equal(
+      (await a('/api/app', { action: 'cancelDraft', id })).status,
+      400,
+      'unresolved transactions cannot release the appearance',
+    );
+    assert.equal((await a('/api/app', { action: 'activationRejected', id })).status, 200);
+    assert.equal((await a('/api/app', { action: 'cancelDraft', id })).status, 200);
+    assert.equal(
+      (await b('/api/templates')).data.templates.find((t: any) => t.model === starter.model).status,
+      'available',
+    );
+    const after = await b('/api/app', input);
+    assert.equal(after.status, 200);
+    assert.equal(
+      (await a('/api/introduction', { id: after.data.character.id })).status,
+      400,
+      'private draft cannot become a visitor introduction',
+    );
+    assert.equal(
+      (await b(`/api/preservation?id=${after.data.character.id}`)).status,
+      400,
+      'unconfirmed drafts cannot claim on-chain storage',
+    );
+    await b('/api/app', { action: 'cancelDraft', id: after.data.character.id });
+  },
+);
+
+test(
+  'free adoption requests can be declined or accepted and handed over without leaking prior-owner data',
+  { skip: !base },
+  async () => {
+    const seller = client(),
+      buyer = client();
+    await seller('/api/auth', { action: 'demo' });
+    const wallet = privateKeyToAccount(generatePrivateKey()),
+      challenge = await buyer('/api/auth', { action: 'challenge', address: wallet.address });
+    const signature = await wallet.signMessage({ message: challenge.data.message });
+    await buyer('/api/auth', {
+      action: 'verify',
+      address: wallet.address,
+      nonce: challenge.data.nonce,
+      signature,
+    });
+    const created = await seller('/api/app', {
+      action: 'create',
+      name: 'Adoption Test',
+      tagline: 'A story ready for a new chapter',
+      description: 'A friendly test character for verified adoption flows.',
+      behavior: 'Be warm and curious.',
+      model: 'download:19_Wizzir',
+      voice: 'shubh',
+      tags: ['Test'],
+      shortLife: false,
+      traits: { curiosity: 70, warmth: 75, playfulness: 60 },
+    });
+    assert.equal(created.status, 200);
+    const id = created.data.character.id;
+    await seller('/api/app', {
+      action: 'memory',
+      id,
+      text: 'PRIVATE_PRIOR_OWNER_INFORMATION',
+      scope: 'private',
+    });
+    await seller('/api/app', {
+      action: 'publish',
+      id,
+      availability: 'transfer',
+      highlights: ['Ready for a new story'],
+    });
+    const first = await buyer('/api/app', {
+      action: 'offer',
+      id,
+      note: 'I would like to continue this story.',
+    });
+    assert.equal(first.status, 200);
+    const firstId = first.data.request.id;
+    assert.equal(
+      (await buyer('/api/app', { action: 'declineRequest', id, requestId: firstId })).status,
+      400,
+    );
+    assert.equal(
+      (await seller('/api/app', { action: 'declineRequest', id, requestId: firstId })).data.request
+        .status,
+      'declined',
+    );
+    const second = await buyer('/api/app', {
+      action: 'offer',
+      id,
+      note: 'I am ready for the next chapter.',
+    });
+    const requestId = second.data.request.id;
+    assert.notEqual(requestId, firstId);
+    const prepared = await seller('/api/app', { action: 'prepareTransfer', id, requestId });
+    assert.equal(prepared.status, 200);
+    assert.equal(prepared.data.recipient, wallet.address.toLowerCase());
+    assert.equal(
+      (await seller('/api/app', { action: 'transfer', id, recipient: wallet.address, requestId }))
+        .status,
+      200,
+    );
+    const result = await buyer(`/api/app?id=${id}`);
+    assert.equal(result.status, 200);
+    assert.equal(result.data.character.createdAt, created.data.character.createdAt);
+    assert.deepEqual(result.data.offers, []);
+    assert.deepEqual(result.data.messages, []);
+    assert.ok(!JSON.stringify(result.data).includes('PRIVATE_PRIOR_OWNER_INFORMATION'));
+    assert.equal((await seller(`/api/app?id=${id}`)).status, 400);
+  },
+);

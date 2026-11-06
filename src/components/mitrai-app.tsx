@@ -22,6 +22,7 @@ import { Flower, Modal } from './ui';
 import type { Address, Hex } from 'viem';
 import ExploreView from './explore-view';
 import CreateView from './create-view';
+import HomeView from './home-view';
 import CharacterView from './character-view';
 import WalletPanel from './wallet-panel';
 import ProactiveInbox from './proactive-inbox';
@@ -104,13 +105,30 @@ export default function MitraiApp() {
       setConnect(false);
       notify('Wallet connected. You authorize each Arkiv write.');
     });
-  const mine = characters.find((c) => c.owner === owner && lifecycle(c).alive);
+  const mine = characters.find(
+    (c) =>
+      c.owner === owner &&
+      (lifecycle(c).alive || c.activation === 'draft' || c.activation === 'submitted'),
+  );
+  useEffect(() => {
+    if (!loading && pathname === '/' && mine)
+      router.replace(mine.entityKey || mine.demo ? `/companion/${mine.id}` : '/create');
+  }, [loading, pathname, mine?.id, mine?.entityKey, router]);
   const mode = owner?.startsWith('demo:') ? 'Demo collector' : owner ? shortAddress(owner) : null;
   useEffect(() => {
     if (!owner?.startsWith('0x')) return;
-    const p = getWalletProvider() as (ReturnType<typeof getWalletProvider> & { on?: (event: string, listener: (accounts: string[]) => void) => void; removeListener?: (event: string, listener: (accounts: string[]) => void) => void });
-    const changed = (accounts: string[]) => { if (!accounts.some(a => a.toLowerCase() === owner)) { void auth('logout').then(refresh); setConnect(true); } };
-    p?.on?.('accountsChanged', changed); return () => p?.removeListener?.('accountsChanged', changed);
+    const p = getWalletProvider() as ReturnType<typeof getWalletProvider> & {
+      on?: (event: string, listener: (accounts: string[]) => void) => void;
+      removeListener?: (event: string, listener: (accounts: string[]) => void) => void;
+    };
+    const changed = (accounts: string[]) => {
+      if (!accounts.some((a) => a.toLowerCase() === owner)) {
+        void auth('logout').then(refresh);
+        setConnect(true);
+      }
+    };
+    p?.on?.('accountsChanged', changed);
+    return () => p?.removeListener?.('accountsChanged', changed);
   }, [owner, refresh]);
   const ensure = () => {
     if (!owner) {
@@ -125,7 +143,26 @@ export default function MitraiApp() {
     : undefined;
   const selected = characters.find((c) => c.id === detailId);
   let content;
-  if (parts[0] === 'create' || (parts[0] === 'my-character' && mine && !mine.demo && !mine.entityKey))
+  if (!parts.length)
+    content =
+      loading || mine ? (
+        <div className="empty">
+          <Loader2 className="spin" />
+          Finding your story…
+        </div>
+      ) : (
+        <HomeView
+          legacy={
+            characters
+              .filter((c) => c.owner === owner && (c.entityKey || c.demo) && !lifecycle(c).alive)
+              .sort((a, b) => (b.birth?.at ?? b.createdAt) - (a.birth?.at ?? a.createdAt))[0]
+          }
+        />
+      );
+  else if (
+    parts[0] === 'create' ||
+    (parts[0] === 'my-character' && mine && !mine.demo && !mine.entityKey)
+  )
     content = (
       <CreateView
         owner={owner}
@@ -173,31 +210,39 @@ export default function MitraiApp() {
       </div>
     );
   else if (detailId)
-    content = selected && selected.owner === owner && !selected.demo && !selected.entityKey ? (
-      <CreateView owner={owner} mine={selected} characters={characters} connect={() => setConnect(true)} refresh={refresh} notify={notify} />
-    ) : selected ? (
-      <CharacterView
-        key={selected.id}
-        c={selected}
-        owner={owner}
-        refresh={refresh}
-        notify={notify}
-        ensure={ensure}
-        initialTab={
-          parts[2] === 'mind' ? 'mind' : parts[2] === 'history' ? 'history' : 'conversation'
-        }
-        autoPublish={parts[0] === 'publish'}
-        autoTransfer={parts[0] === 'transfer'}
-      />
-    ) : (
-      <div className="empty-page">
-        <h1>{loading ? 'Finding this character…' : 'This story is private.'}</h1>
-        <p>Connect as its owner, or explore the public collection.</p>
-        <Link className="button primary" href="/explore">
-          Back to explore
-        </Link>
-      </div>
-    );
+    content =
+      selected && selected.owner === owner && !selected.demo && !selected.entityKey ? (
+        <CreateView
+          owner={owner}
+          mine={selected}
+          characters={characters}
+          connect={() => setConnect(true)}
+          refresh={refresh}
+          notify={notify}
+        />
+      ) : selected ? (
+        <CharacterView
+          key={selected.id}
+          c={selected}
+          owner={owner}
+          refresh={refresh}
+          notify={notify}
+          ensure={ensure}
+          initialTab={
+            parts[2] === 'mind' ? 'mind' : parts[2] === 'history' ? 'history' : 'conversation'
+          }
+          autoPublish={parts[0] === 'publish'}
+          autoTransfer={parts[0] === 'transfer'}
+        />
+      ) : (
+        <div className="empty-page">
+          <h1>{loading ? 'Finding this character…' : 'This story is private.'}</h1>
+          <p>Connect as its owner, or explore the public collection.</p>
+          <Link className="button primary" href="/explore">
+            Back to explore
+          </Link>
+        </div>
+      );
   else
     content = (
       <ExploreView
@@ -227,10 +272,10 @@ export default function MitraiApp() {
               className={!parts.length || parts[0] === 'explore' ? 'active' : ''}
               href="/explore"
             >
-              Discover
+              Explore MitrAI
             </Link>
             <Link className={parts[0] === 'my-character' ? 'active' : ''} href="/my-character">
-              My character
+              My MitrAI
             </Link>
             <Link className={parts[0] === 'legacies' ? 'active' : ''} href="/legacies">
               Legacies <Leaf size={13} />
@@ -275,16 +320,20 @@ export default function MitraiApp() {
       <footer className="site-footer">
         <Link className="brand small" href="/" aria-label="mitrai.">
           <img
-            src="/brand/mitrai-logo-dark.png"
+            src="/brand/mitrai-logo-dark.png?v=2"
             alt="mitrai."
-            height={22}
+            height={24}
             className="brand-logo small"
           />
         </Link>
         <span>A little life. A world of possibility.</span>
         <div>
           <span className="status-dot" />{' '}
-          {owner?.startsWith('0x') ? 'Wallet connected' : owner ? 'Local demo' : 'Arkiv Rabdi testnet'}
+          {owner?.startsWith('0x')
+            ? 'Wallet connected'
+            : owner
+              ? 'Local demo'
+              : 'Arkiv Rabdi testnet'}
           <span className="footer-divider">/</span>
           <button onClick={() => setSettings(true)}>
             Built with Arkiv <ArrowUpRight size={13} />
@@ -301,9 +350,28 @@ export default function MitraiApp() {
         </div>
       )}
       {connect && (
-        <Modal title={owner ? 'Your wallet' : 'Connect your wallet'} close={() => setConnect(false)}>
-          <WalletPanel owner={owner} busy={busy} connect={wallet} notify={notify} disconnect={() => void run(async () => { await auth('logout'); await refresh(); setConnect(false); })} />
-          {demoEnabled && <button className="text-link" onClick={startDemo} disabled={busy}>Try the local development demo</button>}
+        <Modal
+          title={owner ? 'Your wallet' : 'Connect your wallet'}
+          close={() => setConnect(false)}
+        >
+          <WalletPanel
+            owner={owner}
+            busy={busy}
+            connect={wallet}
+            notify={notify}
+            disconnect={() =>
+              void run(async () => {
+                await auth('logout');
+                await refresh();
+                setConnect(false);
+              })
+            }
+          />
+          {demoEnabled && (
+            <button className="text-link" onClick={startDemo} disabled={busy}>
+              Try the local development demo
+            </button>
+          )}
         </Modal>
       )}
       {settings && (

@@ -34,13 +34,28 @@ export function arkivPublic() {
     transport: http(process.env.NEXT_PUBLIC_ARKIV_RPC || undefined),
   });
 }
+const birthBlocks = new Map<string, Promise<{ at: number; blockNumber: string }>>();
+async function entityBirth(blockNumber: bigint) {
+  const key = String(blockNumber);
+  let result = birthBlocks.get(key);
+  if (!result) {
+    result = arkivPublic()
+      .getBlock({ blockNumber })
+      .then((b) => ({ at: Number(b.timestamp) * 1000, blockNumber: key }));
+    birthBlocks.set(key, result);
+    result.catch(() => birthBlocks.delete(key));
+  }
+  return result;
+}
 export async function readArkivCharacter(key: Hex) {
   const entity = await arkivPublic().getEntity(key, Characters);
+  const character = JSON.parse(hexToString(entity.snapshot.value)) as Character;
   return {
     owner: entity.$owner,
     proof: entity.proof.value,
     verifier: entity.verifier.value,
-    character: JSON.parse(hexToString(entity.snapshot.value)) as Character,
+    character,
+    birth: character.activation ? await entityBirth(entity.$createdAt) : undefined,
   };
 }
 export async function findArkivCharacter(id: string, owner: Address) {
@@ -64,13 +79,18 @@ export async function discoverArkiv() {
     .from(Characters)
     .where(eq('visibility', 'public'))
     .fetch();
-  return entities.map((e) => ({
-    key: e.$key,
-    owner: e.$owner,
-    proof: e.proof.value,
-    verifier: e.verifier.value,
-    character: JSON.parse(hexToString(e.snapshot.value)) as Character,
-  }));
+  return Promise.all(
+    entities.map(async (e) => ({
+      key: e.$key,
+      owner: e.$owner,
+      proof: e.proof.value,
+      verifier: e.verifier.value,
+      character: JSON.parse(hexToString(e.snapshot.value)) as Character,
+      birth: JSON.parse(hexToString(e.snapshot.value)).activation
+        ? await entityBirth(e.$createdAt)
+        : undefined,
+    })),
+  );
 }
 export async function writeArkiv(
   provider: EIP1193Provider,
@@ -105,7 +125,7 @@ export async function writeArkiv(
             snapshot,
           },
           expiration: ExpirationTime.fromDays(90),
-          flags: { readonly: true },
+          flags: { readonly: true, permissionlessExtension: true },
         },
       ],
     });
@@ -114,7 +134,13 @@ export async function writeArkiv(
   const [root, checkpoint] = await arkivPublic().predictEntityKeys({ owner, count: 2 });
   const result = await wallet.executeBatch({
     creates: [
-      { schema: Characters, values, salt: root.salt, expiration: ExpirationTime.fromDays(90) },
+      {
+        schema: Characters,
+        values,
+        salt: root.salt,
+        expiration: ExpirationTime.fromDays(90),
+        flags: { permissionlessExtension: true },
+      },
       {
         schema: Checkpoints,
         values: {
@@ -127,7 +153,7 @@ export async function writeArkiv(
         },
         salt: checkpoint.salt,
         expiration: ExpirationTime.fromDays(90),
-        flags: { readonly: true },
+        flags: { readonly: true, permissionlessExtension: true },
       },
     ],
   });
@@ -181,4 +207,14 @@ export async function transferArkiv(
     account: owner,
   });
   return wallet.changeOwnership({ entityKey: key, newOwner: recipient });
+}
+export async function renewArkiv(provider: EIP1193Provider, owner: Address, keys: Hex[]) {
+  const wallet = createWalletClient({
+    chain: await ensureRabdi(provider),
+    account: owner,
+    transport: custom(provider),
+  });
+  return wallet.executeBatch({
+    extensions: keys.map((entityKey) => ({ entityKey, expiration: ExpirationTime.fromDays(90) })),
+  });
 }

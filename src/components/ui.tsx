@@ -22,7 +22,7 @@ export function MitraiTextLogo({
 }) {
   return (
     <img
-      src="/brand/mitrai-logo-dark.png"
+      src="/brand/mitrai-logo-dark.png?v=2"
       alt={alt}
       height={height}
       className={`mitrai-text-logo ${className}`.trim()}
@@ -51,11 +51,17 @@ export function MitraiLogo({
   if (withText) {
     return (
       <img
-        src="/brand/mitrai-logo-dark.png"
+        src="/brand/mitrai-logo-dark.png?v=2"
         alt={alt}
         height={size}
         className={`mitrai-logo-dark ${className}`.trim()}
-        style={{ display: 'inline-block', verticalAlign: 'middle', height: size, width: 'auto', objectFit: 'contain' }}
+        style={{
+          display: 'inline-block',
+          verticalAlign: 'middle',
+          height: size,
+          width: 'auto',
+          objectFit: 'contain',
+        }}
       />
     );
   }
@@ -95,7 +101,7 @@ export function TimeLeft({ character }: { character: Character }) {
   return (
     <>
       {days > 0
-        ? `${days}d ${hours}h together`
+        ? `${days}d ${hours}h remaining`
         : `${hours ? hours + 'h ' : ''}${mins}m ${secs}s remaining`}
     </>
   );

@@ -32,6 +32,9 @@ export type Character = {
   ownershipEpoch?: number;
   entityKey?: string;
   chainVersion?: number;
+  activation?: 'draft' | 'submitted' | 'active' | 'cancelled';
+  birth?: { at: number; blockNumber: string };
+  draftAt?: number;
 };
 export type Message = {
   id: string;
@@ -43,14 +46,26 @@ export type Message = {
   provider?: string;
   requestId?: string;
 };
-export function lifecycle(c: Pick<Character, 'createdAt' | 'lifespan'>, now = Date.now()) {
-  const progress = Math.max(0, Math.min(1, (now - c.createdAt) / c.lifespan));
+export function lifecycle(
+  c: Pick<Character, 'createdAt' | 'lifespan' | 'activation' | 'birth' | 'entityKey'>,
+  now = Date.now(),
+) {
+  const pending = !!c.activation && !c.entityKey;
+  const born = c.birth?.at ?? c.createdAt;
+  const progress = pending ? 0 : Math.max(0, Math.min(1, (now - born) / c.lifespan));
   return {
     progress,
-    remaining: Math.max(0, c.createdAt + c.lifespan - now),
-    stage:
-      progress >= 1 ? 'Legacy' : progress >= 0.75 ? 'Golden' : progress >= 0.2 ? 'Bloom' : 'Dawn',
-    alive: progress < 1,
+    remaining: pending ? c.lifespan : Math.max(0, born + c.lifespan - now),
+    stage: pending
+      ? 'Draft'
+      : progress >= 1
+        ? 'Legacy'
+        : progress >= 0.75
+          ? 'Golden'
+          : progress >= 0.2
+            ? 'Bloom'
+            : 'Dawn',
+    alive: !pending && progress < 1,
   };
 }
 export function initialBrain(traits?: Brain['traits']): Brain {
@@ -63,6 +78,9 @@ export function initialBrain(traits?: Brain['traits']): Brain {
     version: 1,
   };
 }
+export const bornAt = (c: Pick<Character, 'createdAt' | 'birth'>) => c.birth?.at ?? c.createdAt;
+export const sunsetAt = (c: Pick<Character, 'createdAt' | 'birth' | 'lifespan'>) =>
+  bornAt(c) + c.lifespan;
 export function publicCharacter(c: Character): Character {
   return {
     ...c,
@@ -177,7 +195,7 @@ export function creationBlockReason(
   const lastAction = Math.max(
     0,
     ...characters.flatMap((c) => [
-      c.creator === owner ? c.createdAt : 0,
+      c.creator === owner && c.activation !== 'cancelled' ? (c.birth?.at ?? c.createdAt) : 0,
       ...c.history
         .filter((h) => h.by === owner && /transferred|ownership change/i.test(h.text))
         .map((h) => h.at),

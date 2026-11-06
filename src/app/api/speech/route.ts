@@ -6,6 +6,7 @@ import { assertAlive } from '@/lib/domain';
 import { readArkivCharacter } from '@/lib/arkiv';
 import { defaultVoiceForModel } from '@/lib/voices';
 import { generateSpeech } from '@/lib/speech-audio';
+import { verifySnapshot } from '@/lib/proof';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 const requests = new Map<string, { start: number; count: number }>();
@@ -27,12 +28,19 @@ export async function POST(request: Request) {
     const body = z
       .object({ id: z.string().min(1).max(100), text: z.string().trim().min(1).max(2500) })
       .parse(JSON.parse(raw));
-    const c = getCharacter(body.id);
+    let c = getCharacter(body.id);
     assertAlive(c);
-    const chainOwner = c.entityKey
-      ? String((await readArkivCharacter(c.entityKey as `0x${string}`)).owner).toLowerCase()
-      : c.owner;
+    const remote = c.entityKey ? await readArkivCharacter(c.entityKey as `0x${string}`) : null;
+    const chainOwner = remote ? String(remote.owner).toLowerCase() : c.owner;
     if (!c.published && chainOwner !== owner) throw new Error('This character is not available.');
+    if (chainOwner !== owner && remote) {
+      if (
+        !remote.character.published ||
+        !verifySnapshot(remote.character, remote.proof, remote.verifier)
+      )
+        throw new Error('This public voice is not available.');
+      c = { ...remote.character, entityKey: c.entityKey, birth: remote.birth };
+    }
     const result = await generateSpeech(
       body.text,
       (c as typeof c & { voice?: string }).voice || defaultVoiceForModel(c.model),

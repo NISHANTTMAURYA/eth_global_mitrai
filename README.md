@@ -2,7 +2,11 @@
 
 Runnable local MVP for ETHGlobal Mumbai · updated 6 November 2026.
 
-For the current expected-versus-implemented journey and remaining work, read [the user-flow audit](docs/current-flow-audit.md). Product/design sections below contain roadmap material and some older stack assumptions; the audit distinguishes these from working behavior.
+Read [the delivered product flow](docs/product-flow.md) for current behavior and remaining limits. The [earlier flow audit](docs/current-flow-audit.md) records the gaps before this revision. Older product/design sections below still contain roadmap material.
+
+## Current product journey
+
+Choose an available named template → customize its personality and reusable voice → connect a wallet and approve creation → talk and see evidence-backed development → publish → request/accept free adoption → hand over without resetting age → Sunset and read-only Legacy. Each model can create one canonical persona. The home page opens an existing owner’s companion automatically. See [the delivered product flow](docs/product-flow.md) for reservation, confirmed birth timing, privacy and remaining limits. Paid settlement is not implemented.
 
 ## Run the implementation
 
@@ -53,7 +57,7 @@ Dynamic spoken replies and greetings now use actual speech audio with Rhubarb ti
 
 Gallery characters use a 15% projection-size increase; the chat scene uses a 10% increase. The bundled model forms have embedded, retargeted or procedural body animations. See [lip-sync research and plan](docs/lip-sync-research.md) for techniques, model mouth capabilities and the proposed audio/viseme pipeline. Sarvam audio generation has been live-tested; browser and cross-language quality still need broader evaluation.
 
-Sixteen rigged GLB models from Downloads are copied to `public/models/downloads`. Each is seeded as a public studio example and offered in the creation picker; existing personas occupy robot, fox and human forms. A form can belong to only one character globally: used forms are disabled in the picker and duplicate API requests are rejected. Some imported models have no body clips; named facial visemes animate when available. Source licences need confirmation before redistributing imported models publicly.
+Sixteen rigged GLB models from Downloads are copied to `public/models/downloads`. Each is offered as a named starting template. Public studio seeding is restricted to explicitly enabled local demo mode. A form can belong to only one character globally: used forms are disabled in the picker and duplicate API requests are rejected. Some imported models have no body clips; named facial visemes animate when available. Source licences need confirmation before redistributing imported models publicly.
 
 The remaining sections describe the product flow and longer-term design; implementation status is authoritative in `state.md`.
 

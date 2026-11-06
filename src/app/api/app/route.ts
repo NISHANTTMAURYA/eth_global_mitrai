@@ -28,11 +28,26 @@ import {
 } from '@/lib/domain';
 import { configuredProvider, reply } from '@/lib/chat';
 import { models } from '@/lib/models';
-import { defaultVoiceForModel } from '@/lib/voices';
+import { defaultVoiceForModel, VOICES } from '@/lib/voices';
 import { readArkivCharacter, discoverArkiv, findArkivCharacter } from '@/lib/arkiv';
 import { signSnapshot, verifySnapshot } from '@/lib/proof';
 import { recordArkivReceipt } from '@/lib/chain-ledger';
 import { samePublicState } from '@/lib/brain-events';
+import {
+  reserveModel,
+  modelClaims,
+  beginModelActivation,
+  confirmModel,
+  cancelModelDraft,
+  rejectedModelActivation,
+} from '@/lib/model-claims';
+import {
+  createRequest,
+  updateRequest,
+  adoptionRequests,
+  recipientEligible,
+  closeRequests,
+} from '@/lib/adoption';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 let discoveryCache: { at: number; rows: Awaited<ReturnType<typeof discoverArkiv>> } | undefined;
@@ -69,6 +84,10 @@ async function verifiedCharacter(id: string) {
     if (remote.character.createdAt !== c.createdAt || remote.character.lifespan !== c.lifespan)
       throw new Error('The Arkiv birth commitment differs from the registered lifetime.');
     const currentOwner = String(remote.owner).toLowerCase();
+    if (remote.birth && (c.activation !== 'active' || c.birth?.at !== remote.birth.at)) {
+      c = { ...c, birth: remote.birth, activation: 'active' };
+      saveCharacter(c);
+    }
     if (currentOwner !== c.owner) {
       c = {
         ...c,
@@ -98,6 +117,7 @@ async function verifiedCharacter(id: string) {
 export async function GET(request: Request) {
   try {
     const owner = await identity();
+    modelClaims();
     const id = new URL(request.url).searchParams.get('id');
     if (id) {
       const c = await verifiedCharacter(id);
@@ -113,6 +133,7 @@ export async function GET(request: Request) {
           throw new Error('This character is not published on Arkiv.');
         shown = {
           ...publicCharacter(remote.character),
+          ...(remote.birth ? { birth: remote.birth, activation: 'active' as const } : {}),
           owner: String(remote.owner).toLowerCase(),
           entityKey: c.entityKey,
           chainVersion: remote.character.brain.version,
@@ -121,7 +142,12 @@ export async function GET(request: Request) {
       return NextResponse.json({
         character: c.owner === owner ? c : publicCharacter(shown),
         messages: c.owner === owner ? messages(id, owner, c.ownershipEpoch || 0) : [],
-        offers: c.owner === owner ? offersFor(id) : [],
+        offers:
+          c.owner === owner
+            ? adoptionRequests(id).filter(
+                (r) => r.owner === c.owner && r.epoch === (c.ownershipEpoch || 0),
+              )
+            : [],
         owner,
         provider: configuredProvider(),
       });
@@ -139,6 +165,11 @@ export async function GET(request: Request) {
           continue;
         const existing = allCharacters().find((c) => c.id === row.character.id);
         if (
+          row.character.activation &&
+          modelClaims().find((m) => m.model === row.character.model)?.entity_key !== row.key
+        )
+          continue;
+        if (
           existing &&
           (existing.createdAt !== row.character.createdAt ||
             existing.lifespan !== row.character.lifespan)
@@ -146,6 +177,7 @@ export async function GET(request: Request) {
           continue;
         const c = {
           ...publicCharacter(row.character),
+          ...(row.birth ? { birth: row.birth, activation: 'active' as const } : {}),
           owner: String(row.owner).toLowerCase(),
           entityKey: row.key,
           chainVersion: row.character.brain.version,
@@ -158,12 +190,12 @@ export async function GET(request: Request) {
       discoveryError = 'Published characters could not be loaded from Arkiv. Please try again.';
     }
     for (const entry of allCharacters()) {
-      if (entry.owner === owner) {
+      if (entry.owner === owner && entry.activation !== 'cancelled') {
         const c = entry.entityKey ? await verifiedCharacter(entry.id) : entry;
         if (c.owner !== owner) continue;
         const previous = rows.findIndex((r) => r.id === c.id);
         if (previous >= 0) rows.splice(previous, 1);
-        rows.push(c);
+        rows.push(c.demo ? c : { ...c, published: c.published && previous >= 0 });
       } else if (process.env.MITRAI_DEMO_MODE === '1' && entry.demo && entry.published)
         rows.push(publicCharacter(entry));
     }
@@ -199,6 +231,11 @@ export async function POST(request: Request) {
         'sync',
         'discover',
         'prepareSnapshot',
+        'activationStarted',
+        'activationRejected',
+        'cancelDraft',
+        'prepareTransfer',
+        'declineRequest',
       ])
       .parse(data.action);
     limit(`${owner}:${action}`, action === 'chat' ? 15 : 25);
@@ -233,7 +270,10 @@ export async function POST(request: Request) {
           model: z
             .string()
             .refine((id) => models.some((m) => m.id === id), 'Unknown character model'),
-          voice: z.string().optional(),
+          voice: z
+            .string()
+            .refine((v) => VOICES.some((voice) => voice.id === v), 'Choose an available voice.')
+            .optional(),
           tags: z.array(z.string().trim().min(1).max(25)).max(5),
           shortLife: z.boolean(),
           traits: z.object({
@@ -245,8 +285,7 @@ export async function POST(request: Request) {
         .parse(data);
       if (
         allCharacters().some(
-          (character) =>
-            !character.demo && !character.id.startsWith('catalog-') && character.model === v.model,
+          (character) => !character.demo && character.entityKey && character.model === v.model,
         )
       )
         throw new Error('That character form is already in use. Choose an unused model.');
@@ -262,17 +301,23 @@ export async function POST(request: Request) {
         tags: [...new Set(v.tags)],
         owner,
         creator: owner,
-        createdAt: now,
-        lifespan: v.shortLife ? 600000 : 30 * 86400000,
+        createdAt: owner.startsWith('demo:') ? now : 0,
+        draftAt: now,
+        ...(owner.startsWith('demo:') ? {} : { activation: 'draft' as const }),
+        lifespan:
+          v.shortLife && (owner.startsWith('demo:') || process.env.MITRAI_DEMO_MODE === '1')
+            ? 600000
+            : 30 * 86400000,
         published: false,
         availability: 'showcase',
         brain: initialBrain(v.traits),
         highlights: [],
-        history: [{ at: now, text: 'A new story began' }],
+        history: [],
         demo: owner.startsWith('demo:'),
         ownershipEpoch: 0,
       };
-      saveCharacter(c);
+      if (c.demo) saveCharacter(c);
+      else reserveModel(c);
       return NextResponse.json({ character: c });
     }
     const id = z.string().min(1).max(100).parse(data.id);
@@ -288,6 +333,21 @@ export async function POST(request: Request) {
       assertAlive(c);
       const audition = z.boolean().parse(data.audition);
       if (audition && !c.published) throw new Error('This character is not public.');
+      let auditionState = publicCharacter(c);
+      if (audition && !c.demo) {
+        const remote = await readArkivCharacter(c.entityKey as `0x${string}`);
+        if (
+          !remote.character.published ||
+          !verifySnapshot(remote.character, remote.proof, remote.verifier) ||
+          remote.character.owner.toLowerCase() !== String(remote.owner).toLowerCase()
+        )
+          throw new Error('This public checkpoint is not available.');
+        auditionState = {
+          ...publicCharacter(remote.character),
+          entityKey: c.entityKey,
+          birth: remote.birth,
+        };
+      }
       if (!audition) assertOwner(c, owner);
       const text = z.string().trim().min(1).max(1500).parse(data.text);
       const history = audition ? [] : messages(id, owner, c.ownershipEpoch || 0);
@@ -300,7 +360,7 @@ export async function POST(request: Request) {
         saveMind(c, owner, activity);
       }
       const result = await reply(
-        audition ? publicCharacter(c) : c,
+        audition ? auditionState : c,
         text,
         history,
         audition,
@@ -364,11 +424,50 @@ export async function POST(request: Request) {
         throw new Error('This character is not open to enquiries.');
       if (c.owner === owner) throw new Error('You already own this character.');
       const note = z.string().trim().min(5).max(500).parse(data.note);
-      saveOffer({ characterId: id, from: owner, note, at: Date.now() });
-      return NextResponse.json({ ok: true });
+      const request = createRequest(c, owner, note);
+      return NextResponse.json({ ok: true, request });
     }
     assertOwner(c, owner);
-    assertAlive(c);
+    if (action === 'declineRequest') {
+      assertAlive(c);
+      return NextResponse.json({
+        request: updateRequest(c, z.string().parse(data.requestId), 'declined'),
+      });
+    }
+    if (action === 'prepareTransfer') {
+      assertAlive(c);
+      const request = data.requestId
+        ? adoptionRequests(c.id).find((r) => r.id === data.requestId)
+        : null;
+      if (data.requestId && !request) throw new Error('Adoption request not found.');
+      const recipient = z
+        .string()
+        .refine(isAddress, 'Enter a valid wallet address.')
+        .parse(request?.from || data.recipient)
+        .toLowerCase();
+      recipientEligible(c, recipient);
+      if (request) updateRequest(c, request.id, 'accepted');
+      return NextResponse.json({
+        recipient,
+        requestId: request?.id,
+        remaining: lifecycle(c).remaining,
+      });
+    }
+    if (action === 'cancelDraft') {
+      if (c.entityKey) throw new Error('An existing persona cannot release its model.');
+      cancelModelDraft(c);
+      return NextResponse.json({ ok: true });
+    }
+    if (action === 'activationStarted') {
+      beginModelActivation(c);
+      return NextResponse.json({ ok: true });
+    }
+    if (action === 'activationRejected') {
+      rejectedModelActivation(c);
+      return NextResponse.json({ ok: true });
+    }
+    if (!(['prepareSnapshot', 'sync'].includes(action) && !c.entityKey && c.activation))
+      assertAlive(c);
     if (action === 'prepareSnapshot') {
       if (owner.startsWith('demo:') || c.demo)
         throw new Error(
@@ -385,6 +484,10 @@ export async function POST(request: Request) {
         );
         if (existing) {
           c.entityKey = existing.key;
+          const confirmed = await readArkivCharacter(existing.key);
+          c.birth = confirmed.birth;
+          c.activation = 'active';
+          confirmModel(c, existing.key);
           c.chainVersion = existing.character.brain.version;
           saveCharacter(c);
           return NextResponse.json({ ...signSnapshot(c), alreadyOnChain: true });
@@ -435,6 +538,17 @@ export async function POST(request: Request) {
         .refine(isAddress, 'Enter a valid EVM wallet address.')
         .parse(data.recipient)
         .toLowerCase();
+      if (data.requestId) {
+        const r = adoptionRequests(c.id).find((r) => r.id === data.requestId);
+        if (
+          !r ||
+          r.owner !== c.owner ||
+          r.epoch !== (c.ownershipEpoch || 0) ||
+          r.from !== recipient ||
+          r.status !== 'accepted'
+        )
+          throw new Error('This handover does not match the accepted adoption request.');
+      }
       if (c.entityKey) {
         const remote = await readArkivCharacter(c.entityKey as `0x${string}`);
         if (String(remote.owner).toLowerCase() !== recipient)
@@ -449,6 +563,7 @@ export async function POST(request: Request) {
             .regex(/^0x[0-9a-f]{64}$/i)
             .parse(data.txHash) as `0x${string}`,
         );
+      closeRequests(c, data.requestId);
       c = handover(c, recipient);
     }
     if (action === 'sync') {
@@ -472,6 +587,11 @@ export async function POST(request: Request) {
       if (!samePublicState(c, remote.character))
         throw new Error('The character changed while signing. Please sync the current state.');
       c.entityKey = key;
+      confirmModel(c, key);
+      if (c.activation) {
+        c.birth = remote.birth;
+        c.activation = 'active';
+      }
       c.chainVersion = c.brain.version;
       discoveryCache = undefined;
       if (data.txHash)

@@ -21,6 +21,8 @@ import { Stage, Flower } from './ui';
 import { models } from '@/lib/models';
 import { VOICES, defaultVoiceForModel } from '@/lib/voices';
 import { activateCharacter } from '@/lib/activate-character';
+import { templates, type PersonaTemplate } from '@/lib/templates';
+import { useTemplates } from '@/lib/use-templates';
 export default function CreateView({
   owner,
   mine,
@@ -37,20 +39,30 @@ export default function CreateView({
   notify: (s: string) => void;
 }) {
   const router = useRouter();
+  const { items: availability, error: availabilityError } = useTemplates();
+  const starter = templates.find((t) => t.model === 'robot')!;
+  const applyTemplate = (t: PersonaTemplate) => {
+    setModel(t.model);
+    setName(t.name);
+    setTagline(t.tagline);
+    setDescription(t.description);
+    setBehavior(t.behavior);
+    setTraits(t.traits);
+    setTags(t.tags.join(', '));
+    if (!userChoseVoice.current) setVoice(t.voice);
+  };
   const [step, setStep] = useState(0);
   const [model, setModel] = useState<ModelId>('robot');
   const [voice, setVoice] = useState<string>('shubh');
   const [playingVoice, setPlayingVoice] = useState<string | null>(null);
   const previewAudio = useRef<HTMLAudioElement | null>(null);
   const userChoseVoice = useRef(false);
-  const [name, setName] = useState('');
-  const [tagline, setTagline] = useState('');
-  const [description, setDescription] = useState('');
-  const [behavior, setBehavior] = useState(
-    'Curious, warm, and a little playful. Ask thoughtful questions.',
-  );
-  const [tags, setTags] = useState('Curious, Creative');
-  const [traits, setTraits] = useState({ curiosity: 62, warmth: 72, playfulness: 55 });
+  const [name, setName] = useState(starter.name);
+  const [tagline, setTagline] = useState(starter.tagline);
+  const [description, setDescription] = useState(starter.description);
+  const [behavior, setBehavior] = useState(starter.behavior);
+  const [tags, setTags] = useState(starter.tags.join(', '));
+  const [traits, setTraits] = useState(starter.traits);
   const [shortLife, setShortLife] = useState(false);
   const [agree, setAgree] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -67,9 +79,9 @@ export default function CreateView({
       const saved = sessionStorage.getItem('mitrai-draft');
       if (saved) {
         const d = JSON.parse(saved);
-        setName(d.name || '');
-        setTagline(d.tagline || '');
-        setDescription(d.description || '');
+        setName(d.name || starter.name);
+        setTagline(d.tagline || starter.tagline);
+        setDescription(d.description || starter.description);
         setBehavior(d.behavior || behavior);
         const m = d.model || 'robot';
         setModel(m);
@@ -80,8 +92,7 @@ export default function CreateView({
     } catch {}
     const chosen = new URLSearchParams(window.location.search).get('form');
     if (chosen && models.some((m) => m.id === chosen)) {
-      setModel(chosen);
-      setVoice(defaultVoiceForModel(chosen));
+      applyTemplate(templates.find((t) => t.model === chosen)!);
     }
   }, []);
   useEffect(() => {
@@ -110,6 +121,14 @@ export default function CreateView({
   const next = () => {
     if (
       step === 0 &&
+      availability.find((t) => t.model === model)?.status !== 'available' &&
+      !owner?.startsWith('demo:')
+    ) {
+      notify('Choose an available character to continue.');
+      return;
+    }
+    if (
+      step === 0 &&
       (name.trim().length < 2 || tagline.trim().length < 4 || description.trim().length < 12)
     ) {
       notify('Give your character a name, a tagline, and a little more of its story.');
@@ -120,6 +139,13 @@ export default function CreateView({
   const create = async () => {
     if (!owner) {
       connect();
+      return;
+    }
+    if (
+      !owner.startsWith('demo:') &&
+      availability.find((t) => t.model === model)?.status !== 'available'
+    ) {
+      notify('This template is unavailable. Choose an available character.');
       return;
     }
     if (!agree) {
@@ -155,7 +181,7 @@ export default function CreateView({
       setSaving(false);
     }
   };
-  if (mine && !mine.demo && !mine.entityKey)
+  if (mine && !mine.demo && !mine.entityKey && mine.activation !== 'cancelled')
     return (
       <div className="page-shell create-page">
         <div className="create-heading">
@@ -188,6 +214,7 @@ export default function CreateView({
                 notify(`${mine.name} is confirmed on Arkiv.`);
               } catch (e) {
                 notify(e instanceof Error ? e.message : 'Could not activate.');
+                await refresh();
               } finally {
                 setSaving(false);
               }
@@ -195,6 +222,22 @@ export default function CreateView({
           >
             {saving ? <Loader2 className="spin" size={16} /> : <Sparkles size={16} />}{' '}
             {saving ? 'Waiting for your wallet…' : 'Create on Arkiv'}
+          </button>
+          <button
+            className="text-link"
+            disabled={saving}
+            onClick={async () => {
+              try {
+                await api('cancelDraft', { id: mine.id });
+                await refresh();
+                notify('Draft cancelled. Its appearance is available again.');
+                router.replace('/create');
+              } catch (e) {
+                notify((e as Error).message);
+              }
+            }}
+          >
+            Cancel unsigned draft
           </button>
         </div>
       </div>
@@ -226,12 +269,12 @@ export default function CreateView({
         <h1>
           Who will <em>yours be?</em>
         </h1>
-        <p>Start with a spark. Let your time together shape the rest.</p>
+        <p>A starting personality is ready. You decide who they become.</p>
       </div>
       <div className="creation-layout">
         <div className="creation-form">
           <div className="stepper">
-            {['The spark', 'The personality', 'The beginning'].map((s, i) => (
+            {['Choose your character', 'Make it yours', 'Begin their story'].map((s, i) => (
               <button
                 key={s}
                 className={i === step ? 'current' : i < step ? 'complete' : ''}
@@ -246,7 +289,37 @@ export default function CreateView({
           </div>
           {step === 0 && (
             <div className="form-step">
-              <h2>Every story starts with someone.</h2>
+              <h2>Choose a beginning.</h2>
+              <p className="muted">
+                Every character comes with a name and starting personality. Make them yours below.
+              </p>
+              {availabilityError && <p role="alert">{availabilityError}</p>}
+              <div className="model-options">
+                {templates.map((t) => {
+                  const state = availability.find((a) => a.model === t.model);
+                  const unavailable = !state || state.status !== 'available';
+                  return (
+                    <button
+                      key={t.model}
+                      disabled={unavailable}
+                      className={`${model === t.model ? 'chosen' : ''} ${unavailable ? 'model-taken' : ''}`}
+                      onClick={() => applyTemplate(t)}
+                    >
+                      <strong>{t.name}</strong>
+                      <small>
+                        {!state
+                          ? 'Checking…'
+                          : state.status === 'created'
+                            ? 'Already created'
+                            : state.status === 'reserved'
+                              ? 'Reserved'
+                              : t.tagline}
+                      </small>
+                    </button>
+                  );
+                })}
+              </div>
+
               <label>
                 Name
                 <input
@@ -301,55 +374,31 @@ export default function CreateView({
                   maxLength={1000}
                 />
               </label>
-              <div className="trait-sliders">
-                {Object.entries(traits).map(([key, value]) => (
-                  <label key={key}>
-                    <span>
-                      {key}
-                      <b>{value}%</b>
-                    </span>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={value}
-                      onChange={(e) => setTraits({ ...traits, [key]: Number(e.target.value) })}
-                    />
-                  </label>
-                ))}
-              </div>
-              <label>
-                Choose their form
-                <small>Choose a body for the character you cultivate.</small>
-              </label>
-              <div className="model-options">
-                {models.map((option) => {
-                  const occupied = characters.some(
-                    (character) => !character.demo && character.model === option.id,
-                  );
-                  return (
-                    <button
-                      key={option.id}
-                      disabled={occupied}
-                      className={`${model === option.id ? 'chosen' : ''} ${occupied ? 'model-taken' : ''}`}
-                      onClick={() => {
-                        setModel(option.id);
-                        if (!userChoseVoice.current) {
-                          setVoice(defaultVoiceForModel(option.id));
-                        }
-                      }}
-                    >
-                      <span>✧</span>
-                      {option.name}
-                      {occupied && <small>Already in use</small>}
-                    </button>
-                  );
-                })}
-              </div>
+              <details className="more-customization">
+                <summary>Fine-tune their starting traits</summary>
+                <div className="trait-sliders">
+                  {Object.entries(traits).map(([key, value]) => (
+                    <label key={key}>
+                      <span>
+                        {key}
+                        <b>{value}%</b>
+                      </span>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={value}
+                        onChange={(e) => setTraits({ ...traits, [key]: Number(e.target.value) })}
+                      />
+                    </label>
+                  ))}
+                </div>
+              </details>
               <label>
                 Choose their voice
                 <small>
-                  Powered by Sarvam AI. Tap the play button to preview voices without using credits.
+                  Listen to a sample and choose the voice you like. Voices can be used by more than
+                  one MitrAI.
                 </small>
               </label>
               <div className="voice-options">
@@ -404,7 +453,8 @@ export default function CreateView({
             <div className="form-step">
               <h2>A lifetime worth making.</h2>
               <p className="muted">
-                Their clock starts when you activate. Every day matters, even while you’re away.
+                Their 30-day life starts when creation is confirmed. Reviewing this draft takes no
+                time from their life.
               </p>
               <div className="lifetime-options">
                 <button className={!shortLife ? 'chosen' : ''} onClick={() => setShortLife(false)}>
@@ -412,11 +462,13 @@ export default function CreateView({
                   <strong>30 days together</strong>
                   <small>The initial product lifespan</small>
                 </button>
-                <button className={shortLife ? 'chosen' : ''} onClick={() => setShortLife(true)}>
-                  <Clock3 size={21} />
-                  <strong>10-minute demo</strong>
-                  <small>See the whole life cycle</small>
-                </button>
+                {owner?.startsWith('demo:') && (
+                  <button className={shortLife ? 'chosen' : ''} onClick={() => setShortLife(true)}>
+                    <Clock3 size={21} />
+                    <strong>10-minute demo</strong>
+                    <small>See the whole life cycle</small>
+                  </button>
+                )}
               </div>
               <div className="review-list">
                 <span>
@@ -433,7 +485,7 @@ export default function CreateView({
                 </span>
                 <span>
                   <Check size={15} />
-                  Your draft becomes a private character first
+                  Your character starts unlisted. Private chats stay off chain.
                 </span>
               </div>
               <label className="checkbox-label">

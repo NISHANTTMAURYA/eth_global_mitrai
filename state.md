@@ -1,3 +1,7 @@
+## Template-first product revision — 6 November 2026
+
+Implemented owner-aware home, editable template defaults, reusable voices, transactional single-use model claims, cancellable unsigned reservations, confirmed-chain birth timing, free adoption request acceptance, public introductions, collapsed Expressions controls, and wallet-approved storage renewal/export. See `docs/product-flow.md` for delivered behavior and limitations. Live transaction validation remains required; tests do not consume real models.
+
 # MitrAI implementation state
 
 Updated 6 November 2026. Project: `/Users/nishantmaurya/eth_global_mitrai`.
