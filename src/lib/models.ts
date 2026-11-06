@@ -9,6 +9,7 @@ export const models = [
     'Characters_GermanShepherd', 'Characters_Pug', 'character-female-a',
   ].map((id) => ({ id: `download:${id}`, name: id.replace(/^\d+_/, '').replace(/^Characters_/, '').replaceAll('_', ' '), file: `downloads/${id}.glb` })),
 ];
+export const showcaseModelIds = new Set(['download:09_CactusBoy','download:19_Wizzir','download:23_Carrot_Kid','download:34_Ghost']);
 export function modelPath(id: string) {
   return `/models/${models.find((m) => m.id === id)?.file || 'robot-expressive.glb'}`;
 }

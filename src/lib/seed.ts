@@ -1,5 +1,5 @@
 import { Character, initialBrain } from './domain';
-import { models } from './models';
+import { models, showcaseModelIds } from './models';
 export function seeds(): Character[] {
   const now = Date.now();
   const studio: Character[] = [
@@ -128,7 +128,7 @@ export function seeds(): Character[] {
     Characters_Pug: ['Pogo', 'A cheerful friend with comic timing.', 'A playful pug who brings warmth and lighthearted curiosity.', ['Play', 'Warm']],
     'character-female-a': ['Nova', 'A curious explorer in motion.', 'An energetic explorer who turns new challenges into small adventures.', ['Explorer', 'Creative']],
   };
-  return [...studio, ...models.filter((m) => m.id.startsWith('download:')).map((m, i) => {
+  return [...studio, ...models.filter((m) => showcaseModelIds.has(m.id)).map((m, i) => {
     const [name, tagline, description, tags] = labels[m.id.slice(9)];
     const createdAt = now - (i + 1) * 60_000;
     return {
