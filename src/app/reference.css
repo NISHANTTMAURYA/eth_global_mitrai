@@ -681,7 +681,7 @@ body:has(.detail-page) .brand { color: #1e211b; }
 .detail-page .workspace-tabs {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0;
   padding: 6px 0;
   border: 0;
@@ -695,7 +695,7 @@ body:has(.detail-page) .brand { color: #1e211b; }
   left: 0;
   top: 6px;
   bottom: 6px;
-  width: 25%;
+  width: 20%;
   border-radius: 24px;
   background: #fff0e4;
   box-shadow: 0 3px 14px #ed874012;
@@ -724,8 +724,9 @@ body:has(.detail-page) .brand { color: #1e211b; }
 .nav a { transition: background-color 220ms ease, color 220ms ease, transform 160ms ease; }
 .nav a:active { transform: scale(.96); }
 @media (max-width: 700px) {
-  .detail-page .workspace-tabs button { font-size: 10px; gap: 5px; padding: 11px 3px; }
-  .detail-page .workspace-tabs button svg { width: 15px; height: 15px; flex-shrink: 0; }
+  .detail-page .workspace-tabs { margin-inline: 10px; }
+  .detail-page .workspace-tabs button { font-size: 9px; gap: 3px; padding: 11px 2px; }
+  .detail-page .workspace-tabs button svg { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .detail-page .workspace-tabs::before,

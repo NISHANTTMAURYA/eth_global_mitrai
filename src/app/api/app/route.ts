@@ -76,10 +76,11 @@ function error(e: unknown) {
     { status: 400 },
   );
 }
-async function verifiedCharacter(id: string) {
+async function verifiedCharacter(id: string, capture?: { remote?: Awaited<ReturnType<typeof readArkivCharacter>> }) {
   let c = await getCharacter(id);
   if (c.entityKey) {
     const remote = await readArkivCharacter(c.entityKey as `0x${string}`);
+    if (capture) capture.remote = remote;
     if (!verifySnapshot(remote.character, remote.proof, remote.verifier))
       throw new Error('This Arkiv checkpoint is not signed by this app’s verifier.');
     if (remote.character.createdAt !== c.createdAt || remote.character.lifespan !== c.lifespan)
@@ -134,12 +135,13 @@ export async function GET(request: Request) {
     const claims = await modelClaims();
     const id = new URL(request.url).searchParams.get('id');
     if (id) {
-      const c = await verifiedCharacter(id);
+      const capture: { remote?: Awaited<ReturnType<typeof readArkivCharacter>> } = {};
+      const c = await verifiedCharacter(id, capture);
       if (!c.published && c.owner !== owner) throw new Error('This character is not published.');
       let shown = c;
       if (c.owner !== owner && !c.demo) {
         if (!c.entityKey) throw new Error('This character is not published on Arkiv.');
-        const remote = await readArkivCharacter(c.entityKey as `0x${string}`);
+        const remote = capture.remote!;
         if (
           !remote.character.published ||
           remote.character.owner.toLowerCase() !== String(remote.owner).toLowerCase()

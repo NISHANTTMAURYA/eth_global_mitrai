@@ -1,4 +1,4 @@
-import { pool, query } from './database';
+import { query } from './database';
 import { evolve, type Message } from './domain';
 import { getCharacter, saveCharacter } from './store';
 import { loadMind } from './continuity-store';
@@ -11,20 +11,21 @@ import type { Hex } from 'viem';
 /** Publish an occasional approved public summary. Chat transcripts remain in Postgres. */
 export async function autoCheckpoint(id: string, owner: string) {
   if (!process.env.ARKIV_WRITER_PRIVATE_KEY) return;
-  const client = await pool.connect();
-  const lockKey = `arkiv:${id}`;
-  let locked = false;
+  const leaseUntil = Date.now() + 120_000;
+  const lease = await query(
+    `INSERT INTO checkpoint_leases(character_id,lease_until) VALUES($1,$2)
+     ON CONFLICT(character_id) DO UPDATE SET lease_until=excluded.lease_until
+     WHERE checkpoint_leases.lease_until<$3 RETURNING character_id`,
+    [id, leaseUntil, Date.now()],
+  );
+  if (!lease.rowCount) return;
   try {
-    await client.query('BEGIN');
-    const lock = await client.query<{ locked: boolean }>('SELECT pg_try_advisory_xact_lock(hashtext($1)) AS locked', [lockKey]);
-    locked = lock.rows[0]?.locked || false;
-    if (!locked) return;
-    let c = await getCharacter(id, client);
+    let c = await getCharacter(id);
     if (!c.entityKey || !c.published || c.owner.toLowerCase() !== owner.toLowerCase()) return;
     const remote = await readArkivCharacter(c.entityKey as Hex);
     if (remote.owner.toLowerCase() !== owner.toLowerCase()) return;
     if ((c.chainVersion ?? remote.character.brain.version) >= c.brain.version) {
-      const row = await query<{ body: unknown }>('SELECT body FROM messages WHERE key=$1', [`${id}:${owner}:${c.ownershipEpoch || 0}`], client);
+      const row = await query<{ body: unknown }>('SELECT body FROM messages WHERE key=$1', [`${id}:${owner}:${c.ownershipEpoch || 0}`]);
       const history = (row.rows[0]?.body || []) as Message[];
       const last = c.history.filter((h) => h.text.startsWith('Checkpoint')).at(-1)?.at || 0;
       const recent = history.filter((m) => m.role === 'user' && m.at > last);
@@ -35,7 +36,7 @@ export async function autoCheckpoint(id: string, owner: string) {
         for (const axis of ['curiosity', 'warmth', 'playfulness'] as const)
           c.brain.traits[axis] = growth.style[axis];
       c.history.push({ at: Date.now(), text: `Checkpoint ${c.brain.version} · ${recent.length} conversations consolidated automatically` });
-      await saveCharacter(c, client);
+      await saveCharacter(c);
     }
     const signed = signSnapshot(c);
     const existing = (await readArkivCheckpoints(c.entityKey as Hex)).some((point) =>
@@ -48,14 +49,13 @@ export async function autoCheckpoint(id: string, owner: string) {
       if (receipt.createdEntities[0])
         await recordArkivReceipt(c.id, receipt.createdEntities[0] as Hex, receipt.txHash);
     }
-    const current = await getCharacter(id, client);
+    const current = await getCharacter(id);
     if (current.owner === c.owner && current.brain.version === c.brain.version) {
       current.chainVersion = c.brain.version;
       current.history.push({ at: Date.now(), text: `Automatic Arkiv checkpoint ${c.brain.version} confirmed` });
-      await saveCharacter(current, client);
+      await saveCharacter(current);
     }
   } finally {
-    await client.query(locked ? 'COMMIT' : 'ROLLBACK').catch(() => undefined);
-    client.release();
+    await query('UPDATE checkpoint_leases SET lease_until=0 WHERE character_id=$1 AND lease_until=$2', [id, leaseUntil]).catch(() => undefined);
   }
 }

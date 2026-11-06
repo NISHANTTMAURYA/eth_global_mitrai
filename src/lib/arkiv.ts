@@ -29,9 +29,15 @@ export const Checkpoints = defineSchema('mitrai.checkpoints.v1', {
   verifier: str(),
   snapshot: bytes(),
 });
+function serverAccessKey() {
+  const key = process.env.ARKIV_ACCESS_KEY || process.env.NEXT_PUBLIC_ARKIV_ACCESS_KEY || '';
+  // An RPC URL is a transport, not an access key. Passing it to rabdi() makes
+  // the SDK append the encoded URL to the endpoint and every chain read fails.
+  return /^https?:\/\//i.test(key) ? '' : key;
+}
 export function arkivPublic() {
   return createPublicClient({
-    chain: rabdi({ accessKey: process.env.ARKIV_ACCESS_KEY || process.env.NEXT_PUBLIC_ARKIV_ACCESS_KEY || '' }),
+    chain: rabdi({ accessKey: serverAccessKey() }),
     transport: http(process.env.NEXT_PUBLIC_ARKIV_RPC || undefined),
   });
 }
@@ -207,7 +213,7 @@ export async function writeAppCheckpoint(c: Character, proof: string, verifier: 
   if (!c.entityKey) throw new Error('The owner must create the Arkiv root first.');
   const account = privateKeyToAccount(raw as Hex);
   const wallet = createWalletClient({
-    chain: rabdi({ accessKey: process.env.ARKIV_ACCESS_KEY || process.env.NEXT_PUBLIC_ARKIV_ACCESS_KEY || '' }),
+    chain: rabdi({ accessKey: serverAccessKey() }),
     account,
     transport: http(process.env.NEXT_PUBLIC_ARKIV_RPC || undefined),
   });

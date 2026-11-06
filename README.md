@@ -32,13 +32,13 @@ The app runs its idempotent schema SQL from `supabase/migrations/202611060001_in
 
 | Sponsor | Product use | Verified state | Remaining work |
 | --- | --- | --- | --- |
-| Arkiv Rabdi | Owner-controlled root, public discovery, signed checkpoints, ownership transfer | A real Carrot Kid root was created by `0x979e3eCb04De84980418D5146E557997150AFC51`; see [Arkiv evidence](arkiv/README.md) | Fund/configure an app writer for automatic append-only checkpoints; demonstrate a second-wallet transfer |
+| Arkiv Rabdi | Owner-controlled root, public discovery, signed checkpoints, ownership transfer | Carrot Kid’s root belongs to `0x979e3eCb04De84980418D5146E557997150AFC51`; a separately funded app wallet created and read back a signed checkpoint; see [Arkiv evidence](arkiv/README.md) | Demonstrate a chat-triggered checkpoint and second-wallet transfer |
 | 0G Private Computer | Persona reply generation in the main chat flow | A direct test call returned provider `0G` and request ID; see [0G evidence](0g/README.md) | Judge should try a live owner conversation and inspect request IDs |
 | ENS | Reverse-name lookup for connected wallets; proposed character name previews and app JSON gateway | Ethereum RPC lookup is dynamic; the gateway explicitly reports `registeredOnEns` | **No ENSv2 subname is registered.** `mitrai.eth` does not currently resolve; see [ENS status](ens/README.md) |
 
 The [ETHGlobal Mumbai prize page](https://ethglobal.com/events/mumbai/prizes) lists 0G Private Computer, Arkiv from-scratch and Continuity-only existing-project paths, and ENSv2 tracks. We cannot claim a Continuity-only prize without confirmed eligibility. Judge the working integrations, not proposed labels.
 
-Arkiv query: `npm run query:arkiv`. A dedicated app writer, when configured with a **funded** `ARKIV_WRITER_PRIVATE_KEY`, appends a signed public checkpoint after five new owner messages. It cannot patch or transfer the user's root. The current local environment has no writer key, so automatic publishing is not live yet. Owner wallet sync remains a fallback. A checkpoint contains approved public state, never raw private chat. Arkiv entity expiry is 90 days, separate from the 30-day character life.
+Arkiv query: `npm run query:arkiv`. The local app writer `0x2c38f3866086521f8C278D4f26567D59246ABD74` is configured and funded; its independent checkpoint write and signed readback succeeded on Rabdi. After five new owner messages, the app schedules a public checkpoint without another wallet popup. That chat trigger has not yet been demonstrated live. The writer cannot patch or transfer the user's root. Owner wallet sync remains a fallback. A checkpoint contains approved public state, never raw private chat. Arkiv entity expiry is 90 days, separate from the 30-day character life. A global Arkiv event watcher is disabled by default because it previously exhausted the small Supabase connection pool; explicit receipts and owner checks remain active.
 
 ## Value and transfer
 

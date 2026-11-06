@@ -48,8 +48,8 @@ export default function ProactiveInbox({
   useEffect(() => {
     setItems([]);
     setPrefs(null);
-    void refresh();
-    const timer = setInterval(() => void refresh(), 15000);
+    void refresh().catch(() => {});
+    const timer = setInterval(() => void refresh().catch(() => {}), 15000);
     return () => clearInterval(timer);
   }, [refresh]);
   const task = async (fn: () => Promise<void>) => {

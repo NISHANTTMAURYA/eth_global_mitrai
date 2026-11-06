@@ -179,17 +179,22 @@ export default function CharacterView({
   useEffect(() => {
     if (!own || !owner) return;
     const timer = setInterval(async () => {
-      const r = await fetch(`/api/app?id=${encodeURIComponent(c.id)}`);
-      if (!r.ok) return;
-      const data = await r.json();
-      setIncoming(data.offers || []);
-      setChat((items) => {
-        const fresh = (data.messages || []).filter(
-          (m: Message) => m.proactive && !items.some((item) => item.id === m.id),
-        );
-        return fresh.length ? [...items, ...fresh] : items;
-      });
-    }, 15000);
+      if (document.visibilityState !== 'visible') return;
+      try {
+        const r = await fetch(`/api/app?id=${encodeURIComponent(c.id)}`);
+        if (!r.ok) return;
+        const data = await r.json();
+        setIncoming(data.offers || []);
+        setChat((items) => {
+          const fresh = (data.messages || []).filter(
+            (m: Message) => m.proactive && !items.some((item) => item.id === m.id),
+          );
+          return fresh.length ? [...items, ...fresh] : items;
+        });
+      } catch {
+        // A temporary network outage should not become an unhandled rejection.
+      }
+    }, 60000);
     return () => clearInterval(timer);
   }, [own, owner, c.id]);
   const stopSpeech = useCallback(() => {

@@ -122,3 +122,7 @@ create table if not exists community_posts (
   created_at bigint not null
 );
 create index if not exists community_posts_recent on community_posts(character_id, created_at desc);
+create table if not exists checkpoint_leases (
+  character_id text primary key,
+  lease_until bigint not null
+);

@@ -73,30 +73,35 @@ type LedgerGlobal = typeof globalThis & {
 /** Chain event filters start at the current head. Persist observed receipts; never invent
  * historical transfers when the RPC cannot replay old events. */
 export function startChainLedger() {
-  if (process.env.PROACTIVE_DISABLED === '1' || process.env.NEXT_PHASE === 'phase-production-build')
-    return;
   const global = globalThis as LedgerGlobal;
+  // Every Rabdi event used to trigger a full Postgres character scan. A busy
+  // public stream could exhaust the small Supabase pool and reject requests.
+  // Explicit receipts and owner reconciliation already cover the main flow.
+  if (process.env.ARKIV_EVENT_WATCH !== '1' || process.env.NEXT_PHASE === 'phase-production-build') {
+    global.mitraiChainLedger?.stop();
+    global.mitraiChainLedger = undefined;
+    return;
+  }
   if (global.mitraiChainLedger?.version === 'receipts-v3') return;
   global.mitraiChainLedger?.stop();
   const pending = new Set<string>();
   const stop = arkivPublic().watchEntityEvents({
     pollingInterval: 10000,
     onEvent: async (e) => {
-      const c = (await allCharacters()).find(
-        (c) => c.entityKey?.toLowerCase() === e.entityKey.toLowerCase(),
-      );
-      const pendingKey = `${e.transactionHash}:${e.entityKey}`;
-      if (!c || pending.has(pendingKey)) return;
-      pending.add(pendingKey);
       try {
-        await recordArkivReceipt(c.id, e.entityKey, e.transactionHash);
-      } catch (error) {
-        console.error(
-          'Arkiv event receipt could not be recorded',
-          error instanceof Error ? error.message : 'unknown',
+        const c = (await allCharacters()).find(
+          (c) => c.entityKey?.toLowerCase() === e.entityKey.toLowerCase(),
         );
-      } finally {
-        pending.delete(pendingKey);
+        const pendingKey = `${e.transactionHash}:${e.entityKey}`;
+        if (!c || pending.has(pendingKey)) return;
+        pending.add(pendingKey);
+        try {
+          await recordArkivReceipt(c.id, e.entityKey, e.transactionHash);
+        } finally {
+          pending.delete(pendingKey);
+        }
+      } catch (error) {
+        console.warn('Arkiv event lookup unavailable:', error instanceof Error ? error.message : 'unknown');
       }
     },
     onError: (e) => console.error('Arkiv event stream:', e.message),
