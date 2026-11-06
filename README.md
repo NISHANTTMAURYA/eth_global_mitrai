@@ -45,7 +45,7 @@ SQLite and the Ed25519 verifier key live in ignored `.data/` (or `MITRAI_DATA_DI
 
 ### Character media
 
-Sixteen rigged GLB models from the user's Downloads folder are copied to `public/models/downloads` and offered in the creator. Existing studio personas already use the robot, fox and human models. A model can belong to only one persona; the creator disables occupied forms and the API independently rejects duplicates. Embedded clips and named vowel morphs are used where present. Numeric morph targets are not guessed. Source licences need confirmation before redistributing the imported models publicly.
+Sixteen rigged GLB models from Downloads are copied to `public/models/downloads`. Each is seeded as a public studio example and offered in the creation picker; existing personas occupy robot, fox and human forms. A form can belong to only one character globally: used forms are disabled in the picker and duplicate API requests are rejected. Some imported models have no body clips; named facial visemes animate when available. Source licences need confirmation before redistributing imported models publicly.
 
 The remaining sections describe the product flow and longer-term design; implementation status is authoritative in `state.md`.
 
