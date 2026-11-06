@@ -75,3 +75,6 @@ Used the two images in ui/ for the blue discovery cards, rounded navigation, lan
 ### Character page simplification
 
 Removed the oversized welcome content and starter chips. Reduced visible status/provider banners, retained the voice control and four tabs, and bounded chat height so the composer stays in the panel. Character bio focuses on attribution and lifetime. Build and typecheck pass; browser visual validation remains unavailable.
+### Desktop panel proportions
+
+Replaced fixed 610/750px panel sizing on desktop with viewport-sized columns. Left scene flexes above a 116px lifetime card; right conversation flexes above a fixed composer. Page uses 85% centered width and matching aligned column bottoms. Build/typecheck pass; rendered result still requires browser verification.

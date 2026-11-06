@@ -611,3 +611,36 @@ body:has(.detail-page) .brand { color: #1e211b; }
     font-size: 14px;
   }
 }
+
+/* Desktop reference: both columns, including lifetime and composer, fit on screen. */
+@media (min-width: 701px) {
+  body:has(.detail-page) .site-header { height: 88px; }
+  body:has(.detail-page) .nav-wrap { width: 85%; max-width: 1320px; padding: 0; min-height: 0; }
+  .detail-page.page-shell { width: 85%; max-width: 1320px; padding: 20px 0 16px; }
+  .detail-page .detail-topbar { height: 48px; margin-bottom: 12px; }
+  .detail-page .back-link { display: inline-flex; align-items: center; gap: 14px; }
+  .detail-page .back-link > svg { box-sizing: content-box; background: #ffffffd9; border-radius: 50%; padding: 14px; }
+  .detail-page .detail-layout { height: calc(100dvh - 184px); min-height: 460px; grid-template-columns: minmax(0, .86fr) minmax(0, 1fr); gap: 10px; align-items: stretch; }
+  .detail-page .character-aside { height: 100%; display: flex; flex-direction: column; min-height: 0; gap: 10px; }
+  .detail-page .detail-stage { height: auto; flex: 1; min-height: 0; border-radius: 44px; border-width: 5px; }
+  .detail-page .stage-title { top: 28px; left: 38px; max-width: 68%; }
+  .detail-page .stage-title h1 { font-size: clamp(28px, 3.2vw, 48px); line-height: 1.1; }
+  .detail-page .stage-title p { font-size: clamp(13px, 1.2vw, 18px); line-height: 1.4; max-width: 220px; }
+  .detail-page .stage-top { top: 140px; left: 34px; }
+  .detail-page .detail-stage > .character-stage { height: 100%; padding-top: 70px; }
+  .detail-page .character-bio { flex: 0 0 116px; margin: 0; padding: 20px 34px; border-radius: 35px; overflow: auto; }
+  .detail-page .character-bio .lifetime-meter { margin-top: 16px; padding-top: 0; border: 0; }
+  .detail-page .character-bio .lifetime-meter > div:first-child span { font-size: 13px; color: #25271f; }
+  .detail-page .character-bio .lifetime-meter small { font-size: 11px; color: #66685d; }
+  .detail-page .meter { height: 6px; background: #f2f0e8; }
+  .detail-page .meter i { background: #7d9d63; }
+  .detail-page .character-workspace { height: 100%; min-height: 0; border-radius: 44px; }
+  .detail-page .workspace-tabs { flex: 0 0 66px; margin: 10px 26px 0; padding: 0 0 8px; }
+  .detail-page .workspace-tabs button { font-size: clamp(10px, .95vw, 14px); padding: 13px 16px; }
+  .detail-page .chat-panel { overflow: hidden; padding: 0 26px 18px; }
+  .detail-page .messages { flex: 1; min-height: 0; }
+  .detail-page .chat-composer { flex-shrink: 0; margin: 0; min-height: 60px; }
+  .detail-page .chat-caption { flex-shrink: 0; }
+  .detail-page .tab-content { overflow-y: auto; min-height: 0; }
+  body:has(.detail-page) .site-footer { display: none; }
+}
