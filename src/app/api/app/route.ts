@@ -1,4 +1,5 @@
 import { continuityContext, acceptConversation } from '@/lib/continuity';
+import { evolveMonologue } from '@/lib/monologue';
 import { reachPreferences, archiveConversation, loadMind, saveMind } from '@/lib/continuity-store';
 import { NextResponse, after } from 'next/server';
 import { z } from 'zod';
@@ -462,6 +463,13 @@ export async function POST(request: Request) {
             client,
           );
           await acceptConversation(latest, owner, userMessage, answers, result.mind, now, client);
+          if ((result.mind?.observations?.length ?? 0) > 0 || (latest.brain.sessions % 3 === 0)) {
+            const evolved = evolveMonologue(latest);
+            if (evolved && evolved !== latest.monologue) {
+              latest.monologue = evolved;
+              await saveCharacter(latest, client);
+            }
+          }
         });
         if (latest.entityKey && latest.published)
           after(() => autoCheckpoint(latest.id, owner).catch((error) =>

@@ -32,6 +32,8 @@ import {
   Save,
   Info,
   Sliders,
+  UserCheck,
+  Globe,
 } from 'lucide-react';
 import { lifecycle, shortAddress, type Character, type Message } from '@/lib/domain';
 import { api } from '@/lib/client';
@@ -45,6 +47,8 @@ import { validateSpeechTrack, type SpeechTrack } from '@/lib/lip-sync';
 import type { Address, Hex } from 'viem';
 import EnsPassportModal from './ens-passport-modal';
 import { EnsBadge } from './ens-badge';
+import { characterSubname } from '@/lib/ens';
+import { getMonologue } from '@/lib/monologue';
 export default function CharacterView({
   c,
   owner,
@@ -89,7 +93,7 @@ export default function CharacterView({
   const [transfer, setTransfer] = useState(autoTransfer);
   const [offer, setOffer] = useState(false);
   const [auditionOpen, setAuditionOpen] = useState(false);
-  const [introduction, setIntroduction] = useState('');
+  const [introduction, setIntroduction] = useState(() => getMonologue(c));
   const [memory, setMemory] = useState(false);
   const [memoryText, setMemoryText] = useState('');
   const [scope, setScope] = useState<'private' | 'public'>('private');
@@ -581,15 +585,27 @@ export default function CharacterView({
             )}
           </div>
           <div className="character-bio">
-            <div className="eyebrow">
-              {own
-                ? 'YOUR LITTLE SOMEONE'
-                : `CULTIVATED BY ${c.creator === 'MitrAI studio' ? 'MITRAI STUDIO' : shortAddress(c.creator)}`}
+            <div className="ownership-ens-header">
+              <span className="owner-badge-pill">
+                <UserCheck size={13} />
+                <span>{own ? 'Your MitrAI' : c.owner === 'studio' ? 'MitrAI Studio (Unclaimed)' : `Owner: ${shortAddress(c.owner)}`}</span>
+              </span>
+              <button
+                type="button"
+                className="ens-badge-btn"
+                onClick={() => setEnsModal(true)}
+                title="View ENS Agent Passport"
+              >
+                <Globe size={13} />
+                <span>{characterSubname(c)}</span>
+              </button>
               {c.availability === 'showcase' && l.alive && (
                 <span className="showcase-status">Showcase only</span>
               )}
+              {c.availability === 'transfer' && l.alive && (
+                <span className="showcase-status adoptable">Open to adoption</span>
+              )}
             </div>
-            {!own && <p className="muted small-text">Current owner: {shortAddress(c.owner)}</p>}
             <h1>
               {c.name}
               <span>✳</span>
@@ -773,7 +789,7 @@ export default function CharacterView({
                     <Sparkles size={16} color="#d97706" />
                     <h3 style={{ margin: 0 }}>Inner Monologue · Spoken Soliloquy</h3>
                   </div>
-                  <p>{introduction || c.description}</p>
+                  <p>{introduction || getMonologue(c)}</p>
                   <button
                     className="button secondary"
                     disabled={speechLoading || speaking}
@@ -791,13 +807,14 @@ export default function CharacterView({
                         setIntroduction(d.text);
                         await speak(d.text, undefined, undefined, d.speech);
                       } catch (e) {
-                        setSpeechLoading(false);
                         notify((e as Error).message);
+                      } finally {
+                        setSpeechLoading(false);
                       }
                     }}
                   >
                     <Volume2 size={16} />
-                    {speechLoading ? 'Preparing monologue…' : 'Listen to Inner Monologue'}
+                    {speechLoading ? 'Preparing voice…' : speaking ? 'Speaking…' : 'Listen to Inner Monologue'}
                   </button>
                   <button className="text-link" onClick={() => setAuditionOpen((v) => !v)}>
                     {auditionOpen ? 'Close audition chat' : 'Try a short preview chat'}

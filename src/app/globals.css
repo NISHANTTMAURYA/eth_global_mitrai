@@ -1419,8 +1419,78 @@ p {
 .character-bio {
   padding: 25px;
 }
+.ownership-ens-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.owner-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1f2937;
+}
+.ens-badge-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #f5f3ff;
+  border: 1px solid #ddd6fe;
+  color: #6d28d9;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Space Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.ens-badge-btn:hover {
+  background: #ede9fe;
+  transform: translateY(-1px);
+}
+.card-ens-owner-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin: 10px 0 6px;
+  padding-top: 10px;
+  border-top: 1px dashed #e5e7eb;
+}
+.card-owner-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #4b5563;
+  font-weight: 500;
+}
+.card-ens-subname-btn {
+  background: #f5f3ff;
+  color: #6d28d9;
+  border: 1px solid #ddd6fe;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  font-family: 'Space Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.card-ens-subname-btn:hover {
+  background: #ede9fe;
+}
 .character-bio .eyebrow {
-  font-size: 7px;
+  font-size: 11px;
   letter-spacing: 1.3px;
 }
 .character-bio h1 {

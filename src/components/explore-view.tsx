@@ -23,6 +23,7 @@ import { lipSyncRank, models } from '@/lib/models';
 import { Stage, Flower, TimeLeft, LifecyclePill } from './ui';
 import { EnsBadge } from './ens-badge';
 import EnsPassportModal from './ens-passport-modal';
+import { characterSubname } from '@/lib/ens';
 export default function ExploreView({
   characters,
   loading,
@@ -204,20 +205,28 @@ export default function ExploreView({
           <div className="section-heading">
             <div>
               <p className="eyebrow">
-                {legacyOnly ? 'THE LEGACY COLLECTION' : 'MEET YOUR NEXT CHAPTER'}
+                {legacyOnly
+                  ? 'THE LEGACY COLLECTION'
+                  : filter === 'Owned by Others'
+                    ? 'STEWARDED BY WEB3 COLLECTORS'
+                    : 'MEET YOUR NEXT CHAPTER'}
               </p>
               <h2>
                 {legacyOnly
                   ? 'Lives that left a mark.'
-                  : templatesOnly
-                    ? 'Available beginnings.'
-                    : 'Meet the community.'}
+                  : filter === 'Owned by Others'
+                    ? 'Companions Owned by Others'
+                    : templatesOnly
+                      ? 'Available beginnings.'
+                      : 'Meet the community.'}
               </h2>
             </div>
             <span className="collection-count">
-              {templatesOnly
-                ? 'Each appearance can begin one story.'
-                : `${visible.length} ${legacyOnly ? 'legacies' : 'personas'} to discover`}
+              {filter === 'Owned by Others'
+                ? `${visible.length} community companions · inspect their ENS passports & inner monologues`
+                : templatesOnly
+                  ? 'Each appearance can begin one story.'
+                  : `${visible.length} ${legacyOnly ? 'legacies' : 'personas'} to discover`}
             </span>
           </div>
           <div className="discover-controls">
@@ -402,13 +411,31 @@ function CharacterCard({
             <span key={t}>{t}</span>
           ))}
         </div>
+        <div className="card-ens-owner-bar">
+          <span className="card-owner-tag">
+            <Globe2 size={12} />
+            {mine ? 'Owned by You' : c.owner !== 'studio' ? `Owner: ${shortAddress(c.owner)}` : 'MitrAI Studio'}
+          </span>
+          <button
+            type="button"
+            className="card-ens-subname-btn"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onOpenEns?.(c);
+            }}
+            title="Inspect ENS Agent Passport"
+          >
+            {characterSubname(c)}
+          </button>
+        </div>
         <div className="card-bottom">
           <span>
-            {mine
-              ? 'Owned by you'
-              : c.owner !== 'studio'
-                ? `Current owner: ${shortAddress(c.owner)}`
-                : 'MitrAI Studio (Unclaimed)'}
+            {c.availability === 'transfer'
+              ? 'Ready for Arkiv Handover'
+              : c.availability === 'offers'
+                ? 'Open to Enquiries'
+                : 'Active Living Companion'}
           </span>
           <span>
             <Sparkles size={12} />

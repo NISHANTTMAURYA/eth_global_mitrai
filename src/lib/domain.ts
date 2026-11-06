@@ -37,6 +37,7 @@ export type Character = {
   activation?: 'draft' | 'submitted' | 'active' | 'cancelled';
   birth?: { at: number; blockNumber: string };
   draftAt?: number;
+  monologue?: string;
 };
 export type Message = {
   id: string;

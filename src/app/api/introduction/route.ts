@@ -5,8 +5,8 @@ import { getCharacter } from '@/lib/store';
 import { assertAlive, publicCharacter } from '@/lib/domain';
 import { readArkivCharacter } from '@/lib/arkiv';
 import { verifySnapshot } from '@/lib/proof';
-import { reply } from '@/lib/chat';
 import { generateSpeech } from '@/lib/speech-audio';
+import { getMonologue } from '@/lib/monologue';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 const cache = new Map<string, { at: number; body: unknown }>(),
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
       now = Date.now(),
       previous = requests.get(ip);
     if (previous && now - previous.at < 60000) {
-      if (++previous.n > 8) throw new Error('Please wait a moment before another introduction.');
+      if (++previous.n > 20) throw new Error('Please wait a moment before another introduction.');
     } else requests.set(ip, { at: now, n: 1 });
     for (const [key, v] of requests) if (now - v.at > 60000) requests.delete(key);
     const id = z
@@ -39,22 +39,16 @@ export async function POST(request: Request) {
       )
         throw new Error('The public story is not available.');
       proof = remote.proof;
-      c = { ...publicCharacter(remote.character), entityKey: c.entityKey, birth: remote.birth };
+      c = { ...publicCharacter(remote.character), entityKey: c.entityKey, birth: remote.birth, monologue: c.monologue };
     }
     assertAlive(c);
-    const key = `${id}:${proof}:${c.brain.version}`,
-      saved = cache.get(key);
-    if (saved && now - saved.at < 300000) return NextResponse.json(saved.body);
-    const result = await reply(
-      publicCharacter(c),
-      'Give a brief first-person public introduction in 45–60 words. Express your actual configured personality. You may mention an approved public memory if one exists. Do not invent shared experiences, ask questions, or claim private knowledge. This is a one-way introduction for a visitor, not a conversation.',
-      [],
-      true,
-    );
-    const text = result.messages.map((m) => m.text).join(' '),
-      speech = await generateSpeech(text, c.voice);
+    const text = getMonologue(c);
+    const key = `mono:${id}:${c.voice}:${text}`;
+    const saved = cache.get(key);
+    if (saved && now - saved.at < 600000) return NextResponse.json(saved.body);
+    const speech = await generateSpeech(text, c.voice);
     assertAlive(c);
-    const body = { text, speech, provider: result.provider };
+    const body = { text, speech, provider: 'Stored Monologue' };
     cache.set(key, { at: now, body });
     if (cache.size > 100) cache.delete(cache.keys().next().value!);
     return NextResponse.json(body, { headers: { 'Cache-Control': 'no-store' } });
