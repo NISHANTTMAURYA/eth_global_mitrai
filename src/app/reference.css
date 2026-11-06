@@ -704,12 +704,30 @@ body:has(.detail-page) .brand { color: #1e211b; }
 }
 .detail-page .workspace-tabs button,
 .detail-page .workspace-tabs button.active {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  padding: 12px 8px;
+  gap: 6px;
+  padding: 12px 6px;
   background: transparent;
   border: 0;
   min-width: 0;
+  white-space: nowrap;
   transition: color 180ms ease, transform 160ms ease;
+}
+.tab-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #e86e27;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
 }
 .detail-page .workspace-tabs button::after { content: none; display: none; }
 .detail-page .workspace-tabs button:hover { color: #e86e27; transform: translateY(-2px); }

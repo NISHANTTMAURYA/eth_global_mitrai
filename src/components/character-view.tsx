@@ -731,18 +731,18 @@ export default function CharacterView({
             }
           >
             {[
-              { id: 'conversation', label: 'Chat', icon: Heart },
-              { id: 'mind', label: 'The mind', icon: Brain },
+              { id: 'conversation', label: 'Chat', icon: Heart, badge: 0 },
+              { id: 'mind', label: 'The mind', icon: Brain, badge: 0 },
               {
                 id: 'story',
-                label:
-                  own && incoming.some((r) => ['pending', 'accepted'].includes(r.status))
-                    ? `Their story · ${incoming.filter((r) => ['pending', 'accepted'].includes(r.status)).length} requests`
-                    : 'Their story',
+                label: 'Their story',
                 icon: BookOpen,
+                badge: own
+                  ? incoming.filter((r) => ['pending', 'accepted'].includes(r.status)).length
+                  : 0,
               },
-              { id: 'community', label: 'Community', icon: Globe2 },
-              { id: 'history', label: 'Provenance', icon: History },
+              { id: 'community', label: 'Community', icon: Globe2, badge: 0 },
+              { id: 'history', label: 'Provenance', icon: History, badge: 0 },
             ].map((t) => (
               <button
                 key={t.id}
@@ -752,7 +752,15 @@ export default function CharacterView({
                 className={tab === t.id ? 'active' : ''}
               >
                 <t.icon size={16} />
-                {t.label}
+                <span>{t.label}</span>
+                {t.badge > 0 && (
+                  <span
+                    className="tab-pill-badge"
+                    title={`${t.badge} pending adoption request${t.badge > 1 ? 's' : ''}`}
+                  >
+                    {t.badge}
+                  </span>
+                )}
               </button>
             ))}
           </div>
