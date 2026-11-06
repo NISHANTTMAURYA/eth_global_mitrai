@@ -127,6 +127,11 @@ export function seeds(): Character[] {
     Characters_GermanShepherd: ['Sable', 'Loyal listener, keen observer.', 'An attentive shepherd companion who notices details in shared stories.', ['Loyal', 'Observant']],
     Characters_Pug: ['Pogo', 'A cheerful friend with comic timing.', 'A playful pug who brings warmth and lighthearted curiosity.', ['Play', 'Warm']],
     'character-female-a': ['Nova', 'A curious explorer in motion.', 'An energetic explorer who turns new challenges into small adventures.', ['Explorer', 'Creative']],
+    'gobkit:corgi': ['Coco', 'A tiny friend with a big heart.', 'A cheerful corgi companion who loves walks, stories, and meeting new people.', ['Corgi', 'Play']],
+    'gobkit:duck': ['Ducky', 'Small steps, happy ripples.', 'A curious duck who explores ponds and asks gentle questions along the way.', ['Duck', 'Curious']],
+    'gobkit:hippo': ['Hugo', 'A soft giant with patient thoughts.', 'A warm hippo companion who brings calm energy to big ideas.', ['Hippo', 'Calm']],
+    'gobkit:chick': ['Pip', 'A new day is a new adventure.', 'A bright little chick who celebrates tiny discoveries and brave first tries.', ['Chick', 'Bright']],
+    'gobkit:hare': ['Hazel', 'Quick feet, thoughtful pauses.', 'A lively hare companion who enjoys imaginative trails and thoughtful conversations.', ['Hare', 'Imaginative']],
   };
   return [...studio, ...models.filter((m) => showcaseModelIds.has(m.id)).map((m, i) => {
     const [name, tagline, description, tags] = labels[m.id.slice(9)];
@@ -140,5 +145,14 @@ export function seeds(): Character[] {
       brain: initialBrain(), highlights: [`A first ${tags[0].toLowerCase()} conversation is waiting`],
       history: [{ at: createdAt, text: `${name} began its story` }], demo: true,
     } satisfies Character;
+  }), ...models.filter((m) => m.id.startsWith('gobkit:')).map((m, i) => {
+    const [name, tagline, description, tags] = labels[m.id];
+    const createdAt = now - (i + 1) * 60_000;
+    return { id: `studio-${m.id.replace(':','-')}`, name, tagline, description,
+      behavior: `Be warm, curious, concise, and playful. Invite visitors into a shared story.`,
+      model: m.id, tags, owner: 'studio', creator: 'MitrAI studio', createdAt,
+      lifespan: 30 * 86400000, published: true, availability: 'showcase' as const,
+      brain: initialBrain(), highlights: ['A first friendly conversation is waiting'],
+      history: [{ at: createdAt, text: `${name} began its story` }], demo: true } satisfies Character;
   })];
 }

@@ -2,6 +2,11 @@ export const models = [
   { id: 'robot', name: 'Little robot', file: 'robot-expressive.glb' },
   { id: 'human', name: 'Human explorer', file: 'pixiv-sample.vrm' },
   { id: 'fox', name: 'Fox', file: 'fox.glb' },
+  { id: 'gobkit:corgi', name: 'Corgi', file: 'gobkit/corgi.glb' },
+  { id: 'gobkit:duck', name: 'Duck', file: 'gobkit/duck.glb' },
+  { id: 'gobkit:hippo', name: 'Hippo', file: 'gobkit/hippo.glb' },
+  { id: 'gobkit:chick', name: 'Chick', file: 'gobkit/chick.glb' },
+  { id: 'gobkit:hare', name: 'Hare', file: 'gobkit/hare.glb' },
   ...[
     '09_CactusBoy', '100_SaintClaus', '15_Nightmare', '19_Wizzir',
     '23_Carrot_Kid', '27_Astrodisco', '30_Bloody', '32_Clown',

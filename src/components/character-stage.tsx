@@ -91,7 +91,7 @@ function Character({
   useEffect(() => {
     if (!gestureKey || legacy) return;
     wavingUntil.current = time.current + 2.5;
-    const clip = actions[gesture];
+    const clip = actions[gesture] || (model.startsWith('gobkit:') ? actions.attack : undefined);
     if (clip) {
       const idle = actions[model === 'fox' ? 'Survey' : 'Idle'] || actions.idle;
       idle?.fadeOut(0.25);
