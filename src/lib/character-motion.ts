@@ -54,7 +54,7 @@ export function createCompanionClips(root: Object3D): AnimationClip[] {
 
 export function companionAction(names: string[], kind: 'idle' | 'greeting') {
   const preferences = kind === 'idle'
-    ? ['CompanionIdle', 'Idle', 'idle', 'Survey']
+    ? ['LibraryIdle', 'CompanionIdle', 'Idle', 'idle', 'Survey']
     : ['CompanionWave', 'Wave', 'wave', 'Yes', 'emote-yes', 'Victory', 'Idle_2', 'walk', 'Survey'];
   return preferences.find((name) => names.includes(name));
 }

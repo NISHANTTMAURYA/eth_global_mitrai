@@ -269,17 +269,30 @@ export default function CharacterView({
                 >
                   <Hand size={18} />
                 </button>
-                {c.model === 'robot' && (
+                {(c.model === 'robot' || /^download:(?:\d+_|Alien)/.test(c.model)) && (
                   <button
                     onClick={() => {
                       setGesture('Dance');
                       setGestureKey((n) => n + 1);
                     }}
                     aria-label="Dance"
+                    title="Dance"
                   >
                     <Music2 size={18} />
                   </button>
                 )}
+                {/^download:\d+_/.test(c.model) && [
+                  { name: 'Charleston', label: 'Charleston dance', icon: Music2 },
+                  { name: 'Clap', label: 'Clap', icon: Hand },
+                  { name: 'Bow', label: 'Take a bow', icon: Heart },
+                  { name: 'Think', label: 'Thinking', icon: Brain },
+                ].map((motion) => (
+                  <button key={motion.name} title={motion.label} aria-label={motion.label}
+                    onClick={() => { setGesture(motion.name); setGestureKey((n) => n + 1); }}>
+                    <motion.icon size={18} />
+                    <span className="motion-label">{motion.name}</span>
+                  </button>
+                ))}
                 <button
                   onClick={greeting ? stopSpeech : playGreeting}
                   aria-label={greeting ? 'Stop greeting' : 'Play prerecorded voice sample'}

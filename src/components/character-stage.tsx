@@ -12,12 +12,16 @@ import {
 import { Canvas, useFrame, useLoader } from '@react-three/fiber';
 import { ContactShadows, OrbitControls, useAnimations } from '@react-three/drei';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { VRMLoaderPlugin, type VRM } from '@pixiv/three-vrm';
 import { Box3, Vector3, Group, Mesh, LoopOnce, MathUtils } from 'three';
 import type { ModelId } from '@/lib/domain';
 import { modelPath } from '@/lib/models';
 import { createCompanionClips, companionAction } from '@/lib/character-motion';
+import { libraryMotions, retargetLibraryMotion } from '@/lib/motion-library';
+const motionLoader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+const motionPaths = libraryMotions.map(([file]) => `/animations/mesh2motion/${file}.glb`);
 type Props = {
   model: ModelId;
   speaking?: boolean;
@@ -52,7 +56,8 @@ function Character({
   legacy = false,
   loader,
   onReady,
-}: Props & { loader: GLTFLoader; onReady: () => void }) {
+  library,
+}: Props & { loader: GLTFLoader; onReady: () => void; library?: Awaited<ReturnType<GLTFLoader['loadAsync']>>[] }) {
   const path = modelPath(model);
   const gltf = useLoader(loader, path);
   useEffect(() => {
@@ -61,8 +66,13 @@ function Character({
   const vrm = model === 'human' ? (gltf.userData.vrm as VRM) : undefined;
   const object = useMemo(() => (model === 'human' ? gltf.scene : clone(gltf.scene)), [gltf, model]);
   const group = useRef<Group>(null);
-  const clips = useMemo(() => gltf.animations.length || model === 'human'
-    ? gltf.animations : createCompanionClips(object), [gltf, object, model]);
+  const clips = useMemo(() => {
+    if (library) return library.flatMap((motion, i) => {
+      const clip = retargetLibraryMotion(object, motion.scene, motion.animations[0], libraryMotions[i][1]);
+      return clip ? [clip] : [];
+    });
+    return gltf.animations.length || model === 'human' ? gltf.animations : createCompanionClips(object);
+  }, [gltf, object, model, library]);
   const { actions } = useAnimations(clips, object);
   const idleName = companionAction(clips.map((c) => c.name), 'idle');
   const time = useRef(0);
@@ -71,7 +81,7 @@ function Character({
     const box = new Box3().setFromObject(object);
     const size = box.getSize(new Vector3());
     const center = box.getCenter(new Vector3());
-    const scale = 3.1 / (size.y || 1);
+    const scale = (library ? 2.65 : 3.1) / (size.y || 1);
     return {
       scale,
       position: [-center.x * scale, -box.min.y * scale, -center.z * scale] as [
@@ -80,7 +90,7 @@ function Character({
         number,
       ],
     };
-  }, [object]);
+  }, [object, library]);
   useEffect(() => {
     if (legacy) {
       Object.values(actions).forEach((a) => a?.stop());
@@ -95,7 +105,7 @@ function Character({
   useEffect(() => {
     if (!gestureKey || legacy) return;
     wavingUntil.current = time.current + 2.5;
-    const greetingName = companionAction(clips.map((c) => c.name), 'greeting');
+    const greetingName = gesture === 'Wave' ? companionAction(clips.map((c) => c.name), 'greeting') : undefined;
     const clip = actions[gesture] || (greetingName ? actions[greetingName] : undefined);
     if (clip) {
       const idle = idleName ? actions[idleName] : undefined;
@@ -185,6 +195,10 @@ function Character({
     </group>
   );
 }
+function LibraryCharacter(props: Props & { loader: GLTFLoader; onReady: () => void }) {
+  const library = useLoader(motionLoader, motionPaths);
+  return <Character {...props} library={library} />;
+}
 export default function CharacterStage(props: Props) {
   const loader = useMemo(
     () => new GLTFLoader().register((parser) => new VRMLoaderPlugin(parser)),
@@ -224,7 +238,9 @@ export default function CharacterStage(props: Props) {
             {/* DOM loading UI stays outside Canvas: Drei Html creates another React root. */}
             <Suspense fallback={null}>
               <group position={[0, -1.55, 0]}>
-                <Character {...props} loader={loader} onReady={markReady} />
+                {/^download:(?:\d+_)/.test(props.model)
+                  ? <LibraryCharacter {...props} loader={loader} onReady={markReady} />
+                  : <Character {...props} loader={loader} onReady={markReady} />}
                 <ContactShadows
                   position={[0, 0.005, 0]}
                   opacity={0.22}

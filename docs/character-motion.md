@@ -1,5 +1,15 @@
 # Character motion
 
+## Current library integration
+
+The ten Mixamo-style imported humanoids now use authored Mesh2Motion CC0 clips: idle-subtle, greeting, dance-simple, dance-charleston, clapping, bow and confused. Local GLBs and the upstream licence live in public/animations/mesh2motion. This replaces the earlier simple generated greeting for those rigs. Quaternius Universal Animation Library was also researched; Mesh2Motion provides direct GLBs and explicit CC0 licensing for this integration.
+
+Bone mappings connect Mixamo suffixes to Mesh2Motion's skeleton. The retargeter samples the source animation, transfers bone directions in world space and reconstructs target-local quaternions, preserving target limb lengths and omitting root translation. It covers arms, elbows, hands, fingers, spine, head and legs. This direction-based transfer does not reproduce every axial twist of full motion capture; different proportions can still need visual tuning.
+
+Use the character toolbar for Hi, Dance, Charleston, Clap, Bow and Think. Other models retain their embedded or VRM gestures. Card scale leaves additional gesture margin. The shared motion loader caches downloads and uses MeshoptDecoder.
+
+Tests decode the actual compressed source GLBs and retarget all seven clips onto all ten imported skeletons, checking finite tracks, playback and bent elbows during greeting. An isolated build and typecheck pass. Rendered motion remains unverified under the existing browser preview restriction.
+
 Rigging gives a mesh joints and weights; it still needs motion tracks. Three.js stores those in AnimationClips and plays/blends them with AnimationMixer.
 
 The ten imported Mixamo-style humanoids without clips now receive locally authored `CompanionIdle` and `CompanionWave` clips at load time. Tracks are generated against the cloned rig's actual bone UUIDs and rest quaternions. World directions are converted into each parent's local space. Arms relax from T-pose; the head/chest have small repeating movement; greeting raises the left arm and moves its wrist, then returns to idle. Original GLB files remain unchanged.

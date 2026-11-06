@@ -657,6 +657,9 @@ body:has(.detail-page) .brand { color: #1e211b; }
 }
 
 /* One moving highlight rather than separate tab backgrounds or underlines. */
+.gesture-toolbar { max-width: calc(100% - 28px); overflow-x: auto; }
+.gesture-toolbar button { flex-shrink: 0; }
+.motion-label { font-size: 9px; margin-left: 3px; }
 .character-bio > .eyebrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .showcase-status { flex-shrink: 0; padding: 4px 9px; border-radius: 20px; background: #f1f2e9; color: #777c68; font-size: 9px; font-weight: 500; letter-spacing: 0; text-transform: none; }
 .detail-page .workspace-tabs {

@@ -58,9 +58,9 @@ User requires zero real-money setup. Changed 0G default and configuration links 
 Removed Drei Html from the model Suspense fallback after the reported React synchronous-root-unmount error. Loading text now stays in the existing page DOM outside Canvas; the loaded model signals readiness after commit. Browser reproduction remains unavailable under the earlier preview permission restriction.
 ### Latest implementation
 
-- Bedrock Converse support is implemented in `src/lib/chat.ts` and is selected first when `ENABLE_BEDROCK=true` plus `AWS_BEDROCK_MODEL`.
-- Provider order is Bedrock → optional 0G testnet → clearly labeled scripted demo.
-- AWS credentials are server-only; no key is read by browser code.
+- Google Vertex AI support is implemented in `src/lib/chat.ts` using `@google/genai` in Vertex mode and is selected first when `GEMINI_USE_VERTEX=true` (or `GOOGLE_GENAI_USE_VERTEXAI=true`) with `GOOGLE_CLOUD_PROJECT`.
+- Provider order is Google Vertex AI → optional 0G testnet → clearly labeled scripted demo.
+- Authenticates using Google Cloud Application Default Credentials (ADC); Bedrock implementation and `@aws-sdk/client-bedrock-runtime` removed.
 ### Downloads character expansion
 
 - Copied all 16 skeletal GLB models from Downloads into public/models/downloads; originals preserved.
@@ -90,3 +90,6 @@ Replaced the disabled Showcase only action with a small status badge beside attr
 ### Rig animations
 
 Added rest-pose-aware idle/wave quaternion clips to all ten previously unanimated imported humanoids. Mapped existing friendly greeting clips for other models and removed Gobkit attack as greeting. Two targeted tests pass, including mixer playback across all ten real GLB skeletons. Typecheck and isolated build pass (initial build encountered a local SQLite lock). Browser visual playback remains unverified. See docs/character-motion.md.
+### Authored motion library
+
+Replaced the simple straight-arm greeting on the ten imported humanoids with seven CC0 Mesh2Motion clips. Added Dance, Charleston, Clap, Bow and Think buttons. Bone-direction retargeting preserves target proportions, and card framing leaves more gesture space. Actual source GLB decode/retarget checks pass across all ten skeletons, as do typecheck and isolated production build. Browser visual validation remains pending.
