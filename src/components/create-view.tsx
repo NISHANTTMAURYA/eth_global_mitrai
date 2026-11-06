@@ -14,7 +14,19 @@ import {
   Play,
   Square,
   Volume2,
+  Brain,
+  Music2,
+  Heart,
+  Sparkle,
+  Lightbulb,
+  PartyPopper,
+  Armchair,
+  ThumbsUp,
+  ThumbsDown,
+  WandSparkles,
+  Globe,
 } from 'lucide-react';
+import { characterSubname } from '@/lib/ens';
 import { type Character, type ModelId } from '@/lib/domain';
 import { api } from '@/lib/client';
 import { Stage, Flower } from './ui';
@@ -23,6 +35,25 @@ import { VOICES, defaultVoiceForModel } from '@/lib/voices';
 import { activateCharacter } from '@/lib/activate-character';
 import { templates, type PersonaTemplate } from '@/lib/templates';
 import { useTemplates } from '@/lib/use-templates';
+import { availableGestures } from '@/lib/conversation';
+import { validateSpeechTrack, type SpeechTrack } from '@/lib/lip-sync';
+
+const gestureDetails: Record<string, { label: string; icon: typeof Hand }> = {
+  Wave: { label: 'Wave hello', icon: Hand },
+  Dance: { label: 'Dance', icon: Music2 },
+  Charleston: { label: 'Charleston', icon: Music2 },
+  Clap: { label: 'Clap', icon: Hand },
+  Bow: { label: 'Bow', icon: Heart },
+  Think: { label: 'Think', icon: Brain },
+  Jump: { label: 'Jump', icon: Sparkle },
+  Sit: { label: 'Sit', icon: Armchair },
+  ArmPump: { label: 'Arm pump', icon: PartyPopper },
+  BodyRoll: { label: 'Body roll', icon: Music2 },
+  HipDance: { label: 'Hip dance', icon: Music2 },
+  Yes: { label: 'Yes', icon: ThumbsUp },
+  No: { label: 'No', icon: ThumbsDown },
+  ThumbsUp: { label: 'Thumbs up', icon: ThumbsUp },
+};
 export default function CreateView({
   owner,
   mine,
@@ -55,7 +86,14 @@ export default function CreateView({
   const [model, setModel] = useState<ModelId>('robot');
   const [voice, setVoice] = useState<string>('shubh');
   const [playingVoice, setPlayingVoice] = useState<string | null>(null);
-  const previewAudio = useRef<HTMLAudioElement | null>(null);
+  const [voicePreviewLoading, setVoicePreviewLoading] = useState(false);
+  const [previewSpeech, setPreviewSpeech] = useState<{
+    audio: { currentTime: number; paused: boolean; ended: boolean };
+    track: SpeechTrack;
+  } | null>(null);
+  const previewAudioContext = useRef<AudioContext | null>(null);
+  const previewSource = useRef<AudioBufferSourceNode | null>(null);
+  const previewSequence = useRef(0);
   const userChoseVoice = useRef(false);
   const [name, setName] = useState(starter.name);
   const [tagline, setTagline] = useState(starter.tagline);
@@ -67,10 +105,16 @@ export default function CreateView({
   const [agree, setAgree] = useState(false);
   const [saving, setSaving] = useState(false);
   const [gesture, setGesture] = useState(0);
+  const [previewMotion, setPreviewMotion] = useState('Wave');
+  const [customCharacterNote, setCustomCharacterNote] = useState(false);
+  const selectedTemplate = templates.find((t) => t.model === model) ?? starter;
+  const selectedGestures = [...new Set(['Wave', ...availableGestures(model)])];
 
   useEffect(() => {
     return () => {
-      previewAudio.current?.pause();
+      previewSequence.current++;
+      previewSource.current?.stop();
+      void previewAudioContext.current?.close();
     };
   }, []);
 
@@ -102,21 +146,74 @@ export default function CreateView({
     );
   }, [name, tagline, description, behavior, model, voice, tags]);
 
-  const toggleVoicePreview = (id: string, previewUrl: string) => {
+  const stopVoicePreview = () => {
+    previewSequence.current++;
+    previewSource.current?.stop();
+    previewSource.current = null;
+    setPreviewSpeech(null);
+    setPlayingVoice(null);
+    setVoicePreviewLoading(false);
+  };
+  const toggleVoicePreview = async (id: string) => {
     if (playingVoice === id) {
-      previewAudio.current?.pause();
-      setPlayingVoice(null);
+      stopVoicePreview();
       return;
     }
-    if (previewAudio.current) {
-      previewAudio.current.pause();
-    }
-    const player = new Audio(previewUrl);
-    previewAudio.current = player;
-    player.onended = () => setPlayingVoice(null);
-    player.onerror = () => setPlayingVoice(null);
-    player.play().catch(() => setPlayingVoice(null));
+    previewSequence.current++;
+    const sequence = previewSequence.current;
+    previewSource.current?.stop();
+    previewSource.current = null;
+    setPreviewSpeech(null);
+    userChoseVoice.current = true;
+    setVoice(id);
     setPlayingVoice(id);
+    setVoicePreviewLoading(true);
+    try {
+      const context = previewAudioContext.current ?? new AudioContext();
+      previewAudioContext.current = context;
+      if (context.state !== 'running') await context.resume();
+      const response = await fetch('/api/voice-preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ voice: id, name }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not prepare the synchronized voice preview.');
+      const encoded = String(data.audio || '').split(',')[1];
+      if (!encoded) throw new Error('Voice preview returned no audio.');
+      const bytes = Uint8Array.from(atob(encoded), (ch) => ch.charCodeAt(0));
+      const buffer = await context.decodeAudioData(bytes.buffer);
+      if (sequence !== previewSequence.current) return;
+      const source = context.createBufferSource();
+      source.buffer = buffer;
+      source.connect(context.destination);
+      previewSource.current = source;
+      const started = context.currentTime;
+      let ended = false;
+      const audioClock = {
+        get currentTime() { return context.currentTime - started; },
+        paused: false,
+        get ended() { return ended; },
+      };
+      source.onended = () => {
+        ended = true;
+        if (sequence === previewSequence.current) {
+          setPreviewSpeech(null);
+          setPlayingVoice(null);
+          setVoicePreviewLoading(false);
+          previewSource.current = null;
+        }
+      };
+      setPreviewSpeech({ audio: audioClock, track: validateSpeechTrack(data) });
+      setVoicePreviewLoading(false);
+      source.start();
+    } catch (error) {
+      if (sequence !== previewSequence.current) return;
+      setPreviewSpeech(null);
+      setPlayingVoice(null);
+      setVoicePreviewLoading(false);
+      notify(error instanceof Error ? error.message : 'Could not prepare the synchronized voice preview.');
+    }
   };
   const next = () => {
     if (
@@ -320,6 +417,41 @@ export default function CreateView({
                 })}
               </div>
 
+              <button
+                type="button"
+                className="custom-character-teaser"
+                onClick={() => setCustomCharacterNote((open) => !open)}
+                aria-expanded={customCharacterNote}
+              >
+                <span className="custom-character-icon"><WandSparkles size={19} /></span>
+                <span><strong>Create your own character</strong><small>Start from a blank design · Coming soon</small></span>
+                <ArrowRight size={16} />
+              </button>
+              {customCharacterNote && (
+                <p className="custom-character-note" role="status">
+                  Blank character design is on the way. For now, choose any available beginning and make the name, story, behavior, traits, and voice your own.
+                </p>
+              )}
+
+              <section className="template-preview-card" aria-label={`${selectedTemplate.name} character preview`}>
+                <div className="template-preview-copy">
+                  <span className="eyebrow">A LITTLE ABOUT THIS ONE</span>
+                  <h3>{selectedTemplate.name}</h3>
+                  <p className="template-preview-tagline">{selectedTemplate.tagline}</p>
+                  <p>{selectedTemplate.description}</p>
+                  <p className="template-learns"><Sparkles size={15} /> They learn from your conversations over time. You can edit their name, introduction, story, behavior, and starting traits.</p>
+                </div>
+                <div className="starter-brain" aria-label={`Starting mind: curiosity ${selectedTemplate.traits.curiosity} percent, warmth ${selectedTemplate.traits.warmth} percent, playfulness ${selectedTemplate.traits.playfulness} percent`}>
+                  <div className="starter-brain-orbit orbit-one" />
+                  <div className="starter-brain-orbit orbit-two" />
+                  <div className="starter-brain-core"><Brain size={24} /></div>
+                  <span className="brain-node node-curiosity"><Lightbulb size={13} /><b>{selectedTemplate.traits.curiosity}</b></span>
+                  <span className="brain-node node-warmth"><Heart size={13} /><b>{selectedTemplate.traits.warmth}</b></span>
+                  <span className="brain-node node-play"><Sparkles size={13} /><b>{selectedTemplate.traits.playfulness}</b></span>
+                  <small>STARTING MIND</small>
+                </div>
+              </section>
+
               <label>
                 Name
                 <input
@@ -328,6 +460,10 @@ export default function CreateView({
                   maxLength={32}
                   placeholder="Something that feels like them"
                 />
+                <span className="ens-creation-preview">
+                  <Globe size={11} />
+                  <span>ENS Subname: <strong>{characterSubname({ name })}</strong></span>
+                </span>
               </label>
               <label>
                 A little introduction
@@ -397,8 +533,8 @@ export default function CreateView({
               <label>
                 Choose their voice
                 <small>
-                  Listen to a sample and choose the voice you like. Voices can be used by more than
-                  one MitrAI.
+                  Preview each voice with your character’s lip-sync, then choose one. Voices can be
+                  used by more than one MitrAI.
                 </small>
               </label>
               <div className="voice-options">
@@ -407,6 +543,7 @@ export default function CreateView({
                     key={v.id}
                     className={`voice-card ${voice === v.id ? 'chosen' : ''}`}
                     onClick={() => {
+                      if (playingVoice && playingVoice !== v.id) stopVoicePreview();
                       userChoseVoice.current = true;
                       setVoice(v.id);
                     }}
@@ -419,14 +556,16 @@ export default function CreateView({
                         className={`voice-play-btn ${playingVoice === v.id ? 'playing' : ''}`}
                         onClick={(e) => {
                           e.stopPropagation();
-                          toggleVoicePreview(v.id, v.previewUrl);
+                          void toggleVoicePreview(v.id);
                         }}
                         aria-label={
                           playingVoice === v.id ? `Stop ${v.name}` : `Listen to ${v.name}`
                         }
-                        title={`Listen to sample (${v.name})`}
+                        title={`Preview ${v.name} with lip-sync`}
                       >
-                        {playingVoice === v.id ? (
+                        {voicePreviewLoading && playingVoice === v.id ? (
+                          <Loader2 size={11} className="spin" />
+                        ) : playingVoice === v.id ? (
                           <Square size={11} fill="currentColor" />
                         ) : (
                           <Play size={11} fill="currentColor" />
@@ -520,14 +659,36 @@ export default function CreateView({
         <aside className="creation-preview">
           <div className="preview-stage palette-1">
             <span className="preview-label">LIVE CHARACTER PREVIEW</span>
-            <Stage model={model} gesture="Wave" gestureKey={gesture} />
-            <button
-              className="preview-wave button secondary"
-              onClick={() => setGesture((g) => g + 1)}
-            >
-              <Hand size={15} />
-              Say hello
-            </button>
+            <Stage
+              model={model}
+              gesture={previewMotion}
+              gestureKey={gesture}
+              speaking={!!previewSpeech}
+              speech={previewSpeech}
+            />
+            <div className="preview-motion-toolbar" aria-label="Character animations">
+              {selectedGestures.map((name) => {
+                const detail = gestureDetails[name] ?? { label: name, icon: Sparkles };
+                const Icon = detail.icon;
+                return (
+                  <button
+                    type="button"
+                    key={name}
+                    title={detail.label}
+                    aria-label={detail.label}
+                    aria-pressed={previewMotion === name}
+                    className={previewMotion === name ? 'active' : ''}
+                    onClick={() => {
+                      setPreviewMotion(name);
+                      setGesture((n) => n + 1);
+                    }}
+                  >
+                    <Icon size={17} />
+                    <span>{detail.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
           <div className="preview-caption">
             <span className="pill">A spark, for now</span>

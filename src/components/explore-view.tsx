@@ -21,6 +21,8 @@ import { lifecycle, shortAddress, type Character } from '@/lib/domain';
 import { api } from '@/lib/client';
 import { lipSyncRank, models } from '@/lib/models';
 import { Stage, Flower, TimeLeft, LifecyclePill } from './ui';
+import { EnsBadge } from './ens-badge';
+import EnsPassportModal from './ens-passport-modal';
 export default function ExploreView({
   characters,
   loading,
@@ -39,6 +41,7 @@ export default function ExploreView({
   notify: (s: string) => void;
 }) {
   const [query, setQuery] = useState('');
+  const [ensCharacter, setEnsCharacter] = useState<Character | null>(null);
   const templatesOnly = !legacyOnly && !characters.some((c) => c.published && lifecycle(c).alive);
   const [filter, setFilter] = useState('All characters');
   const [syncing, setSyncing] = useState(false);
@@ -223,7 +226,12 @@ export default function ExploreView({
           ) : visible.length ? (
             <div className="character-grid">
               {visible.map((c, i) => (
-                <CharacterCard key={c.id} c={c} index={i} />
+                <CharacterCard
+                  key={c.id}
+                  c={c}
+                  index={i}
+                  onOpenEns={(char) => setEnsCharacter(char)}
+                />
               ))}
             </div>
           ) : !legacyOnly && !characters.some((c) => c.entityKey && !c.demo) ? (
@@ -291,10 +299,21 @@ export default function ExploreView({
           </section>
         )}
       </div>
+      {ensCharacter && (
+        <EnsPassportModal character={ensCharacter} close={() => setEnsCharacter(null)} />
+      )}
     </GalleryRenderer>
   );
 }
-function CharacterCard({ c, index }: { c: Character; index: number }) {
+function CharacterCard({
+  c,
+  index,
+  onOpenEns,
+}: {
+  c: Character;
+  index: number;
+  onOpenEns?: (char: Character) => void;
+}) {
   return (
     <article className="character-card">
       <Link
@@ -335,7 +354,8 @@ function CharacterCard({ c, index }: { c: Character; index: number }) {
         </div>
         <p>{c.tagline}</p>
         <div className="tags">
-          {c.tags.slice(0, 3).map((t) => (
+          <EnsBadge character={c} compact onClick={() => onOpenEns?.(c)} />
+          {c.tags.slice(0, 2).map((t) => (
             <span key={t}>{t}</span>
           ))}
         </div>

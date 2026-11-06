@@ -3277,3 +3277,239 @@ p {
 .create-page .model-options {max-height:330px;overflow-y:auto;overscroll-behavior:contain;padding:3px;grid-template-columns:repeat(2,minmax(0,1fr));}
 .create-page .model-options button {min-height:68px;}
 @media(max-width:520px){.create-page .model-options {max-height:265px;}}
+
+/* Character picker: template personality, starting mind, and real motion preview. */
+.custom-character-teaser {display:flex;align-items:center;gap:12px;width:100%;margin:-6px 0 22px;padding:14px 16px;border:1px dashed #d9d9cf;border-radius:15px;background:linear-gradient(110deg,#fbfaf5,#fff);text-align:left;color:inherit;cursor:pointer;}
+.custom-character-teaser:hover {border-color:#e6a079;background:#fff9f4;}
+.custom-character-teaser>span:nth-child(2) {display:flex;flex:1;flex-direction:column;gap:4px;}
+.custom-character-teaser strong {font-size:12px;font-weight:600;}
+.custom-character-teaser small,.custom-character-note {font-size:10px;color:var(--muted);}
+.custom-character-icon {width:35px;height:35px;display:grid;place-items:center;border-radius:11px;background:#fff1e7;color:#d56d48;}
+.custom-character-teaser>svg {color:#9a9b8d;}
+.custom-character-note {margin:-13px 0 20px;padding:11px 13px;background:#f8f7f1;border-radius:11px;line-height:1.6;}
+.template-preview-card {display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:14px 22px;padding:21px;margin:0 0 23px;border:1px solid #e7e9df;border-radius:19px;background:radial-gradient(ellipse at 100% 0%,#f5f5e9 0%,transparent 47%),#fbfcf8;}
+.template-preview-copy .eyebrow {font-size:8px;letter-spacing:1.3px;color:#8a907e;}
+.template-preview-copy h3 {font-size:23px;letter-spacing:-.5px;margin:8px 0 2px;}
+.template-preview-copy p {margin:6px 0 0;font-size:11px;line-height:1.65;color:#73796d;}
+.template-preview-copy .template-preview-tagline {color:#353b31;font-size:12px;font-weight:500;}
+.template-preview-copy .template-learns {display:flex;align-items:flex-start;gap:7px;margin-top:13px;color:#567047;}
+.template-preview-copy .template-learns svg {flex-shrink:0;margin-top:1px;}
+.starter-brain {position:relative;min-height:176px;display:grid;place-items:center;overflow:hidden;border-radius:16px;background:linear-gradient(145deg,#eaf3df,#f5f2e5 56%,#e9f1f3);}
+.starter-brain-orbit {position:absolute;width:132px;height:75px;border:1px solid rgba(116,148,101,.38);border-radius:50%;transform:rotate(-32deg);}
+.starter-brain-orbit.orbit-two {width:135px;height:77px;transform:rotate(42deg);border-color:rgba(223,145,103,.35);}
+.starter-brain-core {position:relative;z-index:1;width:56px;height:56px;display:grid;place-items:center;border-radius:50%;background:#fff;color:#6e8855;box-shadow:0 5px 18px #576d3b21;}
+.brain-node {position:absolute;z-index:2;display:flex;align-items:center;gap:3px;padding:4px 6px;border:1px solid #fff;border-radius:20px;background:#ffffffd9;color:#708650;font-size:9px;box-shadow:0 2px 8px #39432712;}
+.brain-node b {font-size:9px;font-weight:600;}
+.node-curiosity {top:20px;left:8px;}.node-warmth {right:6px;top:35px;color:#cb806d;}.node-play {bottom:29px;left:50%;transform:translateX(-50%);color:#b6874b;}
+.starter-brain>small {position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:7px;letter-spacing:1.1px;color:#818879;}
+.preview-motion-toolbar {position:absolute;z-index:5;bottom:12px;left:12px;right:12px;display:flex;align-items:center;gap:5px;overflow-x:auto;overscroll-behavior-x:contain;padding:7px;border:1px solid #ffffffc9;border-radius:28px;background:#ffffffed;box-shadow:0 5px 20px #26351b1c;scrollbar-width:thin;}
+.preview-motion-toolbar button {flex:0 0 auto;display:flex;align-items:center;gap:6px;min-height:34px;padding:6px 10px;border:1px solid transparent;border-radius:22px;background:transparent;color:#707b70;cursor:pointer;font:inherit;transition:background .15s,color .15s;}
+.preview-motion-toolbar button span {font-size:9px;white-space:nowrap;}
+.preview-motion-toolbar button:hover,.preview-motion-toolbar button.active {background:#fff1e8;color:#d76d45;}
+.preview-motion-toolbar button:focus-visible {outline:2px solid #df8b63;outline-offset:1px;}
+@media(max-width:700px){.template-preview-card {grid-template-columns:1fr;}.starter-brain {min-height:160px;}.template-preview-motions>div:first-child {align-items:flex-start;flex-direction:column;gap:4px;}}
+
+/* ENS Agent Subname & Passport styles */
+.ens-subname-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(82, 152, 255, 0.12), rgba(66, 184, 255, 0.06));
+  border: 1px solid rgba(82, 152, 255, 0.35);
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.ens-subname-pill:hover {
+  background: linear-gradient(135deg, rgba(82, 152, 255, 0.22), rgba(66, 184, 255, 0.14));
+  border-color: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+}
+.ens-subname-pill.compact {
+  padding: 2px 7px;
+  font-size: 9px;
+  gap: 3px;
+}
+.ens-subname-icon {
+  color: #3b82f6;
+}
+.ens-subname-label {
+  font-family: var(--font-mono, monospace);
+  letter-spacing: -0.2px;
+}
+.ens-creation-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #2563eb;
+  margin-top: 5px;
+  font-family: monospace;
+}
+.ens-creation-preview strong {
+  color: #1e40af;
+}
+
+/* ENS Passport Modal */
+.ens-passport-container {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 8px 4px;
+}
+.ens-passport-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ens-badge-large {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #bfdbfe;
+  width: fit-content;
+}
+.ens-icon-glow {
+  color: #2563eb;
+}
+.ens-subname-text {
+  font-family: monospace;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e3a8a;
+}
+.ens-verified-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #15803d;
+  background: #dcfce7;
+  padding: 2px 8px;
+  border-radius: 20px;
+  border: 1px solid #bbf7d0;
+}
+.ens-passport-desc {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #4b5563;
+  margin: 0;
+}
+.ens-records-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #ffffff;
+  overflow: hidden;
+}
+.ens-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+}
+.ens-copy-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #2563eb;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+.ens-records-list {
+  display: flex;
+  flex-direction: column;
+}
+.ens-record-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 14px;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 12px;
+}
+.ens-record-row:last-child {
+  border-bottom: none;
+}
+.ens-record-row.highlight {
+  background: #f0fdf4;
+}
+.ens-record-key {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: monospace;
+  font-size: 11px;
+  color: #6b7280;
+}
+.ens-record-val {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #111827;
+}
+.ens-record-val.monospace {
+  font-family: monospace;
+  font-size: 11px;
+  color: #374151;
+}
+.ens-record-val.text-wrap {
+  font-size: 11px;
+  line-height: 1.5;
+  color: #4b5563;
+}
+.icon-copy-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 2px;
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+}
+.icon-copy-btn:hover {
+  color: #2563eb;
+  background: #eff6ff;
+}
+.stage-pill-mini {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: #fef3c7;
+  color: #92400e;
+}
+.ens-subval {
+  font-size: 11px;
+  color: #6b7280;
+}
+.ens-passport-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+

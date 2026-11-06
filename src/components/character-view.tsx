@@ -41,6 +41,8 @@ import { messageBatch } from '@/lib/message-batch';
 import { availableGestures, speechSegments } from '@/lib/conversation';
 import { validateSpeechTrack, type SpeechTrack } from '@/lib/lip-sync';
 import type { Address, Hex } from 'viem';
+import EnsPassportModal from './ens-passport-modal';
+import { EnsBadge } from './ens-badge';
 export default function CharacterView({
   c,
   owner,
@@ -98,6 +100,7 @@ export default function CharacterView({
   const [actionBusy, setActionBusy] = useState(false);
   const [portrait, setPortrait] = useState(true);
   const [greeting, setGreeting] = useState(false);
+  const [ensModal, setEnsModal] = useState(false);
   const end = useRef<HTMLDivElement>(null);
   const audioContext = useRef<AudioContext | null>(null);
   const source = useRef<AudioBufferSourceNode | null>(null);
@@ -429,6 +432,7 @@ export default function CharacterView({
           Back to discovery
         </Link>
         <div className="button-row">
+          <EnsBadge character={c} onClick={() => setEnsModal(true)} />
           {own && l.alive && (
             <button className="button secondary small-button" onClick={() => setPublishing(true)}>
               <Globe2 size={14} />
@@ -552,6 +556,7 @@ export default function CharacterView({
             </h1>
             <p>{c.tagline}</p>
             <div className="tags">
+              <EnsBadge character={c} onClick={() => setEnsModal(true)} />
               {c.tags.map((t) => (
                 <span key={t}>{t}</span>
               ))}
@@ -1250,6 +1255,7 @@ export default function CharacterView({
           </button>
         </Modal>
       )}
+      {ensModal && <EnsPassportModal character={c} close={() => setEnsModal(false)} />}
     </div>
   );
 }

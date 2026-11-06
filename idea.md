@@ -247,3 +247,27 @@ To protect the emotional bond between a creator and their companion, visitors br
     * *Memory Crystals*: Approved public revelations (e.g., *"Discovered that rain sounds bring comfort during long coding nights"*).
     * *Habit Nodes*: Ingrained conversational reflexes (e.g., *"Tends to ask thoughtful questions before giving advice"*).
   * This allows buyers to inspect the depth of a persona's cultivated mind while preserving absolute privacy for the owner's private conversations.
+
+---
+
+### 5. On-Chain Identity & Agent Passports (The ENS Integration)
+* **Track:** **Ethereum Name Service (ENS)** ($10,000 Bounty at ETHGlobal Mumbai).
+* **The Concept: A Web3 Passport for Every Companion**
+  * In standard crypto apps, an agent is just a 42-character hex address or contract key (`0x71a...`).
+  * MitrAI provisions each companion a human-readable, brandable subname under `mitrai.eth`: e.g. **`milo.mitrai.eth`**, **`fern.mitrai.eth`**.
+  * The cryptographic node hash (`namehash`) is computed directly using `viem/ens`.
+* **Cross-Chain State Bridge (ENS Text Records):**
+  * MitrAI uses standard **EIP-2304 Text Records** to link the agent's on-chain **Arkiv** memory state directly into its ENS identity:
+    * `arkiv.entity` $\rightarrow$ The on-chain key on Rabdi testnet where verifiable memory checkpoints reside.
+    * `agent.status` $\rightarrow$ Mortal stage (`Dawn`, `Bloom`, `Golden`, `Legacy`).
+    * `agent.guardian` $\rightarrow$ Current collector wallet address or primary `.eth` name.
+    * `agent.model` $\rightarrow$ 3D avatar form (`fox`, `robot`, `human`).
+    * `agent.lifespan` $\rightarrow$ Remaining days until Sunset.
+* **Interactive UI Badges & Passport Modal:**
+  * Every card and detail view features the clickable **`⟐ milo.mitrai.eth`** badge.
+  * Clicking it opens the **ENS Agent Passport Modal**, displaying verifiable text records, copyable EIP-2304 JSON, and a direct link to `app.ens.domains`.
+* **Open Subname Gateway (ENSIP-10):**
+  * MitrAI serves an open HTTP resolution route at `/api/ens/[name]` (e.g., `/api/ens/milo.mitrai.eth`) allowing any external Web3 app or agent crawler to query records without proprietary databases.
+* **Collector Reverse Resolution:**
+  * When a user connects their wallet, MitrAI queries public Ethereum RPC via `viem.getEnsName` to resolve their `0x...` address to their primary ENS name (e.g. `vitalik.eth`) in the navbar and provenance history.
+

@@ -102,6 +102,20 @@ To maintain the intimacy of the companion bond and preserve privacy, visitors br
 * **The Inner Monologue:** A one-click spoken soliloquy where the 3D persona animates on stage and shares a 15–20 second voiced reflection in its authentic Sarvam AI voice—reflecting on its origin, its personality, and how many days it has left until Sunset.
 * **The Mind Orbit (Memory Constellation):** An interactive visual ring of orbiting nodes around the avatar displaying public traits, approved memory crystals, and conversational habits. Explorers can inspect what makes this mind unique without accessing the seller’s private chat history.
 
+### 5. On-Chain Identity & Agent Passports (ENS Track)
+* **Prize Track:** **Ethereum Name Service (ENS)** ($10,000 pool).
+* **Companion Subname Passports (`[name].mitrai.eth`):**
+  * Every persona is assigned a canonical ENS subname under `mitrai.eth` (e.g., `milo.mitrai.eth`).
+  * Cryptographic `namehash` is dynamically derived using `viem/ens`.
+* **Standard EIP-2304 Text Records:**
+  * Binds the persona's on-chain **Arkiv** entity key (`arkiv.entity`), mortal status (`agent.status`), current owner (`agent.guardian`), 3D form (`agent.model`), and remaining lifetime (`agent.lifespan`).
+  * Clickable `⟐ [name].mitrai.eth` badges in discovery and profile views launch an interactive **ENS Agent Passport** modal.
+* **Subname Resolution Gateway:**
+  * MitrAI serves an open HTTP gateway at `/api/ens/[name]` (e.g. `/api/ens/milo.mitrai.eth`) allowing external dApps to resolve the agent's verified records without proprietary SDKs.
+* **Collector Reverse Resolution:**
+  * When a collector connects their wallet, the app queries Ethereum RPC via `viem.getEnsName` to resolve their `0x...` address to their primary ENS name (e.g., `vitalik.eth`) in the header and provenance logs.
+* Complete documentation: See [`ens/README.md`](ens/README.md), [`ens/use-case.md`](ens/use-case.md), [`ens/schema.md`](ens/schema.md), and [`ens/how-you-use-ens.md`](ens/how-you-use-ens.md).
+
 ## Product decisions
 
 - Core loop: **create → cultivate → demonstrate → publish → discover → adopt → continue → Sunset**.
