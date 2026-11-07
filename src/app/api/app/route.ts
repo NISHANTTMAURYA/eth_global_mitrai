@@ -675,15 +675,20 @@ export async function POST(request: Request) {
             throw new Error('Complete the Arkiv ownership transfer first.');
         }
       } else if (!c.demo) throw new Error('Sync this character to Arkiv before transferring.');
-      if (c.entityKey && data.txHash)
-        await recordArkivReceipt(
-          c.id,
-          c.entityKey as `0x${string}`,
-          z
-            .string()
-            .regex(/^0x[0-9a-f]{64}$/i)
-            .parse(data.txHash) as `0x${string}`,
-        );
+      if (c.entityKey && data.txHash) {
+        try {
+          await recordArkivReceipt(
+            c.id,
+            c.entityKey as `0x${string}`,
+            z
+              .string()
+              .regex(/^0x[0-9a-f]{64}$/i)
+              .parse(data.txHash) as `0x${string}`,
+          );
+        } catch (receiptErr) {
+          console.warn('Arkiv receipt background recording notice:', receiptErr);
+        }
+      }
       await closeRequests(c, data.requestId);
       c = handover(c, recipient);
     }

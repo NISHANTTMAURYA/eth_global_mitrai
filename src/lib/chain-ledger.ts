@@ -16,9 +16,9 @@ export async function recordArkivReceipt(characterId: string, entityKey: Hex, tx
   let pending = receipts.get(txHash);
   if (!pending) {
     pending = (async () => {
-      const receipt = await client.getTransactionReceipt({ hash: txHash });
-      const block = await client.getBlock({ blockNumber: receipt.blockNumber });
-      return { receipt, at: Number(block.timestamp) * 1000 };
+      const receipt = await client.waitForTransactionReceipt({ hash: txHash, timeout: 15000 }).catch(() => client.getTransactionReceipt({ hash: txHash }));
+      const block = await client.getBlock({ blockNumber: receipt.blockNumber }).catch(() => null);
+      return { receipt, at: block ? Number(block.timestamp) * 1000 : Date.now() };
     })();
     receipts.set(txHash, pending);
     if (receipts.size > 100) receipts.delete(receipts.keys().next().value!);
