@@ -194,8 +194,9 @@ export function creationBlockReason(
   owner: string,
   now = Date.now(),
 ): string | null {
-  if (characters.some((c) => c.owner === owner && lifecycle(c, now).alive))
-    return 'You already have an active character. Cultivate the one you have.';
+  const activeCount = characters.filter((c) => c.owner === owner && lifecycle(c, now).alive).length;
+  if (activeCount >= 2)
+    return 'You already have two active characters. Keep shaping their stories.';
   const lastAction = Math.max(
     0,
     ...characters.flatMap((c) => [
@@ -205,7 +206,7 @@ export function creationBlockReason(
         .map((h) => h.at),
     ]),
   );
-  if (lastAction && now - lastAction < 600000)
+  if (process.env.MITRAI_DEMO_MODE !== '1' && lastAction && now - lastAction < 600000)
     return 'Give this story a little time. Creation has a ten-minute cooldown after handover.';
   return null;
 }

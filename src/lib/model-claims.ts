@@ -48,8 +48,8 @@ export async function reserveModel(c: Character, now = Date.now()) {
       await query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [c.owner], client);
       await modelClaims(now, client);
       const chars = await allCharacters(client);
-      if (chars.some((p) => p.owner === c.owner && lifecycle(p, now).alive))
-        throw new Error('You already have an active MitrAI.');
+      if (chars.filter((p) => p.owner === c.owner && lifecycle(p, now).alive).length >= 2)
+        throw new Error('You already have two active MitrAIs.');
       const pending = await query(
         "SELECT character_id FROM model_claims WHERE owner=$1 AND state IN ('reserved','submitted') LIMIT 1",
         [c.owner],

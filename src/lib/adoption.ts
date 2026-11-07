@@ -18,11 +18,11 @@ export type AdoptionRequest = {
 export async function recipientEligible(c: Character, recipient: string) {
   if (recipient === c.owner) throw new Error('Choose a different owner.');
   const [characters, claims] = await Promise.all([allCharacters(), modelClaims()]);
-  if (
-    characters.some((p) => p.id !== c.id && p.owner === recipient && lifecycle(p).alive) ||
-    claims.some((m) => m.owner === recipient && m.state !== 'confirmed')
-  )
-    throw new Error('This wallet already has an active MitrAI or creation in progress.');
+  const activeCount = characters.filter(
+    (p) => p.id !== c.id && p.owner === recipient && lifecycle(p).alive,
+  ).length;
+  if (activeCount >= 2 || claims.some((m) => m.owner === recipient && m.state !== 'confirmed'))
+    throw new Error('This wallet already has two active MitrAIs or a creation in progress.');
 }
 
 export async function adoptionRequests(id: string): Promise<AdoptionRequest[]> {

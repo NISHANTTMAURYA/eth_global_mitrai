@@ -25,7 +25,7 @@ import {
   ThumbsDown,
   WandSparkles,
 } from 'lucide-react';
-import { type Character, type ModelId } from '@/lib/domain';
+import { lifecycle, type Character, type ModelId } from '@/lib/domain';
 import { api } from '@/lib/client';
 import { Stage, Flower } from './ui';
 import { models } from '@/lib/models';
@@ -108,6 +108,9 @@ export default function CreateView({
   const [customCharacterNote, setCustomCharacterNote] = useState(false);
   const selectedTemplate = templates.find((t) => t.model === model) ?? starter;
   const selectedGestures = [...new Set(['Wave', ...availableGestures(model)])];
+  const activeCount = characters.filter(
+    (character) => character.owner === owner && lifecycle(character).alive,
+  ).length;
 
   useEffect(() => {
     return () => {
@@ -339,16 +342,16 @@ export default function CreateView({
         </div>
       </div>
     );
-  if (mine)
+  if (mine && activeCount >= 2)
     return (
       <div className="empty-page">
         <Flower size={60} />
         <h1>
-          One little life.
+          Two little lives.
           <br />
           Your full attention.
         </h1>
-        <p>You already have an active character. Keep shaping its story.</p>
+        <p>You already have two active characters. Keep shaping their stories.</p>
         <Link className="button primary" href={`/companion/${mine.id}`}>
           Return to {mine.name}
           <ArrowRight size={16} />

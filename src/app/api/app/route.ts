@@ -520,8 +520,8 @@ export async function POST(request: Request) {
         c.availability !== 'transfer'
       )
         throw new Error('This character is not available for demo adoption.');
-      if ((await allCharacters()).some((x) => x.owner === owner && lifecycle(x).alive))
-        throw new Error('You already have an active character.');
+      if ((await allCharacters()).filter((x) => x.owner === owner && lifecycle(x).alive).length >= 2)
+        throw new Error('You already have two active characters.');
       c = handover(c, owner);
       await saveCharacter(c);
       return NextResponse.json({ character: c });

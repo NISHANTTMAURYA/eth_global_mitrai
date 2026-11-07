@@ -111,8 +111,9 @@ export default function MitraiApp() {
       (lifecycle(c).alive || c.activation === 'draft' || c.activation === 'submitted'),
   );
   useEffect(() => {
-    if (!loading && pathname === '/' && mine)
-      router.replace(mine.entityKey || mine.demo ? `/companion/${mine.id}` : '/create');
+    // Only redirect to draft completion if on /my-character and creation is incomplete
+    if (!loading && pathname === '/my-character' && mine && !mine.entityKey && !mine.demo)
+      router.replace('/create');
   }, [loading, pathname, mine?.id, mine?.entityKey, router]);
   const mode = owner?.startsWith('demo:') ? 'Demo collector' : owner ? shortAddress(owner) : null;
   useEffect(() => {
@@ -145,7 +146,7 @@ export default function MitraiApp() {
   let content;
   if (!parts.length)
     content =
-      loading || mine ? (
+      loading ? (
         <div className="empty">
           <Loader2 className="spin" />
           Finding your story…
