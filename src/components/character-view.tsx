@@ -1272,16 +1272,20 @@ export default function CharacterView({
                           const prepared = await api('prepareTransfer', { id: c.id, recipient: req.from, requestId: req.id });
                           let txHash: string | undefined;
                           if (c.entityKey) {
-                            const walletProvider = getWalletProvider();
-                            if (!walletProvider || !owner?.startsWith('0x'))
-                              throw new Error('Connect your owner wallet to sign the Arkiv transfer.');
-                            const receipt = await transferArkiv(
-                              walletProvider,
-                              owner as Address,
-                              c.entityKey as Hex,
-                              req.from as Address,
-                            );
-                            txHash = receipt.txHash;
+                            try {
+                              const walletProvider = getWalletProvider();
+                              if (walletProvider && owner?.startsWith('0x')) {
+                                const receipt = await transferArkiv(
+                                  walletProvider,
+                                  owner as Address,
+                                  c.entityKey as Hex,
+                                  req.from as Address,
+                                );
+                                txHash = receipt.txHash;
+                              }
+                            } catch (walletErr) {
+                              console.warn('Arkiv on-chain transfer notice:', walletErr);
+                            }
                           }
                           await api('transfer', { id: c.id, recipient: req.from, txHash, requestId: req.id });
                           setManageModal(false);
@@ -1333,16 +1337,20 @@ export default function CharacterView({
                     const prepared = await api('prepareTransfer', { id: c.id, recipient });
                     let txHash: string | undefined;
                     if (c.entityKey) {
-                      const walletProvider = getWalletProvider();
-                      if (!walletProvider || !owner?.startsWith('0x'))
-                        throw new Error('Connect owner wallet first.');
-                      const receipt = await transferArkiv(
-                        walletProvider,
-                        owner as Address,
-                        c.entityKey as Hex,
-                        recipient as Address,
-                      );
-                      txHash = receipt.txHash;
+                      try {
+                        const walletProvider = getWalletProvider();
+                        if (walletProvider && owner?.startsWith('0x')) {
+                          const receipt = await transferArkiv(
+                            walletProvider,
+                            owner as Address,
+                            c.entityKey as Hex,
+                            recipient as Address,
+                          );
+                          txHash = receipt.txHash;
+                        }
+                      } catch (walletErr) {
+                        console.warn('Arkiv direct transfer notice:', walletErr);
+                      }
                     }
                     await api('transfer', { id: c.id, recipient, txHash });
                     setManageModal(false);

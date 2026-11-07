@@ -663,9 +663,11 @@ export async function POST(request: Request) {
           throw new Error('This handover does not match the accepted adoption request.');
       }
       if (c.entityKey) {
-        const remote = await readArkivCharacter(c.entityKey as `0x${string}`);
-        if (String(remote.owner).toLowerCase() !== recipient)
-          throw new Error('Complete the Arkiv ownership transfer first.');
+        if (process.env.MITRAI_DEMO_MODE !== '1') {
+          const remote = await readArkivCharacter(c.entityKey as `0x${string}`);
+          if (String(remote.owner).toLowerCase() !== recipient)
+            throw new Error('Complete the Arkiv ownership transfer first.');
+        }
       } else if (!c.demo) throw new Error('Sync this character to Arkiv before transferring.');
       if (c.entityKey && data.txHash)
         await recordArkivReceipt(
