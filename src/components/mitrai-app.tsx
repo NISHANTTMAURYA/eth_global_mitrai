@@ -105,11 +105,15 @@ export default function MitraiApp() {
       setConnect(false);
       notify('Wallet connected. You authorize each Arkiv write.');
     });
-  const mine = characters.find(
+  const myCharacters = characters.filter(
     (c) =>
       c.owner === owner &&
       (lifecycle(c).alive || c.activation === 'draft' || c.activation === 'submitted'),
   );
+  const [activeMyCharacterId, setActiveMyCharacterId] = useState<string | null>(null);
+  const currentMine =
+    myCharacters.find((c) => c.id === activeMyCharacterId) || myCharacters[0];
+  const mine = currentMine;
   useEffect(() => {
     // Only redirect to draft completion if on /my-character and creation is incomplete
     if (!loading && pathname === '/my-character' && mine && !mine.entityKey && !mine.demo)
@@ -180,16 +184,46 @@ export default function MitraiApp() {
         <Loader2 className="spin" />
         Loading your story…
       </div>
-    ) : mine ? (
-      <CharacterView
-        key={mine.id}
-        c={mine}
-        owner={owner}
-        refresh={refresh}
-        notify={notify}
-        ensure={ensure}
-        initialTab="conversation"
-      />
+    ) : currentMine ? (
+      <div className="my-character-container">
+        {myCharacters.length > 1 && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              padding: '12px 24px',
+              maxWidth: 1200,
+              margin: '0 auto',
+            }}
+          >
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#64748b' }}>
+              Your Companions:
+            </span>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {myCharacters.map((c) => (
+                <button
+                  key={c.id}
+                  className={`button ${c.id === currentMine.id ? 'primary' : 'secondary'} small-button`}
+                  onClick={() => setActiveMyCharacterId(c.id)}
+                  style={{ borderRadius: 20, padding: '4px 14px', fontSize: 13 }}
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        <CharacterView
+          key={currentMine.id}
+          c={currentMine}
+          owner={owner}
+          refresh={refresh}
+          notify={notify}
+          ensure={ensure}
+          initialTab="conversation"
+        />
+      </div>
     ) : (
       <div className="empty-page">
         <Flower size={64} />
