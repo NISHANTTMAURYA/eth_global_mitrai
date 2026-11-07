@@ -346,7 +346,7 @@ export default function HomeView({ legacy }: { legacy?: Character }) {
               The owner-controlled Arkiv root stores public character traits, memory crystals, and lifespan leases on Rabdi testnet, enabling 1-click sovereign ownership handover.
             </p>
             <div className="arch-detail">
-              <span>Network: Rabdi Testnet (Chain ID 60138)</span>
+              <span>Network: Rabdi Testnet (Chain ID 7794095)</span>
               <span>Ownership: Sovereign on-chain transfer</span>
             </div>
           </div>

@@ -12,6 +12,7 @@ research/extracted/
 
 *.tsbuildinfo
 work/
+/videos/
 
 # Local Netlify folder
 .netlify

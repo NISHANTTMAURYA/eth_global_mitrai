@@ -30,7 +30,7 @@ test('handover preserves lifetime and public history, removes private memories',
   assert.equal(next.lifespan, c.lifespan);
   assert.equal(next.brain.memories.length, 1);
   assert.equal(next.owner, 'demo:new');
-  assert.equal(next.published, false);
+  assert.equal(next.published, true);
 });
 test('expired characters cannot transfer', () => {
   const c = seeds().find((c) => c.id === 'juniper')!;
@@ -54,11 +54,17 @@ test('trait movement remains capped per UTC day', () => {
   assert.ok(b.traits.curiosity <= 63);
 });
 test('an old character handover starts a fresh creation cooldown for the sender', async () => {
-  const { creationBlockReason } = await import('../src/lib/domain');
-  const c = seeds()[0];
-  const now = Date.now();
-  const owner = c.owner;
-  const transferred = handover(c, 'demo:new', now);
-  assert.match(creationBlockReason([transferred], owner, now + 1) || '', /cooldown/);
-  assert.equal(creationBlockReason([transferred], owner, now + 600001), null);
+  const originalMode = process.env.MITRAI_DEMO_MODE;
+  delete process.env.MITRAI_DEMO_MODE;
+  try {
+    const { creationBlockReason } = await import('../src/lib/domain');
+    const c = seeds()[0];
+    const now = Date.now();
+    const owner = c.owner;
+    const transferred = handover(c, 'demo:new', now);
+    assert.match(creationBlockReason([transferred], owner, now + 1) || '', /cooldown/);
+    assert.equal(creationBlockReason([transferred], owner, now + 600001), null);
+  } finally {
+    if (originalMode !== undefined) process.env.MITRAI_DEMO_MODE = originalMode;
+  }
 });

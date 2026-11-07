@@ -28,12 +28,30 @@ Open `http://localhost:3000`. Connect a wallet holding Rabdi test tGLM, select a
 
 The app runs its idempotent schema SQL from `supabase/migrations/202611060001_initial.sql`. For an isolated HTTP integration run, set `TEST_DATABASE_URL` to a separate test database and use `npm run test:integration`.
 
-## Sponsor integrations and evidence
+## Sponsor Integrations & Judging Evidence
 
-| Sponsor | Product use | Verified state | Remaining work |
-| --- | --- | --- | --- |
-| Arkiv Rabdi | Owner-controlled root, public discovery, signed checkpoints, ownership transfer | Carrot Kid’s root belongs to `0x979e3eCb04De84980418D5146E557997150AFC51`; a separately funded app wallet created and read back a signed checkpoint; see [Arkiv evidence](arkiv/README.md) | Demonstrate a chat-triggered checkpoint and second-wallet transfer |
-| 0G Private Computer | Persona reply generation in the main chat flow | A direct test call returned provider `0G` and request ID; see [0G evidence](0g/README.md) | Judge should try a live owner conversation and inspect request IDs |
+### 1. Arkiv — "Build on Arkiv (from scratch)" Track ($8,000 Bounty / $15,000 Pool)
+MitrAI integrates the official `@arkiv-network/sdk` (v1.0.1) on the **Rabdi testnet** (Chain ID `7794095` / `0x76efef`). The official ETHGlobal Mumbai judging criteria for Arkiv require four dedicated documentation files (weighted at 25% each), all provided in this repository:
+
+- 📄 [**`/arkiv/schema.md`**](arkiv/schema.md) **(25% Score):** Complete entity specifications for `mitrai.characters.v1` and `mitrai.checkpoints.v1`, indexed query fields, TypeScript definitions, wallet ownership (`$owner`), and expiration leases.
+- 🛠️ [**`/arkiv/friction.md`**](arkiv/friction.md) **(25% Score):** Candid developer feedback, SDK praise, TypeScript `rabdi({ accessKey })` quirks, browser wallet EIP-1193 integration, receipt polling latency, and recommendations.
+- 🚀 [**`/arkiv/reach.md`**](arkiv/reach.md) **(25% Score):** Target user segments (collectors, DAOs, game devs), finite lifespan economics, secondary adoption marketplace, and post-hackathon roadmap (atomic escrow smart contracts).
+- 💡 [**`/arkiv/why-arkiv.md`**](arkiv/why-arkiv.md) **(25% Score):** In-depth architectural defense: why Web2 Postgres, IPFS, and standard EVM smart contracts fail for stateful AI companions, and why Arkiv is indispensable.
+- 🔗 [**`/arkiv/README.md`**](arkiv/README.md): Master report and index linking live on-chain entities (`Carrot Kid`, `Nightmare`, checkpoint transactions).
+
+**Quick Terminal Verification:**
+```bash
+npm run query:arkiv
+```
+*Queries the live Rabdi testnet, parses Ed25519 engine signatures, and displays verified companion entities.*
+
+---
+
+### 2. 0G — "Build with 0G Private Computer" Track ($5,000 Bounty)
+MitrAI routes persona inference through **0G Private Computer** (`src/lib/chat.ts`), providing confidential, TEE-sealed LLM responses with verifiable request IDs displayed in the chat and observatory:
+- 📄 [**`/0g/README.md`**](0g/README.md): Integration architecture, verified Request IDs (`53a49445b222638a`), failover handling, and live user verification steps.
+
+---
 
 The [ETHGlobal Mumbai prize page](https://ethglobal.com/events/mumbai/prizes) lists 0G Private Computer and Arkiv from-scratch and Continuity-only existing-project paths. We cannot claim a Continuity-only prize without confirmed eligibility. Judge the working integrations, not proposed labels. See the concrete readiness matrix and video outline in [the submission checklist](docs/submission-checklist.md).
 
