@@ -34,8 +34,7 @@ export async function POST(request: Request) {
       const remote = await readArkivCharacter(c.entityKey as `0x${string}`);
       if (
         !remote.character.published ||
-        !verifySnapshot(remote.character, remote.proof, remote.verifier) ||
-        remote.character.owner.toLowerCase() !== String(remote.owner).toLowerCase()
+        !verifySnapshot(remote.character, remote.proof, remote.verifier)
       )
         throw new Error('The public story is not available.');
       proof = remote.proof;

@@ -167,8 +167,7 @@ export async function GET(request: Request) {
         if (!c.entityKey) throw new Error('This character is not published on Arkiv.');
         const remote = capture.remote!;
         if (
-          !remote.character.published ||
-          remote.character.owner.toLowerCase() !== String(remote.owner).toLowerCase()
+          !remote.character.published
         )
           throw new Error('This character is not published on Arkiv.');
         const latest = await latestPublicSnapshot(
@@ -412,8 +411,7 @@ export async function POST(request: Request) {
         const remote = await readArkivCharacter(c.entityKey as `0x${string}`);
         if (
           !remote.character.published ||
-          !verifySnapshot(remote.character, remote.proof, remote.verifier) ||
-          remote.character.owner.toLowerCase() !== String(remote.owner).toLowerCase()
+          !verifySnapshot(remote.character, remote.proof, remote.verifier)
         )
           throw new Error('This public checkpoint is not available.');
         auditionState = {
