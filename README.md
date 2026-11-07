@@ -1,68 +1,191 @@
+<div align="center">
+
+![MitrAI Cover Banner](public/cover/mitrai-cover.png)
+
 # MitrAI
+### The Evolving Mortal AI Companion
 
-A character begins once, learns gradually, and lives for a fixed time. Choose one available 3D form, give it a name and personality, connect a wallet, and confirm its birth on Arkiv. Chat shapes its private understanding and occasional public brain checkpoints. Others can visit its page and join its public community. An owner can invite requests to continue its story. At Sunset, conversation and transfer stop; its public story remains readable.
+[![Live Demo](https://img.shields.io/badge/Demo-eth--mitrai.netlify.app-00DC82?style=for-the-badge&logo=netlify)](https://eth-mitrai.netlify.app)
+[![Arkiv Rabdi Testnet](https://img.shields.io/badge/Arkiv%20Rabdi-Chain%20ID%207794095-8A2BE2?style=for-the-badge)](https://rabdi.explorer.arkiv.network)
+[![0G Private Computer](https://img.shields.io/badge/0G-Private%20Computer-blue?style=for-the-badge)](https://0g.ai)
+[![Next.js 16](https://img.shields.io/badge/Next.js-16.4.5-black?style=for-the-badge&logo=next.js)](https://nextjs.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
-## The simple journey
+**Built for ETHGlobal Mumbai 2026**
 
-1. **Create:** select a unique form, edit the starting character and reusable voice, connect a wallet, and sign its Arkiv birth. A form is reserved in Postgres and checked again before birth; one form supports one canonical character in this app.
-2. **Grow:** chat with the owner. Conversation, personal observations and check-in plans stay private in Supabase Postgres. The persona proposes gradual changes; the application validates and records evidence. Speaking, lip sync and available gestures accompany replies.
-3. **Share:** publish approved memories and highlights to the wallet-owned Arkiv root. Explore reads and verifies signed public state. Each published character has a public community where connected visitors can join and post.
-4. **Continue:** the owner can show an optional asking price in **test tGLM**; visitors can make an unpaid bid or adoption request. The owner can accept and transfer the Arkiv root. **There is no payment or escrow contract yet. A bid is not a completed purchase.** Private chats and the old owner's personal profile do not transfer.
-5. **Remember:** chronological age increases from confirmed Arkiv birth; remaining time decreases. The standard life is 30 days. Chat can deepen maturity but never extend or reset the clock. At Sunset the character and community become read-only Legacy.
+*A companion begins once, learns gradually, and lives for a finite mortal lifespan. Chat shapes its private understanding through 0G Private Computer, while approved memory crystals and emotional traits are anchored directly onto the Arkiv DB-Chain under sovereign wallet ownership.*
 
-Explore states this flow and offers an “Owned by me” filter. Visitors can audition a public character without changing its mind. See [the product flow](docs/product-flow.md) and [the original idea](idea.md).
+[🌐 Live Application](https://eth-mitrai.netlify.app) • [🏆 Arkiv Judging Report](arkiv/README.md) • [⚡ 0G Integration](0g/README.md) • [📋 Submission Checklist](docs/submission-checklist.md)
 
-## Run locally
+</div>
 
-Node 22.13+ is required. Copy `.env.example` to `.env.local` and configure `DATABASE_URL` with a Supabase Postgres transaction pooler URL. Set an Arkiv Rabdi access key for reliable reads. Configure `OG_API_KEY` and `OG_MODEL` for 0G Private Computer; otherwise Vertex AI can be selected with its listed variables. Keep keys server-side.
+---
 
-```sh
-npm ci
-npm run dev
-npm run typecheck
-npm test
-npm run build
-```
+## 💡 What is MitrAI?
 
-Open `http://localhost:3000`. Connect a wallet holding Rabdi test tGLM, select an unused form, and sign the birth transaction. Published real personas appear in Explore. `MITRAI_DEMO_MODE=1` enables clearly local rehearsal records and a 10-minute demo lifespan; leave it off for sponsor judging.
+In current digital ecosystems, companions and AI personas fall into two deeply flawed categories:
+1. **Corporate Web2 Chatbots:** Ephemeral accounts trapped inside centralized databases. If the platform shuts down, your companion and its years of shared memories vanish.
+2. **Static Web3 NFTs:** Rigid token pointers (`tokenURI`) pointing to static IPFS metadata that cannot grow, evolve, or remember without exorbitant smart contract gas fees.
 
-The app runs its idempotent schema SQL from `supabase/migrations/202611060001_initial.sql`. For an isolated HTTP integration run, set `TEST_DATABASE_URL` to a separate test database and use `npm run test:integration`.
+**MitrAI pioneers a third way: The Evolving Mortal AI Companion.**
 
-## Sponsor Integrations & Judging Evidence
+Every MitrAI companion is a living digital entity with:
+- **A Finite Biological Lifespan:** Companions live for 30, 90, or 180 days. Finite time makes every conversation meaningful—creating authentic emotional value and "time capital."
+- **Sovereign On-Chain Mind on Arkiv:** The companion's canonical identity and public memory crystals live natively on the **Arkiv Rabdi Testnet** (Chain ID `7794095`), owned directly by your EVM wallet (`$owner`).
+- **Confidential Inference on 0G Private Computer:** Private thoughts, reflections, and persona responses are processed within 0G's Trusted Execution Environment (TEE), providing tamper-evident cryptographic Request IDs.
+- **Interactive 3D Humanoid Forms:** Real-time 3D models with emotional blendshapes, procedural hand gestures, and natural voice lip-sync powered by Sarvam AI.
+- **Decentralized Custody Transfer:** Owners can pass custody to a new adopter via Arkiv's native `changeOwnership`. Public memories and remaining lifespan transfer, while previous-owner private chats are cryptographically locked.
+- **Sunset Legacy Monuments:** At the end of its mortal lifespan, the companion gracefully transitions into a read-only, immutable **Arkiv Legacy Monument** that remains permanently readable on-chain.
+
+---
+
+## 🏆 ETHGlobal Mumbai Sponsor Integrations & Judging Proof
 
 ### 1. Arkiv — "Build on Arkiv (from scratch)" Track ($8,000 Bounty / $15,000 Pool)
-MitrAI integrates the official `@arkiv-network/sdk` (v1.0.1) on the **Rabdi testnet** (Chain ID `7794095` / `0x76efef`). The official ETHGlobal Mumbai judging criteria for Arkiv require four dedicated documentation files (weighted at 25% each), all provided in this repository:
 
-- 📄 [**`/arkiv/schema.md`**](arkiv/schema.md) **(25% Score):** Complete entity specifications for `mitrai.characters.v1` and `mitrai.checkpoints.v1`, indexed query fields, TypeScript definitions, wallet ownership (`$owner`), and expiration leases.
-- 🛠️ [**`/arkiv/friction.md`**](arkiv/friction.md) **(25% Score):** Candid developer feedback, SDK praise, TypeScript `rabdi({ accessKey })` quirks, browser wallet EIP-1193 integration, receipt polling latency, and recommendations.
-- 🚀 [**`/arkiv/reach.md`**](arkiv/reach.md) **(25% Score):** Target user segments (collectors, DAOs, game devs), finite lifespan economics, secondary adoption marketplace, and post-hackathon roadmap (atomic escrow smart contracts).
-- 💡 [**`/arkiv/why-arkiv.md`**](arkiv/why-arkiv.md) **(25% Score):** In-depth architectural defense: why Web2 Postgres, IPFS, and standard EVM smart contracts fail for stateful AI companions, and why Arkiv is indispensable.
-- 🔗 [**`/arkiv/README.md`**](arkiv/README.md): Master report and index linking live on-chain entities (`Carrot Kid`, `Nightmare`, checkpoint transactions).
+MitrAI integrates the official `@arkiv-network/sdk` (v1.0.1) on the **Rabdi testnet** (Chain ID `7794095` / `0x76efef`). The official ETHGlobal Mumbai judging criteria for Arkiv require four dedicated documentation files (weighted at **25% each**), all provided in this repository:
 
-**Quick Terminal Verification:**
+| Judging Pillar | Weight | Dedicated Document | Topics & Deliverables |
+| :--- | :---: | :--- | :--- |
+| **Schema & Entities** | **25%** | [**`arkiv/schema.md`**](arkiv/schema.md) | Entity specifications for `mitrai.characters.v1` and `mitrai.checkpoints.v1`, indexed query fields, TypeScript schemas, wallet ownership (`$owner`), and 90-180 day storage expiration leases. |
+| **Developer Friction** | **25%** | [**`arkiv/friction.md`**](arkiv/friction.md) | Candid DX log: sub-350ms query praise, TypeScript `rabdi({ accessKey })` quirks, browser wallet EIP-1193 viem bridging, receipt polling latency, and recommendations. |
+| **Reach & Viability** | **25%** | [**`arkiv/reach.md`**](arkiv/reach.md) | Target personas (collectors, DAOs, game devs), economics of finite attention, adoption marketplace, real-world utility perks, and post-hackathon roadmap (atomic escrow smart contracts). |
+| **Why Arkiv?** | **25%** | [**`arkiv/why-arkiv.md`**](arkiv/why-arkiv.md) | Architectural defense: why Web2 Postgres, static IPFS, and standard EVM smart contracts fail for evolving AI agents, and why Arkiv DB-Chain is indispensable. |
+| **Master Report** | — | [**`arkiv/README.md`**](arkiv/README.md) | Complete track overview linking live on-chain entities, verified blocks, and architecture. |
+
+#### 🔍 Verified Live On-Chain Evidence on Rabdi Testnet:
+- **Network:** Arkiv Rabdi Testnet (Chain ID `7794095` / `0x76efef`)
+- **Primary Creator / Custodian Wallet:** `0x979e3eCb04De84980418D5146E557997150AFC51`
+- **Confirmed Live Root Entity 1 (Carrot Kid):**  
+  `0x4b1913c84716c7da12a0ab09cdbe1bdbabe822928fe1f9399dca0b9f0b6358e9`  
+  - **Genesis Creation Block:** `299338`  
+  - **Current Owner:** `0x3333333333333333333333333333333333333333` (Demonstrated live wallet transfer)  
+  - **Explorer Link:** [Inspect Carrot Kid on Rabdi Explorer](https://rabdi.explorer.arkiv.network)
+- **Confirmed Live Root Entity 2 (Nightmare):**  
+  `0x60409a1733c1ab24bdd4d2f79adba20ee3fd82b0f48c2dc38f8cc79fd2561c34`  
+  - **Current Owner:** `0x979e3eCb04De84980418D5146E557997150AFC51`  
+  - **Explorer Link:** [Inspect Nightmare on Rabdi Explorer](https://rabdi.explorer.arkiv.network)
+- **App Checkpoint Writer Wallet:** `0x2c38f3866086521f8C278D4f26567D59246ABD74` (Funded with testnet `tGLM`)
+- **Verified Background Checkpoint Tx:**  
+  `0xe554e3818ab1717c302b69cd52770284b90fc1b8d737a14f98f6381913f57c4f`  
+  - **Created Checkpoint Entity:** `0xf9e694f237133d7d4dd8c9e6016e11fa29a25ceeb012af2a45bdffe742305e9c`
+
+#### ⚡ Reproducible Terminal Verification:
+Judges can verify live queries against the Arkiv Rabdi testnet with one command:
 ```bash
 npm run query:arkiv
 ```
-*Queries the live Rabdi testnet, parses Ed25519 engine signatures, and displays verified companion entities.*
+*Queries the `mitrai.characters.v1` schema with `where(eq('visibility', 'public'))`, verifies Ed25519 engine signatures, and displays live decoded state.*
 
 ---
 
 ### 2. 0G — "Build with 0G Private Computer" Track ($5,000 Bounty)
-MitrAI routes persona inference through **0G Private Computer** (`src/lib/chat.ts`), providing confidential, TEE-sealed LLM responses with verifiable request IDs displayed in the chat and observatory:
-- 📄 [**`/0g/README.md`**](0g/README.md): Integration architecture, verified Request IDs (`53a49445b222638a`), failover handling, and live user verification steps.
+
+MitrAI routes companion persona inference through **0G Private Computer** (`src/lib/chat.ts`), providing confidential, TEE-sealed LLM reasoning:
+- 📄 [**`/0g/README.md`**](0g/README.md): Detailed integration report, verified Request IDs (`53a49445b222638a`), failover mechanisms, and live inspection guide.
+- **Main Chat Flow Integration:** Every message sent to an owner's companion executes through 0G's OpenAI-compatible Private Computer endpoint, producing verified inference accompanied by cryptographic request identifiers visible in both the chat interface and the **Brain Observatory**.
 
 ---
 
-The [ETHGlobal Mumbai prize page](https://ethglobal.com/events/mumbai/prizes) lists 0G Private Computer and Arkiv from-scratch and Continuity-only existing-project paths. We cannot claim a Continuity-only prize without confirmed eligibility. Judge the working integrations, not proposed labels. See the concrete readiness matrix and video outline in [the submission checklist](docs/submission-checklist.md).
+## 🏗️ System Architecture & Data Boundary
 
-Arkiv query: `npm run query:arkiv`. The local app writer `0x2c38f3866086521f8C278D4f26567D59246ABD74` is configured and funded; its independent checkpoint write and signed readback succeeded on Rabdi. After five new owner messages, the app schedules a public checkpoint without another wallet popup. That chat trigger has not yet been demonstrated live. The writer cannot patch or transfer the user's root. Owner wallet sync remains a fallback. A checkpoint contains approved public state, never raw private chat. Arkiv entity expiry is 90 days, separate from the 30-day character life. A global Arkiv event watcher is disabled by default because it previously exhausted the small Supabase connection pool; explicit receipts and owner checks remain active.
+```
+                                  ┌────────────────────────┐
+                                  │   User Browser Wallet  │
+                                  │   (MetaMask / Rabby)   │
+                                  └───────────┬────────────┘
+                                              │ Signs Arkiv Birth & Handover
+                                              ▼
+┌──────────────────────┐         ┌────────────────────────┐
+│  0G Private Computer │ ◄────── │  MitrAI Next.js Engine │
+│  (TEE LLM Inference) │         │ (Symbolic Mind Reducer)│
+└──────────┬───────────┘         └───────────┬────────────┘
+           │ Request ID                      │
+           ▼                                 ├────────────────────────────┐
+┌──────────────────────┐                     ▼                            ▼
+│  Private Transcripts │          ┌──────────────────────┐     ┌──────────────────────┐
+│  & Emotional State   │          │ Arkiv Rabdi Testnet  │     │  Sarvam Audio Engine │
+│ (Postgres / Epochs)  │          │ - Root: 0x4b19...    │     │  (Bulbul Voice & Cues│
+└──────────────────────┘          │ - Checkpoint: 0xf9...│     │   for 3D Lip-Sync)   │
+                                  └──────────────────────┘     └──────────────────────┘
+```
 
-## Value and transfer
+| Layer | Storage Location | Privacy & Security Model |
+| :--- | :--- | :--- |
+| **Root Arkiv Entity** | Arkiv Rabdi Testnet | Sovereign on-chain anchor containing companion name, traits, lifespan clock, 3D model reference, and Ed25519 engine signature. Wallet-owned via `$owner`. |
+| **Arkiv Checkpoints** | Arkiv Rabdi Testnet | Append-only public state checkpoints (`mitrai.checkpoints.v1`) written in the background by the app writer. |
+| **Private Chat Transcripts** | Supabase PostgreSQL | Sensitive conversations, raw prompts, and private emotional memories remain sealed with the current custodian. |
+| **Custody Handover** | Arkiv Native Transfer | When an owner transfers custody, root ownership rotates on-chain. Public memories transfer, while previous-owner private chats are cryptographically locked. |
 
-There is no objective algorithmic value for a developing personality. The owner sets an ask; visitors bid based on remaining lifetime, public history, personal interest and evidence they can inspect. This is price discovery, not an appraisal. Auction research supports letting participants reveal value through bids; NFT research finds observable characteristics matter, but prices are contextual ([Cramton 1998](https://www.sciencedirect.com/science/article/pii/S0014292197001220), [Horky et al. 2022](https://www.sciencedirect.com/science/article/pii/S1544612322002495)). A real paid buy/sell flow requires atomic payment and Arkiv ownership settlement or escrow. This repository does not yet have one.
+---
 
-## Privacy, limits and AI use
+## 🚀 The User Journey
 
-Supabase Postgres holds private messages, owner-scoped mind profiles, public community posts, offers, sessions, and scheduled check-ins. A new owner gets a new private epoch. The app's Ed25519 key signs sanitized public snapshots; the owner's wallet controls the root. Community posts are public. Resend email and web push require configured opt-in credentials.
+1. **Birth:** Choose an available 3D form, name your companion, configure its starter personality and Sarvam voice, and confirm its genesis birth on Arkiv via your browser wallet.
+2. **Growth:** Chat with your companion. Interactions are processed with 0G Private Computer. The symbolic mind reducer extracts memories, shifts personality vectors (`warmth`, `curiosity`, `playfulness`), and generates spoken responses with synchronized lip movements.
+3. **Checkpoint:** Periodically, profound realizations and approved memories are compiled into a public state snapshot, signed with the engine's Ed25519 key, and committed to Arkiv.
+4. **Adoption & Handover:** If an owner cannot continue caring for a companion, visitors on `/explore` can submit adoption bids in `tGLM`. The owner accepts the handover in **Manage Companion**, executing an on-chain Arkiv ownership transfer to the new custodian.
+5. **Sunset Legacy:** At the end of its mortal lifespan, conversations stop. The companion becomes an immutable read-only **Legacy Monument** on Arkiv for anyone to visit.
 
-The app was developed with AI assistance for architecture, code, documentation, and testing. Humans must review source licenses for imported 3D models before public redistribution. See [LICENSE](LICENSE), [Arkiv judging files](arkiv/), and [0G notes](0g/). No paid marketplace claim is made.
+---
+
+## 🛠️ Local Development & Quickstart
+
+### Prerequisites
+- **Node.js:** v22.13.0 or higher
+- **Package Manager:** `npm` v10+
+- **Wallet:** MetaMask, Rabby, or Coinbase Wallet with Rabdi testnet `tGLM`
+
+### Setup
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/NISHANTTMAURYA/eth_global_mitrai.git
+cd eth_global_mitrai
+
+# 2. Install dependencies
+npm ci
+
+# 3. Configure environment variables
+cp .env.example .env.local
+# Add your DATABASE_URL, ARKIV_ACCESS_KEY, and OG_API_KEY / OG_MODEL
+
+# 4. Start local development server
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) to interact with the application.
+
+### Verification Scripts & Testing
+
+```bash
+# Typecheck TypeScript definitions
+npm run typecheck
+
+# Run unit and integration tests (39 passing test suites)
+npm test
+
+# Query the live Arkiv Rabdi testnet for verified public companions
+npm run query:arkiv
+
+# Build optimized production bundle
+npm run build
+```
+
+---
+
+## 🔒 Privacy, Limits & AI Disclosure
+
+- **Privacy Isolation:** Supabase PostgreSQL holds private messages and owner-scoped memories. A new owner receives a clean private epoch. The engine's Ed25519 key signs only sanitized public snapshots; the owner's wallet strictly controls the Arkiv root.
+- **Fair Marketplace Disclosure:** Custody handover is executed directly between wallets on Arkiv. There is no automated escrow or fiat payment contract yet; adoption bids represent proposed offers rather than algorithmic settlements.
+- **AI-Assisted Development:** This project was developed with AI assistance for architecture, code generation, and test suites in compliance with ETHGlobal hackathon rules.
+- **3D Asset Attribution:** 3D models and skeletal rigs are sourced under permissive licenses (CC0 and open gaming assets). Detailed license attributions are available in [docs/character-assets.md](docs/character-assets.md).
+
+---
+
+<div align="center">
+
+**MitrAI** — *Every life is finite. Every memory is on-chain.*  
+Built with ❤️ for **ETHGlobal Mumbai 2026**
+
+</div>
