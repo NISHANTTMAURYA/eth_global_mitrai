@@ -1289,8 +1289,9 @@ export default function CharacterView({
                           }
                           await api('transfer', { id: c.id, recipient: req.from, txHash, requestId: req.id });
                           setManageModal(false);
-                          router.push('/explore');
+                          setIncoming((list) => list.filter((item) => item.id !== req.id));
                           notify('Ownership handed over on Arkiv! Your companion has found a new guardian.');
+                          window.location.href = '/explore';
                         })
                       }
                     >

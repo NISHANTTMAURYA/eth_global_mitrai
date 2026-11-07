@@ -166,7 +166,7 @@ export function handover(c: Character, recipient: string, now = Date.now()): Cha
     ...c,
     owner: recipient,
     ownershipEpoch: (c.ownershipEpoch || 0) + 1,
-    published: false,
+    published: true, // Keep published so the character appears under "Owned by Others" immediately in Explore
     availability: 'showcase',
     askingPriceTglm: undefined,
     brain: {

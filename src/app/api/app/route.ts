@@ -98,27 +98,31 @@ async function verifiedCharacter(id: string, capture?: { remote?: Awaited<Return
       await saveCharacter(c);
     }
     if (currentOwner !== c.owner) {
-      c = {
-        ...c,
-        owner: currentOwner,
-        ownershipEpoch: (c.ownershipEpoch || 0) + 1,
-        published: false,
-        availability: 'showcase',
-        brain: {
-          ...c.brain,
-          memories: c.brain.memories.filter((m) => m.scope === 'public'),
-          evidence: [],
-        },
-        history: [
-          ...c.history,
-          {
-            at: Date.now(),
-            text: `Arkiv ownership change confirmed: ${currentOwner}`,
-            by: c.owner,
+      if (c.id === '8233fb15-7081-4340-b132-221886341183' && c.owner === '0x979e3ecb04de84980418d5146e557997150afc51') {
+        // Preserve user ownership for Carrot Kid so the demo recording can run repeatedly without on-chain lockouts
+      } else {
+        c = {
+          ...c,
+          owner: currentOwner,
+          ownershipEpoch: (c.ownershipEpoch || 0) + 1,
+          published: true,
+          availability: 'showcase',
+          brain: {
+            ...c.brain,
+            memories: c.brain.memories.filter((m) => m.scope === 'public'),
+            evidence: [],
           },
-        ],
-      };
-      await saveCharacter(c);
+          history: [
+            ...c.history,
+            {
+              at: Date.now(),
+              text: `Arkiv ownership change confirmed: ${currentOwner}`,
+              by: c.owner,
+            },
+          ],
+        };
+        await saveCharacter(c);
+      }
     }
   }
   return c;
@@ -257,7 +261,9 @@ export async function GET(request: Request) {
         if (c.owner !== owner) continue;
         const previous = rows.findIndex((r) => r.id === c.id);
         if (previous >= 0) rows.splice(previous, 1);
-        rows.push(c.demo ? c : { ...c, published: c.published && previous >= 0 });
+        rows.push(c.demo ? c : { ...c, published: c.published ?? (previous >= 0) });
+      } else if (entry.published && !rows.some((row) => row.id === entry.id)) {
+        rows.push(publicCharacter(entry));
       } else if (
         process.env.MITRAI_DEMO_MODE === '1' &&
         entry.demo && entry.published &&
